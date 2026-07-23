@@ -1,0 +1,23 @@
+# Dependencias — se reinstalan dentro de la imagen
+node_modules
+**/node_modules
+
+# Artefactos de build — se regeneran en la etapa de build
+build
+.docusaurus
+
+# Logs / sistema operativo / editores
+*.log
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+.vscode
+.idea
+
+# Archivos propios de Docker (no se necesitan dentro del contexto)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI / GitHub Pages (no aplica en el contenedor)
+.github
