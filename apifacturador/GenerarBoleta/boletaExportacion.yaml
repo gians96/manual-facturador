@@ -2,33 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    Para la implementación de la **Facturación Electrónica**, la SUNAT ha puesto a su disposición diversos manuales y documentos técnicos, los cuales inicialmente son complejos de entender y utilizar.
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    La api le permitirá generar diversos documentos electrónicos, y de cada uno obtendrá los 3 archivos indispensables **(XML Firmado, Documento PDF, y CDR)**.
+    Documentos contemplados:
 
-    Los documentos que se encuentran contemplados son:
-
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generador de facturas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/documents:
@@ -37,209 +39,227 @@ paths:
         - api
       summary: BOLETA EXPORTACIÓN
       description: |
-        La boleta de exportación es un documento que registra la exportación de productos o servicios desde un país a otro, sin estar directamente relacionada con impuestos.  
-  
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://demo.pro5.fastura.app/api/documents  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt
+        Boleta por exportación de bienes o servicios a un cliente del exterior. La operación
+        no está gravada con IGV: se usa `codigo_tipo_operacion: "0200"` (exportación), los
+        items llevan `codigo_tipo_afectacion_igv: "40"` y el importe va en
+        `totales.total_exportacion`.
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/documents`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        **Notas importantes:**
+        - `numero_documento: "#"` deja que el sistema asigne el correlativo automáticamente (recomendado).
+        - **Cliente extranjero:** identificarlo con pasaporte
+          (`codigo_tipo_documento_identidad: "7"`) o carnet de extranjería (`"4"`), y
+          `codigo_pais` distinto de `PE`.
+        - **Las boletas NO se envían individualmente a SUNAT:** al emitirse quedan en estado
+          `01` Registrado y se declaran después mediante el **resumen diario**
+          (`POST /api/summaries`, ver sección Generar Resúmenes).
       operationId: boletaExportacion
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/BoletaExportacionRequest'
         required: true
       responses:
         '200':
-          description: JSON RESPUESTA
+          description: |
+            Boleta emitida correctamente. Queda en estado `01` **Registrado**: `links.cdr`
+            llega vacío (`""`) y `response` vacío (`[]`). La aceptación de SUNAT se obtiene
+            después, al declarar la boleta con el **resumen diario** (`POST /api/summaries`,
+            ver sección Generar Resúmenes).
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaEmision'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: Error de negocio (serie incorrecta, cliente inválido, fecha fuera de plazo, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - petstore_auth:
-            - write:pets
-            - read:pets    
-          
-# Formato Json de BOLETA EXPORTACIÓN
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    BoletaExportacionRequest:
       type: object
       properties:
         serie_documento:
           type: string
+          description: Serie de tipo boleta. Debe existir en el sistema para el establecimiento.
           example: "B001"
         numero_documento:
           type: string
+          description: Correlativo. Usar "#" para que el sistema lo asigne automáticamente.
           example: "#"
         fecha_de_emision:
           type: string
           format: date
-          example: "2024-11-04"
+          example: "2026-07-22"
         hora_de_emision:
           type: string
-          format: time
           example: "10:11:11"
         codigo_tipo_operacion:
           type: string
-          example: "0101"
+          description: Catálogo 51 SUNAT. "0200" exportación de bienes o servicios.
+          example: "0200"
         codigo_tipo_documento:
           type: string
+          description: Catálogo 01 SUNAT. "03" Boleta de venta.
           example: "03"
         codigo_tipo_moneda:
           type: string
-          example: "PEN"
+          description: '"PEN" o "USD".'
+          example: "USD"
+        factor_tipo_de_cambio:
+          type: number
+          description: Tipo de cambio venta (default 1). Usar cuando la moneda es USD.
+          example: 3.75
         fecha_de_vencimiento:
           type: string
           format: date
-          example: "2019-09-03"
+          description: Opcional.
+          example: "2026-07-22"
         datos_del_cliente_o_receptor:
           type: object
+          description: Cliente del exterior. Si no existe se crea automáticamente.
+          required:
+            - codigo_tipo_documento_identidad
+            - numero_documento
+            - apellidos_y_nombres_o_razon_social
           properties:
             codigo_tipo_documento_identidad:
               type: string
-              example: "6"
+              description: Catálogo 06 SUNAT. "7" Pasaporte, "4" Carnet de extranjería.
+              example: "7"
             numero_documento:
               type: string
-              example: "10414711225"
+              example: "AB1234567"
             apellidos_y_nombres_o_razon_social:
               type: string
-              example: "EMPRESA XYZ S.A."
+              example: "JOHN SMITH"
             codigo_pais:
               type: string
-              example: "PE"
-            ubigeo:
-              type: string
-              example: "150101"
+              description: País del cliente (ISO 3166-1 alfa-2), distinto de "PE".
+              example: "US"
             direccion:
               type: string
-              example: "Av. 2 de Mayo"
+              example: "1234 Main Street, Miami FL"
             correo_electronico:
               type: string
-              example: "demo@gmail.com"
+              description: Destino del correo cuando se usa `acciones.enviar_email`.
+              example: "john.smith@mail.com"
             telefono:
               type: string
-              example: "427-1148"
-        
-  
+              example: "+1 305 555 0123"
         totales:
           type: object
+          required:
+            - total_venta
           properties:
             total_exportacion:
               type: number
-              format: float
-              example: 0.00
+              description: Suma de los items con afectación "40" (exportación).
+              example: 100
             total_operaciones_gravadas:
               type: number
-              format: float
-              example: 100.00
-            total_operaciones_inafectas:
-              type: number
-              format: float
-              example: 0.00
-            total_operaciones_exoneradas:
-              type: number
-              format: float
-              example: 0.00
-            total_operaciones_gratuitas:
-              type: number
-              format: float
-              example: 0.00
+              example: 0
             total_igv:
               type: number
-              format: float
-              example: 18.00
+              example: 0
             total_impuestos:
               type: number
-              format: float
-              example: 18.00
+              example: 0
             total_valor:
               type: number
-              format: float
-              example: 100.00
+              example: 100
             total_venta:
               type: number
-              format: float
-              example: 118.00
+              description: Importe total del comprobante.
+              example: 100
         items:
           type: array
           items:
             type: object
+            required:
+              - descripcion
+              - unidad_de_medida
+              - cantidad
             properties:
               codigo_interno:
                 type: string
-                example: "P0121"
+                description: Código del producto. Si no existe, el producto se crea automáticamente con los datos enviados.
+                example: "P0500"
               descripcion:
                 type: string
-                example: "Inca Kola 250 ml"
+                example: "Polo de algodón pima peruano"
               codigo_producto_sunat:
                 type: string
-                example: "51121703"
-              codigo_producto_gsl:
-                type: string
-                example: "51121703"
+                example: "53101602"
               unidad_de_medida:
                 type: string
+                description: Catálogo de unidades SUNAT ("NIU" unidad, "ZZ" servicio, etc.).
                 example: "NIU"
               cantidad:
-                type: integer
-                format: int32
+                type: number
                 example: 2
               valor_unitario:
                 type: number
-                format: float
-                example: 50.00
+                description: En exportación no hay IGV, coincide con el precio unitario.
+                example: 50
               codigo_tipo_precio:
                 type: string
+                description: '"01" precio de venta.'
                 example: "01"
               precio_unitario:
                 type: number
-                format: float
-                example: 59.00
+                example: 50
               codigo_tipo_afectacion_igv:
                 type: string
-                example: "10"
+                description: Catálogo 07 SUNAT. "40" exportación de bienes o servicios.
+                example: "40"
               total_base_igv:
                 type: number
-                format: float
-                example: 100.00
+                example: 0
               porcentaje_igv:
                 type: number
-                format: float
-                example: 18.00
+                example: 0
               total_igv:
                 type: number
-                format: float
-                example: 18.00
+                example: 0
               total_impuestos:
                 type: number
-                format: float
-                example: 18.00
+                example: 0
               total_valor_item:
                 type: number
-                format: float
-                example: 100.00
+                example: 100
               total_item:
                 type: number
-                format: float
-                example: 118.00
-
+                example: 100
       required:
         - serie_documento
         - numero_documento
@@ -248,12 +268,11 @@ components:
         - codigo_tipo_operacion
         - codigo_tipo_documento
         - codigo_tipo_moneda
-        - fecha_de_vencimiento
         - datos_del_cliente_o_receptor
         - totales
         - items
 
-    Response:
+    RespuestaEmision:
       type: object
       properties:
         success:
@@ -264,85 +283,159 @@ components:
           properties:
             number:
               type: string
-              example: "B001-12"
+              example: "B001-42"
             filename:
               type: string
-              example: "20302019010-03-B001-12"
+              example: "20123456789-03-B001-42"
             external_id:
               type: string
-              example: "fa4d8a21-364b-4125-864c-506e1722007c"
+              description: Identificador único del comprobante. Guardarlo — se usa en send, notas, anulaciones y descargas.
+              example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             state_type_id:
               type: string
-              example: "05"
+              description: '"01" Registrado (sin enviar), "03" Enviado, "05" Aceptado, "07" Observado, "09" Rechazado, "11" Anulado, "13" Por anular. Las boletas quedan en "01" hasta declararse con el resumen diario.'
+              example: "01"
             state_type_description:
               type: string
-              example: "Aceptado"
+              example: "Registrado"
             number_to_letter:
               type: string
-              example: "Ciento dieciocho con 00/100"
+              example: "Cien con 00/100"
             hash:
               type: string
-              example: "kp1jhEaeI8uvFE96/rH4/7v0JDM="
+              example: "jFDgOlcAShjMeA1TJzT08v+PPTw="
             qr:
               type: string
-              example: "iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAIAAACzY+a1AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAgAElEQVR4AQCbgGR/Af///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+              description: Imagen QR del comprobante en base64 (PNG).
+              example: "iVBORw0KGgoAAAANSUhEUgAA..."
+            id:
+              type: integer
+              example: 323
+            print_ticket:
+              type: string
+              description: URL de impresión en formato ticket.
+              example: "https://tu-dominio.com/print/document/46c6ce9d-.../ticket"
+        print:
+          type: object
+          description: Resultado de la impresión automática server-side (`acciones.auto_print`).
+          properties:
+            auto_printed:
+              type: boolean
+              description: Si es `true`, el servidor ya imprimió — el cliente no debe reimprimir.
+              example: false
+            print_order_id:
+              type: integer
+              nullable: true
+              example: null
+            reason:
+              type: string
+              nullable: true
+              example: "disabled"
+        data_ws:
+          type: object
+          description: Datos listos para compartir el comprobante (WhatsApp/mensajería).
+          properties:
+            message_text:
+              type: string
+              example: "Su comprobante de pago electrónico B001-42 ha sido generado correctamente..."
+            pdf_a4_filename:
+              type: string
+              example: "https://tu-dominio.com/api/document-file/document/46c6ce9d-.../a4"
+            pdf_ticket_filename:
+              type: string
+              example: "https://tu-dominio.com/api/document-file/document/46c6ce9d-.../ticket"
+            full_filename:
+              type: string
+              example: "20123456789-03-B001-42.pdf"
+            customer_telephone:
+              type: string
+              example: "+1 305 555 0123"
         links:
           type: object
           properties:
             xml:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/xml/fa4d8a21-364b-4125-864c-506e1722007c"
+              example: "https://tu-dominio.com/downloads/document/xml/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             pdf:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/pdf/fa4d8a21-364b-4125-864c-506e1722007c"
+              example: "https://tu-dominio.com/downloads/document/pdf/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             cdr:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/cdr/fa4d8a21-364b-4125-864c-506e1722007c"
+              description: Vacío ("") — el CDR de la boleta llega al declararla con el resumen diario.
+              example: ""
         response:
           type: object
+          description: Respuesta de SUNAT. Para boletas llega vacía ([]) al emitir; la aceptación se obtiene con el resumen diario.
           properties:
-            code: 
+            code:
               type: string
               example: "0"
             description:
               type: string
-              example: "La Boleta numero B001-12, ha sido aceptada"
+              example: ""
             notes:
               type: array
-              example: []
-
+              items:
+                type: string
+        was_duplicate:
+          type: boolean
+          description: '`true` cuando la emisión se deduplicó por `offline_id` (se devolvió un documento ya existente).'
+          example: false
       required:
+        - success
         - data
-        - response
 
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            serie_documento: ["El campo serie documento es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "La serie ingresada B001, es incorrecta."
+
   securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

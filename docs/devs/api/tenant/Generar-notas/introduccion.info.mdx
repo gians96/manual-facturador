@@ -1,7 +1,7 @@
 ---
 id: introduccion
 title: "Introducción"
-description: "En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas."
+description: "La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y"
 sidebar_label: Introduction
 sidebar_position: 0
 hide_title: true
@@ -16,7 +16,7 @@ import Export from "@theme/ApiExplorer/Export";
 
 <span
   className={"theme-doc-version-badge badge badge--secondary"}
-  children={"Version: 1.0.11"}
+  children={"Version: 8.0.0"}
 >
 </span>
 
@@ -29,20 +29,26 @@ import Export from "@theme/ApiExplorer/Export";
 
 
 
-En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas.
+La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-Los documentos que se encuentran contemplados son:
+Documentos contemplados:
 
-1. Factura  
-2. Boleta  
-3. Nota de Débito  
-4. Nota de Crédito  
-5. Resúmenes  
-6. Anulaciones  
-7. Guia de remisión  
-8. Cotización  
-9. Inventarios  
+1. Factura
+2. Boleta
+3. Nota de Crédito
+4. Nota de Débito
+5. Resúmenes diarios (boletas)
+6. Anulaciones (comunicación de baja)
+7. Guía de remisión (remitente y transportista)
+8. Cotización
+9. Inventarios
 10. Productos
+
+**Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+"Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
 
 <div
   style={{"marginBottom":"2rem"}}
@@ -57,12 +63,14 @@ Los documentos que se encuentran contemplados son:
     className={"openapi-tabs__security-schemes"}
   >
     <TabItem
-      label={"OAuth 2.0: fastura_auth"}
-      value={"fastura_auth"}
+      label={"HTTP: Bearer Auth"}
+      value={"bearerAuth"}
     >
       
       
-      
+      Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+      o campo `token` de la respuesta de `POST /api/login`).
+      Enviar en cada petición: `Authorization: Bearer <TOKEN>`.
       
       <div>
         <table>
@@ -71,50 +79,13 @@ Los documentos que se encuentran contemplados son:
               <th>
                 Security Scheme Type:
               </th><td>
-                oauth2
+                http
               </td>
             </tr><tr>
               <th>
-                OAuth Flow (implicit):
+                HTTP Authorization Scheme:
               </th><td>
-                <div>
-                  Authorization URL: https://empresa1.demo3pro6.ibu.pe
-                </div><span>
-                  Scopes:
-                </span><ul>
-                  <li>
-                    write: Modificar...
-                  </li><li>
-                    read: Leer..
-                  </li>
-                </ul>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </TabItem><TabItem
-      label={"API Key: api_key"}
-      value={"api_key"}
-    >
-      
-      
-      
-      
-      <div>
-        <table>
-          <tbody>
-            <tr>
-              <th>
-                Security Scheme Type:
-              </th><td>
-                apiKey
-              </td>
-            </tr><tr>
-              <th>
-                Header parameter name:
-              </th><td>
-                api_key
+                bearer
               </td>
             </tr>
           </tbody>

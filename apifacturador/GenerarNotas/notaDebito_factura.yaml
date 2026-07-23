@@ -2,31 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas.
-    
-    Los documentos que se encuentran contemplados son:
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generar Notas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/documents:
@@ -34,97 +38,141 @@ paths:
       tags:
         - api
       summary: NOTA DÉBITO - FACTURA
-      description: |  
-        Una de estas formas es la nota de débito y se utiliza cuando un comprador quiere informar a un vendedor de que ha aumentado el precio de su deuda o que la cantidad que había pagado era errónea y debe pagar más.  
+      description: |
+        La Nota de Débito se emite para aumentar el importe de una factura ya emitida:
+        intereses por mora, aumento en el valor de la operación o penalidades (catálogo 10 SUNAT).
 
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://empresa1.demo3pro6.ibu.pe/api/documents  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt
+        Las notas se emiten por el mismo endpoint `POST /api/documents`, cambiando
+        `codigo_tipo_documento` a `"08"` y agregando los campos `codigo_tipo_nota`,
+        `motivo_o_sustento_de_nota` y `documento_afectado`.
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/documents`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        **Notas importantes:**
+        - `numero_documento: "#"` deja que el sistema asigne el correlativo automáticamente (recomendado).
+        - La serie de la nota debe existir en el sistema para el tipo `08` y empezar con la letra
+          del comprobante afectado: `FD01` para notas de débito de **facturas**, `BD01` para
+          notas de débito de **boletas**.
+        - `documento_afectado` acepta dos formas: `{external_id}` (identificador del comprobante
+          afectado, devuelto al emitirlo) **o** `{serie_documento, numero_documento, codigo_tipo_documento}`.
+        - Las notas de **factura** se envían a SUNAT al emitirse (la respuesta incluye
+          `response.code "0"` y `links.cdr`). Las notas de **boleta** se declaran mediante el
+          resumen diario.
       operationId: notaDebito_factura
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/NotaDebitoRequest'
         required: true
       responses:
         '200':
-          description: |
-            JSON RESPUESTA
+          description: Nota de débito emitida correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaEmision'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: Error de negocio (serie incorrecta, documento afectado no encontrado, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - fastura_auth:
-            - write
-            - read 
-          
-# Formato Json de NOTA DÉBITO - FACTURA
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    NotaDebitoRequest:
       type: object
       properties:
         serie_documento:
           type: string
+          description: Serie de la nota. Debe existir en el sistema para el tipo "08" y empezar con la letra del comprobante afectado ("FD01" para facturas, "BD01" para boletas).
           example: "FD01"
         numero_documento:
           type: string
+          description: Correlativo. Usar "#" para que el sistema lo asigne automáticamente (recomendado).
           example: "#"
         fecha_de_emision:
           type: string
           format: date
-          example: "2024-11-05"
+          example: "2026-07-22"
         hora_de_emision:
           type: string
-          format: time
           example: "10:11:11"
         codigo_tipo_documento:
           type: string
+          description: '"08" Nota de Débito.'
           example: "08"
         codigo_tipo_nota:
           type: string
-          example: "01"
+          description: |-
+            Catálogo 10 SUNAT (tipos de nota de débito):
+            "01" intereses por mora, "02" aumento en el valor, "03" penalidades / otros conceptos.
+          example: "02"
         motivo_o_sustento_de_nota:
           type: string
-          example: "Error al emitir comprobante"
+          description: Descripción del motivo de la nota.
+          example: "Aumento en el valor de la operación"
         codigo_tipo_moneda:
           type: string
+          description: '"PEN" o "USD".'
           example: "PEN"
         numero_orden_de_compra:
           type: string
+          description: Opcional.
           example: "0045467898"
         documento_afectado:
           type: object
+          description: |-
+            Comprobante que la nota modifica. Dos formas de identificarlo:
+            con `external_id` (devuelto al emitir el comprobante) o con
+            `{serie_documento, numero_documento, codigo_tipo_documento}`.
+          required:
+            - external_id
           properties:
             external_id:
               type: string
-              example: "a7d75ecc-061d-46f6-8ee4-2521a5bbec1d"
+              description: Identificador único del comprobante afectado (campo `data.external_id` de la respuesta de emisión).
+              example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
         datos_del_cliente_o_receptor:
           type: object
+          description: Debe corresponder al cliente del comprobante afectado.
+          required:
+            - codigo_tipo_documento_identidad
+            - numero_documento
+            - apellidos_y_nombres_o_razon_social
           properties:
             codigo_tipo_documento_identidad:
               type: string
+              description: Catálogo 06 SUNAT. "6" RUC (facturas), "1" DNI.
               example: "6"
             numero_documento:
               type: string
-              example: "10414711225"
+              example: "20123456789"
             apellidos_y_nombres_o_razon_social:
               type: string
               example: "EMPRESA XYZ S.A."
@@ -133,59 +181,58 @@ components:
               example: "PE"
             ubigeo:
               type: string
+              description: Obligatorio (6 dígitos) cuando el cliente es RUC.
               example: "150101"
             direccion:
               type: string
-              example: "Av. 2 de Mayo"
+              example: "Av. 2 de Mayo 123 - Lima"
             correo_electronico:
               type: string
-              example: "demo@gmail.com"
+              example: "cliente@correo.com"
             telefono:
               type: string
-              example: "427-1148"
+              example: "999888777"
         totales:
           type: object
+          required:
+            - total_venta
           properties:
             total_exportacion:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_gravadas:
               type: number
-              format: float
-              example: 100.00
+              example: 100
             total_operaciones_inafectas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_exoneradas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_gratuitas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_igv:
               type: number
-              format: float
-              example: 18.00
+              example: 18
             total_impuestos:
               type: number
-              format: float
-              example: 18.00
+              example: 18
             total_valor:
               type: number
-              format: float
-              example: 100.00
+              example: 100
             total_venta:
               type: number
-              format: float
-              example: 118.00
+              description: Importe total de la nota.
+              example: 118
         items:
           type: array
           items:
             type: object
+            required:
+              - descripcion
+              - unidad_de_medida
+              - cantidad
             properties:
               codigo_interno:
                 type: string
@@ -198,61 +245,59 @@ components:
                 example: "51121703"
               unidad_de_medida:
                 type: string
+                description: Catálogo de unidades SUNAT ("NIU" unidad, "ZZ" servicio, etc.).
                 example: "NIU"
               cantidad:
-                type: integer
-                format: int32
+                type: number
                 example: 2
               valor_unitario:
                 type: number
-                format: float
-                example: 50.00
+                description: Precio sin IGV.
+                example: 50
               codigo_tipo_precio:
                 type: string
                 example: "01"
               precio_unitario:
                 type: number
-                format: float
-                example: 59.00
+                description: Precio con IGV.
+                example: 59
               codigo_tipo_afectacion_igv:
                 type: string
+                description: Catálogo 07 SUNAT. "10" gravado, "20" exonerado, "30" inafecto.
                 example: "10"
               total_base_igv:
                 type: number
-                format: float
-                example: 100.00
+                example: 100
               porcentaje_igv:
                 type: number
-                format: float
-                example: 18.00
+                example: 18
               total_igv:
                 type: number
-                format: float
-                example: 18.00
+                example: 18
               total_impuestos:
                 type: number
-                format: float
-                example: 18.00
+                example: 18
               total_valor_item:
                 type: number
-                format: float
-                example: 100.00
+                example: 100
               total_item:
                 type: number
-                format: float
-                example: 118.00
-          item:
-            type:array
-
+                example: 118
       required:
         - serie_documento
-        - fecha_de_emision
-        - codigo_tipo_documento
-        - fecha_de_vencimiento
-        - codigo_tipo_documento_identidad
-        - external_id
         - numero_documento
-    Response:
+        - fecha_de_emision
+        - hora_de_emision
+        - codigo_tipo_documento
+        - codigo_tipo_moneda
+        - codigo_tipo_nota
+        - motivo_o_sustento_de_nota
+        - documento_afectado
+        - datos_del_cliente_o_receptor
+        - totales
+        - items
+
+    RespuestaEmision:
       type: object
       properties:
         success:
@@ -266,12 +311,14 @@ components:
               example: "FD01-1"
             filename:
               type: string
-              example: "11111111111-08-FD01-1"
+              example: "20123456789-08-FD01-1"
             external_id:
               type: string
+              description: Identificador único de la nota emitida. Se usa en descargas y consultas.
               example: "0128f958-b41b-4d21-ae91-6a7a7e2cecc1"
             state_type_id:
               type: string
+              description: '"01" Registrado (sin enviar), "03" Enviado, "05" Aceptado, "07" Observado, "09" Rechazado, "11" Anulado, "13" Por anular.'
               example: "05"
             state_type_description:
               type: string
@@ -284,27 +331,66 @@ components:
               example: "zadRmfbphEVuiZqm69dR2VyCHSc="
             qr:
               type: string
-              example: "iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAIAAACzY+a1AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAgAElEQVR4AQCbgGR/Af///wAAAMPNxEJsyosTAAAAAElFTkSuQmCC"
+              description: Imagen QR del comprobante en base64 (PNG).
+              example: "iVBORw0KGgoAAAANSUhEUgAA..."
             id:
               type: integer
               example: 559
             print_ticket:
               type: string
-              example: "https://empresa1.demo3pro6.ibu.pe/print/document/0128f958-b41b-4d21-ae91-6a7a7e2cecc1/ticket"
+              description: URL de impresión en formato ticket.
+              example: "https://tu-dominio.com/print/document/0128f958-.../ticket"
+        print:
+          type: object
+          description: Resultado de la impresión automática server-side (`acciones.auto_print`).
+          properties:
+            auto_printed:
+              type: boolean
+              description: Si es `true`, el servidor ya imprimió — el cliente no debe reimprimir.
+              example: false
+            print_order_id:
+              type: integer
+              nullable: true
+              example: null
+            reason:
+              type: string
+              nullable: true
+              example: "disabled"
+        data_ws:
+          type: object
+          description: Datos listos para compartir el comprobante (WhatsApp/mensajería).
+          properties:
+            message_text:
+              type: string
+              example: "Su comprobante de pago electrónico FD01-1 ha sido generado correctamente..."
+            pdf_a4_filename:
+              type: string
+              example: "https://tu-dominio.com/api/document-file/document/0128f958-.../a4"
+            pdf_ticket_filename:
+              type: string
+              example: "https://tu-dominio.com/api/document-file/document/0128f958-.../ticket"
+            full_filename:
+              type: string
+              example: "20123456789-08-FD01-1.pdf"
+            customer_telephone:
+              type: string
+              example: "999888777"
         links:
           type: object
           properties:
             xml:
               type: string
-              example: "https://empresa1.demo3pro6.ibu.pe/downloads/document/xml/0128f958-b41b-4d21-ae91-6a7a7e2cecc1"
+              example: "https://tu-dominio.com/downloads/document/xml/0128f958-b41b-4d21-ae91-6a7a7e2cecc1"
             pdf:
               type: string
-              example: "https://empresa1.demo3pro6.ibu.pe/downloads/document/pdf/0128f958-b41b-4d21-ae91-6a7a7e2cecc1"
+              example: "https://tu-dominio.com/downloads/document/pdf/0128f958-b41b-4d21-ae91-6a7a7e2cecc1"
             cdr:
               type: string
-              example: "https://empresa1.demo3pro6.ibu.pe/downloads/document/cdr/0128f958-b41b-4d21-ae91-6a7a7e2cecc1"
+              description: Las notas de factura se envían a SUNAT al emitirse, por lo que el CDR está disponible de inmediato.
+              example: "https://tu-dominio.com/downloads/document/cdr/0128f958-b41b-4d21-ae91-6a7a7e2cecc1"
         response:
           type: object
+          description: Respuesta de SUNAT.
           properties:
             code:
               type: string
@@ -315,36 +401,68 @@ components:
             notes:
               type: array
               items:
-                example: "4094 - La dirección completa y detallada del domicilio fiscal del emisor no cumple con el formato establecido - INFO: 4094 (nodo: \"cac:AddressLine/cbc:Line\" valor: \"-\")"
+                type: string
+              example:
+                - "4094 - La dirección completa y detallada del domicilio fiscal del emisor no cumple con el formato establecido - INFO"
+        was_duplicate:
+          type: boolean
+          description: '`true` cuando la emisión se deduplicó por `offline_id` (se devolvió un documento ya existente).'
+          example: false
+      required:
+        - success
+        - data
 
-  requestBodies:
-    Pet:
-      description: Información...
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: Lista...
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            codigo_tipo_nota: ["El campo codigo tipo nota es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "La serie ingresada FD01, es incorrecta."
+
   securitySchemes:
-    fastura_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write: Modificar...
-            read: Leer..
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

@@ -2,335 +2,495 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas.
-    
-    Los documentos que se encuentran contemplados son:
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generar Notas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/dispatches:
     post:
       tags:
         - api
-      summary: Generar Guia de Remisión - Transportista
-      description: |  
-        Para generar una guia de remision de transportista puede usar el siguiente servicio, necesitará la url, el token, y los datos del documento.  
+      summary: Guía del Transportista (31)
+      description: |
+        La **Guía de Remisión Transportista** (`codigo_tipo_documento: "31"`) la emite la
+        empresa que presta el servicio de transporte. Usa el mismo endpoint
+        `POST /api/dispatches` que la guía remitente, pero la estructura cambia:
 
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://empresa1.demo3pro6.ibu.pe/api/dispatches 
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt  
+        - **No** lleva `datos_del_cliente_o_receptor`, `codigo_modo_transporte` ni `transportista`.
+        - Lleva `datos_remitente` y `datos_destinatario` (las partes del traslado) y sus
+          direcciones en `direcciones_proveedores`.
+        - `chofer` y `vehiculo` son obligatorios.
+        - `direccion_partida` y `direccion_llegada` son obligatorias **también** para el tipo 31
+          (validación del API), con sus 3 sub-campos.
 
-         **NOTA:**  
-         El Chofer y el Vehículo son campos obligatorios. Sin embargo, el Chofer Secundario y el Vehículo Secundario son opcionales, y pueden ser omitidos.
+        **Flujo completo de una guía de remisión:**
+        1. `POST /api/dispatches` → genera la guía (XML firmado + PDF) y devuelve `external_id`.
+           Este paso **no** envía a SUNAT.
+        2. `POST /api/dispatches/send` con `{"external_id": "..."}` → envía al API GRE de SUNAT
+           y obtiene el número de ticket (la guía pasa a estado `03` Enviado).
+        3. `POST /api/dispatches/status_ticket` con `{"external_id": "..."}` → consulta el ticket,
+           descarga el CDR y actualiza el estado (`05` Aceptado).
 
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/dispatches`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        > **No existe ambiente de pruebas (beta) de SUNAT para guías de remisión** — a diferencia
+        > de facturas/boletas/notas. El envío usa el **API GRE de SUNAT en producción** y requiere
+        > credenciales configuradas en la empresa: `client_id` / `client_secret` del API GRE +
+        > usuario secundario SUNAT. Sin credenciales, `/api/dispatches/send` responde:
+        > `{"success":false,"message":"Code: 0 - Message: Error al obtener token - error_description:  error: "}`
       operationId: generarGuiaRemisionTransportista
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/GuiaTransportistaRequest'
         required: true
       responses:
         '200':
-          description: |
-            JSON RESPUESTA
+          description: Guía generada correctamente (XML firmado y PDF; aún sin enviar a SUNAT)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaGuia'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos (p. ej. falta `direccion` en `direccion_partida` o `direccion_llegada`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: |-
+            Error de negocio. Mensajes reales:
+            - `"La serie ingresada V001, es incorrecta."`
+            - `"El código ingresado del establecimiento es incorrecto."`
+            - `"Undefined array key \"codigo_del_domicilio_fiscal\""` (falta esa clave en `direccion_partida`/`direccion_llegada`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - fastura_auth:
-            - write
-            - read 
-          
-# Formato Json de GENERAR GUIA DE REMISIÓN - TRANSPORTISTA
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    GuiaTransportistaRequest:
       type: object
+      required:
+        - serie_documento
+        - numero_documento
+        - fecha_de_emision
+        - hora_de_emision
+        - codigo_tipo_documento
+        - datos_del_emisor
+        - codigo_motivo_traslado
+        - fecha_de_traslado
+        - indicador_de_transbordo
+        - unidad_peso_total
+        - peso_total
+        - direccion_partida
+        - direccion_llegada
+        - datos_remitente
+        - datos_destinatario
+        - direcciones_proveedores
+        - chofer
+        - vehiculo
+        - items
       properties:
         serie_documento:
           type: string
-          example: "T001"
+          description: Serie de guía de remisión transportista (tipo 31). Debe existir en el sistema.
+          example: "V001"
         numero_documento:
           type: string
+          description: Correlativo. Usar "#" para que el sistema lo asigne automáticamente (recomendado).
           example: "#"
         fecha_de_emision:
           type: string
           format: date
-          example: "2024-11-12"
+          example: "2026-07-22"
         hora_de_emision:
           type: string
-          format: time
           example: "10:11:11"
         codigo_tipo_documento:
           type: string
-          example: "09"
+          description: '"31" Guía de Remisión Transportista.'
+          example: "31"
         datos_del_emisor:
-          type: object
-          properties:
-            codigo_pais:
-              type: string
-              example: "PE"
-            ubigeo:
-              type: string
-              example: "150101"
-            direccion:
-              type: string
-              example: "Av. 2 de Mayo"
-            correo_electronico:
-              type: string
-              example: "demo@gmail.com"
-            telefono:
-              type: string
-              example: "427-1148"
-            codigo_del_domicilio_fiscal:
-              type: string
-              example: "0000"
-        datos_del_cliente_o_receptor:
-          type: object
-          properties:
-            codigo_tipo_documento_identidad:
-              type: string
-              example: "6"
-            numero_documento:
-              type: string
-              example: "10414711225"
-            apellidos_y_nombres_o_razon_social:
-              type: string
-              example: "EMPRESA XYZ S.A."
-            nombre_comercial:
-              type: string
-              example: "EMPRESA XYZ S.A."
-            codigo_pais:
-              type: string
-              example: "PE"
-            ubigeo:
-              type: string
-              example: "150101"
-            direccion:
-              type: string
-              example: "Av. 2 de Mayo"
-            correo_electronico:
-              type: string
-              example: "demo@gmail.com"
-            telefono:
-              type: string
-              example: "427-1148"
-        observaciones:
-          type: string
-          example: "aaaaaaaaaaaaaaa"
-        codigo_modo_transporte:
-          type: string
-          example: "01"
+          $ref: '#/components/schemas/DatosDelEmisor'
         codigo_motivo_traslado:
           type: string
+          description: >-
+            Catálogo 20 SUNAT. "01" Venta, "02" Compra, "04" Traslado entre establecimientos
+            de la misma empresa, "08" Importación, "09" Exportación, "13" Otros
+            (requiere `descripcion_motivo_traslado`).
           example: "01"
         descripcion_motivo_traslado:
           type: string
-          example: "El cliente solicito envia a su trabajo en ..."
+          description: Obligatoria cuando `codigo_motivo_traslado` es "13" Otros; opcional en el resto.
+          example: "Traslado por venta"
         fecha_de_traslado:
           type: string
           format: date
-          example: "2024-11-12"
-        codigo_de_puerto:
-          type: string
-          example: ""
-        indicador_de_transbordo: 
+          example: "2026-07-22"
+        indicador_de_transbordo:
           type: boolean
+          description: '**Obligatorio**: si se omite, la inserción en base de datos falla.'
           example: false
         unidad_peso_total:
           type: string
+          description: Unidad del peso bruto total. Usar "KGM" (kilogramos).
           example: "KGM"
         peso_total:
           type: number
-          example: 30.00
+          example: 30
         numero_de_bultos:
           type: number
+          description: Opcional.
           example: 1
         numero_de_contenedor:
           type: string
+          description: Opcional (solo importación/exportación).
           example: ""
+        codigo_de_puerto:
+          type: string
+          description: Opcional (solo importación/exportación).
+          example: ""
+        fecha_entrega_transporte:
+          type: string
+          format: date
+          description: Opcional. Fecha de entrega de los bienes al transportista.
+          example: "2026-07-22"
         direccion_partida:
-          type: object
-          properties:
-            ubigeo:
-              type: string
-              example: "150101"
-            direccion:
-              type: string
-              example: "PUNTO A"
-            codigo_del_domicilio_fiscal:
-              type: string
-              example: ""
+          $ref: '#/components/schemas/DireccionTraslado'
         direccion_llegada:
+          $ref: '#/components/schemas/DireccionTraslado'
+        datos_remitente:
+          $ref: '#/components/schemas/ParteTraslado'
+        datos_destinatario:
+          $ref: '#/components/schemas/ParteTraslado'
+        direcciones_proveedores:
           type: object
+          description: Direcciones del remitente y del destinatario.
+          required:
+            - remitente
+            - destinatario
           properties:
-            ubigeo:
-              type: string
-              example: "150101"
-            direccion:
-              type: string
-              example: "PUNTO 2"
-            codigo_del_domicilio_fiscal:
-              type: string
-              example: ""
-        transportista:
-          type: object
-          properties:
-            codigo_tipo_documento_identidad:
-              type: string
-              example: "6"
-            numero_documento:
-              type: string
-              example: "10417844398"
-            apellidos_y_nombres_o_razon_social:
-              type: string
-              example: "aaaaaaaaa"
-            numero_mtc:
-              type: string
-              example: ""
+            remitente:
+              $ref: '#/components/schemas/DireccionParte'
+            destinatario:
+              $ref: '#/components/schemas/DireccionParte'
         chofer:
-          type: object
-          properties:
-            codigo_tipo_documento_identidad:
-              type: string
-              example: "1"
-            numero_documento:
-              type: string
-              example: "4177874"
-            nombres:
-              type: string
-              example: "Juan Perez"
-            numero_licencia:
-              type: string
-              example: "A76023452"
-            telefono:
-              type: string
-              example: "923131232"
-        chofer_secundario:
-          type: array
-          items:
-            type: object
-            properties:
-              codigo_tipo_documento_identidad:
-                type: string
-                example: "1"
-              numero_documento:
-                type: string
-                example: "41778243"
-              nombres:
-                type: string
-                example: "Nombres y apellidos 1"
-              numero_licencia:
-                type: string
-                example: "A76023452"
-              telefono:
-                type: string
-                example: ""
+          $ref: '#/components/schemas/Chofer'
         vehiculo:
-          type: object
-          properties:
-            numero_de_placa:
-              type: string
-              example: "A011254"
-            certificado_habilitacion_vehicular:
-              type: string
-              example: "1212121212"
-            modelo:
-              type: string
-              example: "YARIS"
-            marca:
-              type: string
-              example: "TOYOTA"
-        vehiculo_secundario:
-          type: array
-          items:
-            type: object
-            properties:
-              numero_de_placa:
-                type: string
-                example: "A012254"
-              certificado_habilitacion_vehicular:
-                type: string
-                example: "1212121212"
-              modelo: 
-                type: string
-                example: "YARIS"
-              marca: 
-                type: string
-                example: "TOYOTA"
+          $ref: '#/components/schemas/Vehiculo'
         items:
           type: array
+          minItems: 1
+          description: Bienes a trasladar.
           items:
-            type: object
-            properties:
-              codigo_interno:
-                type: string
-                example: "P0121"
-              cantidad:
-                type: number
-                example: 2
+            $ref: '#/components/schemas/ItemGuia'
+        observaciones:
+          type: string
+          description: Opcional.
+          example: ""
         documento_afectado:
+          $ref: '#/components/schemas/DocumentoAfectado'
+        documento_relacionado:
+          type: array
+          description: Opcional. Otros documentos relacionados al traslado.
+          items:
+            $ref: '#/components/schemas/DocumentoRelacionado'
+        leyendas:
+          type: array
+          description: Opcional.
+          items:
+            $ref: '#/components/schemas/Leyenda'
+        acciones:
+          $ref: '#/components/schemas/Acciones'
+
+    DatosDelEmisor:
+      type: object
+      description: >-
+        Datos del establecimiento emisor (la empresa de transporte). `codigo_del_domicilio_fiscal`
+        es obligatorio ("0000" = domicilio fiscal principal); con un código inexistente responde
+        500 "El código ingresado del establecimiento es incorrecto."
+      required:
+        - codigo_del_domicilio_fiscal
+      properties:
+        codigo_del_domicilio_fiscal:
+          type: string
+          example: "0000"
+
+    ParteTraslado:
+      type: object
+      description: >-
+        Remitente / destinatario del traslado. Las 4 claves son obligatorias
+        (el backend las accede directamente).
+      required:
+        - codigo_tipo_documento_identidad
+        - descripcion_tipo_documento_identidad
+        - numero_documento
+        - apellidos_y_nombres_o_razon_social
+      properties:
+        codigo_tipo_documento_identidad:
+          type: string
+          description: Catálogo 06 SUNAT. "6" RUC, "1" DNI.
+          example: "6"
+        descripcion_tipo_documento_identidad:
+          type: string
+          example: "RUC"
+        numero_documento:
+          type: string
+          example: "20123456789"
+        apellidos_y_nombres_o_razon_social:
+          type: string
+          example: "EMPRESA XYZ S.A."
+
+    DireccionParte:
+      type: object
+      description: Dirección de la parte (remitente o destinatario).
+      required:
+        - ubigeo
+        - direccion
+      properties:
+        ubigeo:
+          type: string
+          description: Código de ubigeo INEI de 6 dígitos.
+          example: "150101"
+        direccion:
+          type: string
+          example: "Av. 2 de Mayo 123 - Lima"
+
+    DireccionTraslado:
+      type: object
+      description: >-
+        Punto de partida / llegada del traslado. Obligatoria también para el tipo 31.
+        Las 3 claves son obligatorias (el backend las accede directamente). En
+        `codigo_del_domicilio_fiscal` usar "0000" si el punto no corresponde a un
+        establecimiento anexo declarado en SUNAT.
+      required:
+        - ubigeo
+        - direccion
+        - codigo_del_domicilio_fiscal
+      properties:
+        ubigeo:
+          type: string
+          description: Código de ubigeo INEI de 6 dígitos.
+          example: "150101"
+        direccion:
+          type: string
+          maxLength: 100
+          description: Dirección del punto (máximo 100 caracteres).
+          example: "Av. 2 de Mayo 123 - Lima"
+        codigo_del_domicilio_fiscal:
+          type: string
+          description: Código de establecimiento anexo declarado en SUNAT; "0000" si no aplica.
+          example: "0000"
+
+    Chofer:
+      type: object
+      description: Datos del conductor (obligatorio en la guía del transportista).
+      required:
+        - codigo_tipo_documento_identidad
+        - numero_documento
+        - nombres
+        - numero_licencia
+      properties:
+        codigo_tipo_documento_identidad:
+          type: string
+          description: Catálogo 06 SUNAT. "1" DNI.
+          example: "1"
+        numero_documento:
+          type: string
+          example: "41784439"
+        nombres:
+          type: string
+          description: Nombres y apellidos del conductor.
+          example: "JUAN PEREZ"
+        numero_licencia:
+          type: string
+          example: "Q41784439"
+        telefono:
+          type: string
+          description: Opcional.
+          example: "999888777"
+
+    Vehiculo:
+      type: object
+      description: Datos del vehículo (obligatorio en la guía del transportista).
+      required:
+        - numero_de_placa
+      properties:
+        numero_de_placa:
+          type: string
+          example: "ABC123"
+        modelo:
+          type: string
+          description: Opcional.
+          example: "YARIS"
+        marca:
+          type: string
+          description: Opcional.
+          example: "TOYOTA"
+        certificado_habilitacion_vehicular:
+          type: string
+          description: Opcional. TUC / certificado de habilitación vehicular.
+          example: ""
+
+    ItemGuia:
+      type: object
+      required:
+        - codigo_interno
+        - descripcion
+        - unidad_de_medida
+        - cantidad
+      properties:
+        codigo_interno:
+          type: string
+          description: >-
+            Código del producto. Si no existe, el producto se crea automáticamente
+            (en ese caso enviar también `valor_unitario` y `codigo_tipo_afectacion_igv`).
+          example: "P0121"
+        descripcion:
+          type: string
+          example: "Inca Kola 250 ml"
+        nombre:
+          type: string
+          description: Opcional. Nombre del producto (usado al crear el producto nuevo).
+          example: "Inca Kola 250 ml"
+        unidad_de_medida:
+          type: string
+          description: Catálogo de unidades SUNAT ("NIU" unidad, "ZZ" servicio, etc.).
+          example: "NIU"
+        cantidad:
+          type: number
+          example: 2
+        valor_unitario:
+          type: number
+          description: Precio sin IGV. Necesario solo si el producto se crea nuevo.
+          example: 50
+        codigo_tipo_afectacion_igv:
+          type: string
+          description: Catálogo 07 SUNAT ("10" gravado, "20" exonerado, "30" inafecto). Necesario solo si el producto se crea nuevo.
+          example: "10"
+
+    DocumentoAfectado:
+      type: object
+      description: >-
+        Opcional. Comprobante que sustenta el traslado. Enviar `external_id` **o** la terna
+        serie/número/tipo de un comprobante ya emitido en el sistema.
+      properties:
+        external_id:
+          type: string
+          description: external_id del comprobante (alternativa a serie/número/tipo).
+          example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
+        serie_documento:
+          type: string
+          example: "F001"
+        numero_documento:
+          type: string
+          example: "190"
+        codigo_tipo_documento:
+          type: string
+          example: "01"
+
+    DocumentoRelacionado:
+      type: object
+      properties:
+        numero:
+          type: string
+          example: "F001-1"
+        empresa:
+          type: string
+          example: "EMPRESA ABC S.A.C."
+        ruc:
+          type: string
+          example: "20123456789"
+        documento:
           type: object
-          properties: 
-            serie_documento:
-              type: string
-              example: "F001"
-            numero_documento:
-              type: string
-              example: "190"
-            codigo_tipo_documento:
+          properties:
+            id:
               type: string
               example: "01"
+            descripcion:
+              type: string
+              example: "Factura Electrónica"
 
-      required:
-        - serie_documento
-        - datos_del_emisor
-        - datos_del_cliente_o_receptor
-        - direccion_partida
-        - direccion_llegada
-        - transportista
-        - chofer
-        - vehiculo
+    Leyenda:
+      type: object
+      properties:
+        codigo:
+          type: string
+          example: "2000"
+        valor:
+          type: string
+          example: "LEYENDA"
 
-    Response:
+    Acciones:
+      type: object
+      description: Opcional. Acciones posteriores a la generación.
+      properties:
+        enviar_email:
+          type: boolean
+          description: Envía la guía al correo del cliente.
+          example: false
+        formato_pdf:
+          type: string
+          description: '"a4", "ticket" o "ticket_58".'
+          example: "a4"
+        auto_print:
+          type: boolean
+          description: Impresión automática en el servidor (requiere impresoras configuradas).
+          example: false
+        name_printer:
+          type: string
+          description: Nombre de la impresora destino para `auto_print`.
+          example: ""
+
+    RespuestaGuia:
       type: object
       properties:
         success:
@@ -341,43 +501,71 @@ components:
           properties:
             number:
               type: string
-              example: "T001-6"
+              example: "V001-1"
             filename:
               type: string
-              example: "11111111111-09-T001-6"
+              example: "12312312312-31-V001-1"
             external_id:
               type: string
-              example: "284a24e7-7997-4c91-83e5-34c92922cde0"
-            
+              description: >-
+                Identificador único de la guía. Guardarlo — se usa en
+                `POST /api/dispatches/send` y `POST /api/dispatches/status_ticket`.
+              example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+      required:
+        - success
+        - data
 
-  requestBodies:
-    Pet:
-      description: Información...
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: Lista...
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            direccion_partida.direccion: ["El campo direccion partida.direccion es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "La serie ingresada V001, es incorrecta."
+
   securitySchemes:
-    fastura_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write: Modificar...
-            read: Leer..
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

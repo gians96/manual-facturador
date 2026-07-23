@@ -2,33 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    Para la implementación de la **Facturación Electrónica**, la SUNAT ha puesto a su disposición diversos manuales y documentos técnicos, los cuales inicialmente son complejos de entender y utilizar.
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    La api le permitirá generar diversos documentos electrónicos, y de cada uno obtendrá los 3 archivos indispensables **(XML Firmado, Documento PDF, y CDR)**.
+    Documentos contemplados:
 
-    Los documentos que se encuentran contemplados son:
-
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generador de facturas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/documents:
@@ -37,49 +39,64 @@ paths:
         - api
       summary: FACTURA EXONERADA
       description: |
-        Entendemos por exoneradas a aquellas operaciones que, no obstante encontrarse afectas en principio al impuesto, por mandato de la misma ley quedan liberadas del pago del tributo.
+        Entendemos por exoneradas a aquellas operaciones que, no obstante encontrarse afectas en
+        principio al impuesto, por mandato de la misma ley quedan liberadas del pago del tributo
+        (por ejemplo los bienes del Apéndice I de la Ley del IGV, o ventas en zonas de Amazonía).
 
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://demo.pro5.fastura.app/api/documents  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt
+        En los items usar `codigo_tipo_afectacion_igv: "20"` (exonerado - operación onerosa) con
+        `total_igv` en 0, y en `totales` declarar el importe en `total_operaciones_exoneradas`
+        con `total_igv` y `total_impuestos` en 0. El item puede incluir `codigo_producto_gsl`
+        (código GSL/partida del producto) cuando aplique.
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/documents`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
       operationId: facturaExonerada
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/FacturaRequest'
         required: true
       responses:
         '200':
-          description: JSON RESPUESTA
+          description: Comprobante emitido correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaEmision'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: Error de negocio (serie incorrecta, cliente inválido, fecha fuera de plazo, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-          
-# Formato Json de FACTURA EXONERADA
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    FacturaRequest:
       type: object
       properties:
         serie_documento:
@@ -87,20 +104,22 @@ components:
           example: "F001"
         numero_documento:
           type: string
+          description: Usar "#" para que el sistema asigne el correlativo automáticamente (recomendado).
           example: "#"
         fecha_de_emision:
           type: string
           format: date
-          example: "2018-10-09"
+          example: "2026-07-22"
         hora_de_emision:
           type: string
-          format: time
           example: "10:11:11"
         codigo_tipo_operacion:
           type: string
+          description: Catálogo 51 SUNAT. "0101" venta interna.
           example: "0101"
         codigo_tipo_documento:
           type: string
+          description: '"01" Factura.'
           example: "01"
         codigo_tipo_moneda:
           type: string
@@ -108,19 +127,26 @@ components:
         fecha_de_vencimiento:
           type: string
           format: date
-          example: "2018-08-30"
+          description: Opcional.
+          example: "2026-07-22"
         numero_orden_de_compra:
           type: string
+          description: Opcional.
           example: "0045467898"
         datos_del_cliente_o_receptor:
           type: object
+          required:
+            - codigo_tipo_documento_identidad
+            - numero_documento
+            - apellidos_y_nombres_o_razon_social
           properties:
             codigo_tipo_documento_identidad:
               type: string
+              description: '"6" RUC (obligatorio en facturas de venta interna).'
               example: "6"
             numero_documento:
               type: string
-              example: "10414711225"
+              example: "20123456789"
             apellidos_y_nombres_o_razon_social:
               type: string
               example: "EMPRESA XYZ S.A."
@@ -132,56 +158,54 @@ components:
               example: "150101"
             direccion:
               type: string
-              example: "Av. 2 de Mayo"
+              example: "Av. 2 de Mayo 123 - Lima"
             correo_electronico:
               type: string
-              example: "demo@gmail.com"
+              example: "cliente@correo.com"
             telefono:
               type: string
-              example: "427-1148"
+              example: "999888777"
         totales:
           type: object
+          required:
+            - total_venta
           properties:
             total_exportacion:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_gravadas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_inafectas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_exoneradas:
               type: number
-              format: float
-              example: 118.00
+              description: Importe de las operaciones exoneradas.
+              example: 118
             total_operaciones_gratuitas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_igv:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_impuestos:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_valor:
               type: number
-              format: float
-              example: 118.00
+              example: 118
             total_venta:
               type: number
-              format: float
-              example: 118.00
+              example: 118
         items:
           type: array
           items:
             type: object
+            required:
+              - descripcion
+              - unidad_de_medida
+              - cantidad
             properties:
               codigo_interno:
                 type: string
@@ -194,52 +218,46 @@ components:
                 example: ""
               codigo_producto_gsl:
                 type: string
+                description: Código GSL/partida del producto. Opcional.
                 example: ""
               unidad_de_medida:
                 type: string
                 example: "NIU"
               cantidad:
-                type: integer
-                format: int32
+                type: number
                 example: 2
               valor_unitario:
                 type: number
-                format: float
-                example: 59.00
+                description: En operaciones exoneradas coincide con el precio unitario (no hay IGV).
+                example: 59
               codigo_tipo_precio:
                 type: string
                 example: "01"
               precio_unitario:
                 type: number
-                format: float
-                example: 59.00
+                example: 59
               codigo_tipo_afectacion_igv:
                 type: string
+                description: '"20" exonerado - operación onerosa.'
                 example: "20"
               total_base_igv:
                 type: number
-                format: float
-                example: 118.00
+                example: 118
               porcentaje_igv:
                 type: number
-                format: float
-                example: 18.00
+                example: 18
               total_igv:
                 type: number
-                format: float
-                example: 0.00
+                example: 0
               total_impuestos:
                 type: number
-                format: float
-                example: 0.00
+                example: 0
               total_valor_item:
                 type: number
-                format: float
-                example: 118.00
+                example: 118
               total_item:
                 type: number
-                format: float
-                example: 118.00
+                example: 118
       required:
         - serie_documento
         - numero_documento
@@ -248,11 +266,11 @@ components:
         - codigo_tipo_operacion
         - codigo_tipo_documento
         - codigo_tipo_moneda
-        - fecha_de_vencimiento
         - datos_del_cliente_o_receptor
         - totales
-        - items  
-    Response:
+        - items
+
+    RespuestaEmision:
       type: object
       properties:
         success:
@@ -263,15 +281,17 @@ components:
           properties:
             number:
               type: string
-              example: "F001-30"
+              example: "F001-26"
             filename:
               type: string
-              example: "20302019010-01-F001-30"
+              example: "20123456789-01-F001-26"
             external_id:
               type: string
-              example: "a40c1742-af1b-499e-aa4b-cd9638c97bd1"
+              description: Identificador único del comprobante. Guardarlo — se usa en send, notas, anulaciones y descargas.
+              example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             state_type_id:
               type: string
+              description: '"01" Registrado (sin enviar), "03" Enviado, "05" Aceptado, "07" Observado, "09" Rechazado, "11" Anulado, "13" Por anular.'
               example: "05"
             state_type_description:
               type: string
@@ -281,72 +301,139 @@ components:
               example: "Ciento dieciocho con 00/100"
             hash:
               type: string
-              example: "CK+I8wCYZ5QG1VqwJzdYxCEPUIs="
+              example: "jFDgOlcAShjMeA1TJzT08v+PPTw="
             qr:
               type: string
-              example: "iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAIAAACzY+a1AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAgAElEQVR4AQCbgGR/Af///wAAAAAAAAAAAAAAAAAAAPO2pjwkM6EdAAAAAElFTkSuQmCC"
+              description: Imagen QR del comprobante en base64 (PNG).
+              example: "iVBORw0KGgoAAAANSUhEUgAA..."
             id:
               type: integer
-              example: 326
+              example: 322
+            print_ticket:
+              type: string
+              description: URL de impresión en formato ticket.
+              example: "https://tu-dominio.com/print/document/46c6ce9d-.../ticket"
+        print:
+          type: object
+          description: Resultado de la impresión automática server-side (`acciones.auto_print`).
+          properties:
+            auto_printed:
+              type: boolean
+              description: Si es `true`, el servidor ya imprimió — el cliente no debe reimprimir.
+              example: false
+            print_order_id:
+              type: integer
+              nullable: true
+              example: null
+            reason:
+              type: string
+              nullable: true
+              example: "disabled"
+        data_ws:
+          type: object
+          description: Datos listos para compartir el comprobante (WhatsApp/mensajería).
+          properties:
+            message_text:
+              type: string
+              example: "Su comprobante de pago electrónico F001-26 ha sido generado correctamente..."
+            pdf_a4_filename:
+              type: string
+              example: "https://tu-dominio.com/api/document-file/document/46c6ce9d-.../a4"
+            pdf_ticket_filename:
+              type: string
+              example: "https://tu-dominio.com/api/document-file/document/46c6ce9d-.../ticket"
+            full_filename:
+              type: string
+              example: "20123456789-01-F001-26.pdf"
+            customer_telephone:
+              type: string
+              example: "999888777"
         links:
           type: object
           properties:
             xml:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/xml/a40c1742-af1b-499e-aa4b-cd9638c97bd1"
+              example: "https://tu-dominio.com/downloads/document/xml/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             pdf:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/pdf/a40c1742-af1b-499e-aa4b-cd9638c97bd1"
+              example: "https://tu-dominio.com/downloads/document/pdf/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             cdr:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/cdr/a40c1742-af1b-499e-aa4b-cd9638c97bd1"
+              description: Vacío ("") mientras el comprobante no haya sido enviado a SUNAT.
+              example: "https://tu-dominio.com/downloads/document/cdr/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
         response:
           type: object
+          description: Respuesta de SUNAT. Vacía ([]) si el comprobante aún no se envió.
           properties:
             code:
               type: string
               example: "0"
             description:
               type: string
-              example: "La Factura numero F001-30, ha sido aceptada"
+              example: "La Factura numero F001-26, ha sido aceptada"
             notes:
               type: array
               items:
                 type: string
-              example: [] 
-
+        was_duplicate:
+          type: boolean
+          description: '`true` cuando la emisión se deduplicó por `offline_id` (se devolvió un documento ya existente).'
+          example: false
       required:
+        - success
         - data
-        - responde
 
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            serie_documento: ["El campo serie documento es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "La serie ingresada F001, es incorrecta."
+
   securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

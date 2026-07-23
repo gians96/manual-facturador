@@ -2,33 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    Para la implementación de la **Facturación Electrónica**, la SUNAT ha puesto a su disposición diversos manuales y documentos técnicos, los cuales inicialmente son complejos de entender y utilizar.
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    La api le permitirá generar diversos documentos electrónicos, y de cada uno obtendrá los 3 archivos indispensables **(XML Firmado, Documento PDF, y CDR)**.
+    Documentos contemplados:
 
-    Los documentos que se encuentran contemplados son:
-
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generador de facturas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/documents:
@@ -37,156 +39,220 @@ paths:
         - api
       summary: FACTURA GRAVADA
       description: |
-        La Factura Electrónica es un comprobante de pago emitido a través del sistema de emisión electrónica desarrollado desde los sistemas del contribuyente, permitiendo la sustentación del costo-gasto para efectos del Impuesto a la Renta y la utilización del crédito fiscal del Impuesto General a las Ventas.  
-  
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://demo.pro5.fastura.app/api/documents  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt
+        La Factura Electrónica es un comprobante de pago emitido a través del sistema de emisión
+        electrónica, que sustenta costo-gasto para efectos del Impuesto a la Renta y permite usar
+        el crédito fiscal del IGV.
+
+        Este es el caso base de emisión: aquí se documentan **todos los campos** que acepta
+        `POST /api/documents` (facturas, boletas y notas comparten este mismo endpoint,
+        cambiando `codigo_tipo_documento`). Las demás páginas muestran variantes con el
+        JSON mínimo de cada caso.
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/documents`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        **Notas importantes:**
+        - `numero_documento: "#"` deja que el sistema asigne el correlativo automáticamente (recomendado).
+        - Por defecto el comprobante se envía a SUNAT al emitirse. Con `acciones.enviar_xml_firmado: false`
+          queda **Registrado** (estado `01`) y se envía después con `POST /api/documents/send`.
+        - `offline_id` (opcional) hace la emisión **idempotente**: si ya existe un documento con ese
+          `offline_id`, se devuelve el existente con `was_duplicate: true` en lugar de emitir de nuevo.
       operationId: facturaGravada
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/FacturaRequest'
         required: true
       responses:
         '200':
-          description: JSON RESPUESTA
+          description: Comprobante emitido correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaEmision'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: Error de negocio (serie incorrecta, cliente inválido, fecha fuera de plazo, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-          
-# Formato Json de FACTURA GRAVADA
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    FacturaRequest:
       type: object
       properties:
         serie_documento:
           type: string
+          description: Serie del comprobante. Debe existir en el sistema para el tipo de documento y establecimiento.
           example: "F001"
         numero_documento:
           type: string
+          description: Correlativo. Usar "#" para que el sistema lo asigne automáticamente.
           example: "#"
         fecha_de_emision:
           type: string
           format: date
-          example: "2023-09-21"
+          example: "2026-07-22"
         hora_de_emision:
           type: string
-          format: time
           example: "10:11:11"
         codigo_tipo_operacion:
           type: string
+          description: Catálogo 51 SUNAT. "0101" venta interna, "0200" exportación, "1004" transporte (activa datos de detracción de transporte).
           example: "0101"
         codigo_tipo_documento:
           type: string
+          description: Catálogo 01 SUNAT. "01" Factura, "03" Boleta, "07" Nota de Crédito, "08" Nota de Débito.
           example: "01"
         codigo_tipo_moneda:
           type: string
+          description: '"PEN" o "USD".'
           example: "PEN"
+        factor_tipo_de_cambio:
+          type: number
+          description: Tipo de cambio venta (default 1).
+          example: 1
         fecha_de_vencimiento:
           type: string
           format: date
-          example: "2023-09-21"
+          description: Opcional.
+          example: "2026-07-22"
         numero_orden_de_compra:
           type: string
+          description: Opcional.
           example: "0045467898"
+        codigo_condicion_de_pago:
+          type: string
+          description: '"01" Contado (default), "02" Crédito (usar junto con `cuotas`).'
+          example: "01"
+        offline_id:
+          type: string
+          description: Identificador único generado por el cliente para emisión idempotente (evita duplicados al reintentar). Opcional.
+          example: "a3f1c2e4-0001"
         datos_del_cliente_o_receptor:
           type: object
+          description: Si el cliente no existe se crea automáticamente. Para facturas de venta interna (0101) debe ser RUC (tipo "6").
+          required:
+            - codigo_tipo_documento_identidad
+            - numero_documento
+            - apellidos_y_nombres_o_razon_social
           properties:
             codigo_tipo_documento_identidad:
               type: string
+              description: Catálogo 06 SUNAT. "1" DNI, "6" RUC, "4" Carnet de extranjería, "7" Pasaporte, "0" sin documento.
               example: "6"
             numero_documento:
               type: string
-              example: "10414711225"
+              example: "20123456789"
             apellidos_y_nombres_o_razon_social:
               type: string
               example: "EMPRESA XYZ S.A."
+            nombre_comercial:
+              type: string
+              example: "EMPRESA XYZ"
             codigo_pais:
               type: string
               example: "PE"
             ubigeo:
               type: string
+              description: Obligatorio (6 dígitos) cuando el cliente es RUC.
               example: "150101"
             direccion:
               type: string
-              example: "Av. 2 de Mayo"
+              example: "Av. 2 de Mayo 123 - Lima"
             correo_electronico:
               type: string
-              example: "demo@gmail.com"
+              description: Destino del correo cuando se usa `acciones.enviar_email`.
+              example: "cliente@correo.com"
             telefono:
               type: string
-              example: "427-1148"
-        
-  
+              example: "999888777"
         totales:
           type: object
+          required:
+            - total_venta
           properties:
             total_exportacion:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_gravadas:
               type: number
-              format: float
-              example: 100.00
+              example: 100
             total_operaciones_inafectas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_exoneradas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_operaciones_gratuitas:
               type: number
-              format: float
-              example: 0.00
+              example: 0
             total_igv:
               type: number
-              format: float
-              example: 18.00
+              example: 18
+            total_igv_operaciones_gratuitas:
+              type: number
+              example: 0
+            total_impuestos_bolsa_plastica:
+              type: number
+              description: Solo si se vende bolsas plásticas (ICBPER).
+              example: 0
             total_impuestos:
               type: number
-              format: float
-              example: 18.00
+              example: 18
             total_valor:
               type: number
-              format: float
-              example: 100.00
+              example: 100
             total_venta:
               type: number
-              format: float
-              example: 118.00
+              description: Importe total del comprobante.
+              example: 118
+            total_descuentos:
+              type: number
+              example: 0
+            total_cargos:
+              type: number
+              example: 0
+            total_anticipos:
+              type: number
+              example: 0
         items:
           type: array
           items:
             type: object
+            required:
+              - descripcion
+              - unidad_de_medida
+              - cantidad
             properties:
               codigo_interno:
                 type: string
+                description: Código del producto. Si no existe, el producto se crea automáticamente con los datos enviados.
                 example: "P0121"
               descripcion:
                 type: string
@@ -196,53 +262,314 @@ components:
                 example: "51121703"
               unidad_de_medida:
                 type: string
+                description: Catálogo de unidades SUNAT ("NIU" unidad, "ZZ" servicio, etc.).
                 example: "NIU"
               cantidad:
-                type: integer
-                format: int32
+                type: number
                 example: 2
               valor_unitario:
                 type: number
-                format: float
-                example: 50.00
+                description: Precio sin IGV.
+                example: 50
               codigo_tipo_precio:
                 type: string
+                description: '"01" precio de venta, "02" valor referencial en operaciones gratuitas.'
                 example: "01"
               precio_unitario:
                 type: number
-                format: float
-                example: 59.00
+                description: Precio con IGV.
+                example: 59
               codigo_tipo_afectacion_igv:
                 type: string
+                description: Catálogo 07 SUNAT. "10" gravado, "20" exonerado, "30" inafecto, "16" gravado gratuito, "40" exportación.
                 example: "10"
               total_base_igv:
                 type: number
-                format: float
-                example: 100.00
+                example: 100
               porcentaje_igv:
                 type: number
-                format: float
-                example: 18.00
+                example: 18
               total_igv:
                 type: number
-                format: float
-                example: 18.00
+                example: 18
               total_impuestos:
                 type: number
-                format: float
-                example: 18.00
+                example: 18
               total_valor_item:
                 type: number
-                format: float
-                example: 100.00
+                example: 100
               total_item:
                 type: number
-                format: float
-                example: 118.00
+                example: 118
+              total_descuentos:
+                type: number
+                example: 0
+              total_cargos:
+                type: number
+                example: 0
+              total_impuestos_bolsa_plastica:
+                type: number
+                example: 0
+              informacion_adicional:
+                type: string
+                example: ""
+              IdLoteSelected:
+                type: integer
+                nullable: true
+                description: ID del lote a descontar (control de lotes/vencimientos). Necesario para que el sistema descuente stock del lote correcto.
+                example: 12
+              lots:
+                type: array
+                description: Series/lotes del item (ej. números de serie, chasis).
+                items:
+                  type: object
+                  properties:
+                    series:
+                      type: string
+                      example: "SER-0001"
+              presentation:
+                type: object
+                description: Presentación del producto (venta por caja, blíster, etc.). `quantity_unit` es el factor respecto a la unidad base.
+                properties:
+                  description:
+                    type: string
+                    example: "CAJA X 100"
+                  quantity_unit:
+                    type: number
+                    example: 100
+              actualizar_descripcion:
+                type: boolean
+                description: Si actualiza la descripción del producto maestro al emitir (default true).
+                example: true
+              nombre_producto_pdf:
+                type: string
+                description: Nombre alternativo a mostrar en el PDF (admite HTML).
+                example: ""
+              descuentos:
+                type: array
+                description: Descuentos a nivel de item.
+                items:
+                  $ref: '#/components/schemas/Descuento'
+              cargos:
+                type: array
+                description: Cargos a nivel de item.
+                items:
+                  $ref: '#/components/schemas/Cargo'
+              datos_adicionales:
+                type: array
+                description: Atributos del item (catálogo 55 SUNAT).
+                items:
+                  type: object
+                  properties:
+                    codigo:
+                      type: string
+                      example: "5019"
+                    descripcion:
+                      type: string
+                      example: "Serie/Chasis"
+                    valor:
+                      type: string
+                      example: "ABC123"
+        acciones:
+          type: object
+          description: Acciones posteriores a la emisión.
+          properties:
+            enviar_email:
+              type: boolean
+              description: Envía el comprobante al correo del cliente.
+              example: false
+            enviar_xml_firmado:
+              type: boolean
+              description: Si es `false`, el comprobante queda Registrado (estado 01) y NO se envía a SUNAT; enviar luego con `POST /api/documents/send`.
+              example: true
+            formato_pdf:
+              type: string
+              description: '"a4", "ticket" o "ticket_58".'
+              example: "a4"
+            auto_print:
+              type: boolean
+              description: Impresión automática en el servidor (requiere impresoras configuradas).
+              example: false
+            name_printer:
+              type: string
+              description: Nombre de la impresora destino para `auto_print`.
+              example: ""
+            client_public_ip:
+              type: string
+              description: IP pública del cliente para la orden de impresión.
+              example: ""
+        pagos:
+          type: array
+          description: Pagos del comprobante (solo facturas y boletas).
+          items:
+            type: object
+            properties:
+              codigo_metodo_pago:
+                type: string
+                description: Método de pago (efectivo, tarjeta, etc.).
+                example: "01"
+              codigo_destino_pago:
+                type: string
+                description: Caja o cuenta destino.
+                example: "01"
+              referencia:
+                type: string
+                example: ""
+              monto:
+                type: number
+                example: 118
+        cuotas:
+          type: array
+          description: Cuotas cuando `codigo_condicion_de_pago` es "02" (crédito).
+          items:
+            type: object
+            properties:
+              fecha:
+                type: string
+                format: date
+                example: "2026-08-22"
+              codigo_tipo_moneda:
+                type: string
+                example: "PEN"
+              monto:
+                type: number
+                example: 118
+        descuentos:
+          type: array
+          description: Descuentos globales.
+          items:
+            $ref: '#/components/schemas/Descuento'
+        cargos:
+          type: array
+          description: Cargos globales.
+          items:
+            $ref: '#/components/schemas/Cargo'
+        detraccion:
+          type: object
+          description: Solo operaciones sujetas a detracción.
+          properties:
+            codigo_tipo_detraccion:
+              type: string
+              example: "037"
+            porcentaje:
+              type: number
+              example: 12
+            monto:
+              type: number
+              example: 14.16
+            codigo_metodo_pago:
+              type: string
+              example: "001"
+            cuenta_bancaria:
+              type: string
+              example: "00-123-456789"
+        retencion:
+          type: object
+          description: Solo agentes de retención.
+          properties:
+            codigo:
+              type: string
+              example: "62"
+            porcentaje:
+              type: number
+              example: 3
+            monto:
+              type: number
+              example: 3.54
+            base:
+              type: number
+              example: 118
+        percepcion:
+          type: object
+          description: Solo agentes de percepción.
+          properties:
+            codigo:
+              type: string
+              example: "51"
+            porcentaje:
+              type: number
+              example: 2
+            monto:
+              type: number
+              example: 2.36
+            base:
+              type: number
+              example: 118
+        anticipos:
+          type: array
+          description: Anticipos a deducir.
+          items:
+            type: object
+            properties:
+              numero:
+                type: string
+                example: "F001-100"
+              codigo_tipo_documento:
+                type: string
+                example: "02"
+              monto:
+                type: number
+                example: 50
+              total:
+                type: number
+                example: 59
+        guias:
+          type: array
+          description: Guías de remisión relacionadas.
+          items:
+            type: object
+            properties:
+              numero:
+                type: string
+                example: "T001-25"
+              codigo_tipo_documento:
+                type: string
+                example: "09"
+        relacionados:
+          type: array
+          description: Otros documentos relacionados.
+          items:
+            type: object
+            properties:
+              numero:
+                type: string
+                example: "F001-50"
+              codigo_tipo_documento:
+                type: string
+                example: "01"
+              monto:
+                type: number
+                example: 118
+        leyendas:
+          type: array
+          description: Leyendas (catálogo 52 SUNAT). La leyenda de monto en letras se genera automáticamente.
+          items:
+            type: object
+            properties:
+              codigo:
+                type: string
+                example: "2000"
+              valor:
+                type: string
+                example: "COMPROBANTE DE PERCEPCIÓN"
         informacion_adicional:
           type: string
-          example: "Forma de pago:Efectivo|Caja: 1"
-
+          example: "Forma de pago: Efectivo | Caja: 1"
+        es_itinerante:
+          type: boolean
+          example: false
+        numero_de_placa:
+          type: string
+          description: Placa del vehículo (ventas de combustible).
+          example: ""
+        codigo_vendedor:
+          type: integer
+          nullable: true
+          description: ID del vendedor.
+          example: null
+        terminos_condiciones:
+          type: string
+          example: ""
       required:
         - serie_documento
         - numero_documento
@@ -251,12 +578,59 @@ components:
         - codigo_tipo_operacion
         - codigo_tipo_documento
         - codigo_tipo_moneda
-        - fecha_de_vencimiento
         - datos_del_cliente_o_receptor
         - totales
         - items
 
-    Response:
+    Descuento:
+      type: object
+      properties:
+        codigo:
+          type: string
+          description: Catálogo 53 SUNAT ("02" descuento global que afecta la base, "00" descuento por item).
+          example: "00"
+        descripcion:
+          type: string
+          example: "Descuento"
+        factor:
+          type: number
+          example: 0.10
+        monto:
+          type: number
+          example: 10
+        base:
+          type: number
+          example: 100
+        cantidad_sin_redondeo:
+          type: number
+          description: Monto del descuento sin redondear (para prorrateo exacto de descuentos globales).
+          example: 10.0
+        global_distribucion:
+          type: boolean
+          description: Marca que el descuento del item proviene del prorrateo de un descuento global.
+          example: false
+
+    Cargo:
+      type: object
+      properties:
+        codigo:
+          type: string
+          description: Catálogo 53 SUNAT ("50" otros cargos).
+          example: "50"
+        descripcion:
+          type: string
+          example: "Cargo"
+        factor:
+          type: number
+          example: 0.05
+        monto:
+          type: number
+          example: 5
+        base:
+          type: number
+          example: 100
+
+    RespuestaEmision:
       type: object
       properties:
         success:
@@ -270,12 +644,14 @@ components:
               example: "F001-26"
             filename:
               type: string
-              example: "20302019010-01-F001-26"
+              example: "20123456789-01-F001-26"
             external_id:
               type: string
+              description: Identificador único del comprobante. Guardarlo — se usa en send, notas, anulaciones y descargas.
               example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             state_type_id:
               type: string
+              description: '"01" Registrado (sin enviar), "03" Enviado, "05" Aceptado, "07" Observado, "09" Rechazado, "11" Anulado, "13" Por anular.'
               example: "05"
             state_type_description:
               type: string
@@ -288,24 +664,66 @@ components:
               example: "jFDgOlcAShjMeA1TJzT08v+PPTw="
             qr:
               type: string
-              example: "iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAIAAACzY+a1AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAgAElEQVRDXEFRWtOsnuAAAAAElFTkSuQmCC"
+              description: Imagen QR del comprobante en base64 (PNG).
+              example: "iVBORw0KGgoAAAANSUhEUgAA..."
             id:
               type: integer
               example: 322
+            print_ticket:
+              type: string
+              description: URL de impresión en formato ticket.
+              example: "https://tu-dominio.com/print/document/46c6ce9d-.../ticket"
+        print:
+          type: object
+          description: Resultado de la impresión automática server-side (`acciones.auto_print`).
+          properties:
+            auto_printed:
+              type: boolean
+              description: Si es `true`, el servidor ya imprimió — el cliente no debe reimprimir.
+              example: false
+            print_order_id:
+              type: integer
+              nullable: true
+              example: null
+            reason:
+              type: string
+              nullable: true
+              example: "disabled"
+        data_ws:
+          type: object
+          description: Datos listos para compartir el comprobante (WhatsApp/mensajería).
+          properties:
+            message_text:
+              type: string
+              example: "Su comprobante de pago electrónico F001-26 ha sido generado correctamente..."
+            pdf_a4_filename:
+              type: string
+              example: "https://tu-dominio.com/api/document-file/document/46c6ce9d-.../a4"
+            pdf_ticket_filename:
+              type: string
+              example: "https://tu-dominio.com/api/document-file/document/46c6ce9d-.../ticket"
+            full_filename:
+              type: string
+              example: "20123456789-01-F001-26.pdf"
+            customer_telephone:
+              type: string
+              example: "999888777"
         links:
           type: object
           properties:
             xml:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/xml/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
+              example: "https://tu-dominio.com/downloads/document/xml/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             pdf:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/pdf/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
+              example: "https://tu-dominio.com/downloads/document/pdf/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             cdr:
               type: string
-              example: "https://demo.pro5.fastura.app/downloads/document/cdr/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
+              description: Vacío ("") mientras el comprobante no haya sido enviado a SUNAT.
+              example: "https://tu-dominio.com/downloads/document/cdr/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
         response:
           type: object
+          description: Respuesta de SUNAT. Vacía ([]) si el comprobante aún no se envió.
           properties:
             code:
               type: string
@@ -317,39 +735,65 @@ components:
               type: array
               items:
                 type: string
-
+        was_duplicate:
+          type: boolean
+          description: '`true` cuando la emisión se deduplicó por `offline_id` (se devolvió un documento ya existente).'
+          example: false
       required:
+        - success
         - data
-        - response
 
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            serie_documento: ["El campo serie documento es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "La serie ingresada F001, es incorrecta."
+
   securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

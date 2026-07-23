@@ -2,31 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas.
-    
-    Los documentos que se encuentran contemplados son:
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generar Notas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/dispatches/status_ticket:
@@ -34,97 +38,185 @@ paths:
       tags:
         - api
       summary: Consulta Ticket | Catalogo de datos
-      description: |  
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://empresa1.demo3pro6.ibu.pe/api/dispatches/status_ticket  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt  
+      description: |
+        **Paso 3 del flujo de guías de remisión**: consulta en SUNAT el resultado del ticket
+        obtenido con `POST /api/dispatches/send`. Si SUNAT ya procesó la guía, descarga el
+        **CDR**, actualiza el estado y devuelve los enlaces de descarga (XML, PDF, CDR).
+
+        SUNAT procesa los tickets de forma asíncrona: si la respuesta indica
+        `"La guía aún está en proceso, vuelva a consultar."`, repetir la consulta unos
+        segundos después.
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/dispatches/status_ticket`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        **Catálogo de estados de la guía (`state_type_id`):**
+
+        | Código | Estado | Descripción |
+        |--------|--------|-------------|
+        | 01 | Registrado | Generada (XML + PDF), aún sin enviar a SUNAT |
+        | 03 | Enviado | Ticket obtenido; SUNAT aún la procesa ("La guía aún está en proceso, vuelva a consultar.") |
+        | 05 | Aceptado | SUNAT la aceptó; CDR disponible |
+        | 07 | Observado | Aceptada con observaciones |
+        | 09 | Rechazado | SUNAT la rechazó |
+
+        > **No existe ambiente de pruebas (beta) de SUNAT para guías de remisión** — a diferencia
+        > de facturas/boletas/notas. El envío usa el **API GRE de SUNAT en producción** y requiere
+        > credenciales configuradas en la empresa: `client_id` / `client_secret` del API GRE +
+        > usuario secundario SUNAT. Sin credenciales, `/api/dispatches/send` responde:
+        > `{"success":false,"message":"Code: 0 - Message: Error al obtener token - error_description:  error: "}`
       operationId: ticketCatalogoDatos
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/ConsultaTicketRequest'
         required: true
       responses:
         '200':
-          description: |
-            JSON RESPUESTA
+          description: Resultado de la consulta del ticket (guía aceptada, en proceso, observada o rechazada)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaConsultaTicket'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos (falta `external_id`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: |-
+            Error de negocio. Mensajes reales:
+            - `"El external id es incorrecto"`
+            - `"La guía aún está en proceso, vuelva a consultar."` (el ticket sigue en cola en SUNAT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - fastura_auth:
-            - write
-            - read 
-          
-# Formato Json de Consulta Ticket | Catalogo de datos
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    ConsultaTicketRequest:
       type: object
+      required:
+        - external_id
       properties:
         external_id:
           type: string
-          example: "7d462447-e406-4a59-adb3-b3f6bc03cf73"
+          description: Identificador devuelto por `POST /api/dispatches` al generar la guía (la misma clave usada en `/api/dispatches/send`).
+          example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
 
-
-      required:
-        - external_id
-
-    Response:
+    RespuestaConsultaTicket:
       type: object
       properties:
         success:
           type: boolean
           example: true
+        data:
+          type: object
+          properties:
+            number:
+              type: string
+              example: "T001-1"
+            filename:
+              type: string
+              example: "12312312312-09-T001-1"
+            external_id:
+              type: string
+              example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            state_type_id:
+              type: string
+              description: '"01" Registrado, "03" Enviado/En proceso, "05" Aceptado, "07" Observado, "09" Rechazado.'
+              example: "05"
+        links:
+          type: object
+          description: Enlaces de descarga de los archivos de la guía.
+          properties:
+            xml:
+              type: string
+              example: "https://tu-dominio.com/downloads/dispatch/xml/2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            pdf:
+              type: string
+              example: "https://tu-dominio.com/downloads/dispatch/pdf/2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            cdr:
+              type: string
+              description: Disponible una vez que SUNAT acepta la guía.
+              example: "https://tu-dominio.com/downloads/dispatch/cdr/2c1a2e6a-680d-4b60-96fc-6eb568971e44"
         message:
           type: string
-          example: ".........."
+          example: "La Guia de Remision T001-1 ha sido aceptada"
+      required:
+        - success
 
-  requestBodies:
-    Pet:
-      description: Información...
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: Lista...
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            external_id: ["El campo external id es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "El external id es incorrecto"
+
   securitySchemes:
-    fastura_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write: Modificar...
-            read: Leer..
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

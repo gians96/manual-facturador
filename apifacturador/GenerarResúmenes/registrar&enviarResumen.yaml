@@ -2,31 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas.
-    
-    Los documentos que se encuentran contemplados son:
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generar Notas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/summaries:
@@ -34,68 +38,98 @@ paths:
       tags:
         - api
       summary: REGISTRAR Y ENVIAR RESÚMEN
-      description: |  
-        Cuando se genera una boleta, esta no se envía inmediatamente a Sunat. Este documento se envía mediante un resúmen, este puede contener 1 o más boletas, para registrar y enviar el resúmen puede usar el 
-        siguiente servicio, necesitará la url, el token y la fecha de emisión de las boletas que conformarán el resumen, es decir mediante la fecha se consultará todas las boletas generadas.  
+      description: |
+        Las **boletas** (y sus notas de crédito/débito) no se envían individualmente a SUNAT:
+        se declaran mediante un **resumen diario**. Este servicio, con
+        `codigo_tipo_proceso: "1"`, registra y envía el resumen de una fecha: el sistema incluye
+        **automáticamente** todas las boletas y notas de boleta emitidas en
+        `fecha_de_emision_de_documentos` que aún no hayan sido declaradas — **no** se envía
+        ningún array `documentos`.
 
-        Cuando haya culminado este procedimiento, deberá consultar el ticket del resumen generado, se explicará en el siguiente punto.  
+        **Flujo completo:**
+        1. Emitir las boletas con `POST /api/documents` (`codigo_tipo_documento: "03"`).
+        2. Registrar el resumen del día con este servicio → SUNAT devuelve un **ticket** (`data.ticket`).
+        3. Consultar el ticket con `POST /api/summaries/status` hasta obtener la aceptación;
+           recién entonces las boletas quedan **Aceptadas** por SUNAT.
 
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://empresa1.demo3pro6.ibu.pe/api/summaries  
-         - **TOKEN:** oZoKGFDzqGJfJilCHowJlZrTadQRBtuJ2fr3PkJz02aU46WPPg
+        **Notas importantes:**
+        - La fecha se envía en formato **`Y-m-d`** (año-mes-día), por ejemplo `"2026-07-22"`.
+        - Si no hay boletas pendientes de declarar en esa fecha, el servicio responde con error
+          de negocio (ver respuesta 500).
+        - Este mismo endpoint con `codigo_tipo_proceso: "3"` se usa para **anular** boletas
+          (ver ANULACIÓN DE BOLETAS).
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/summaries`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
       operationId: registrar&enviarResumen
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/ResumenRequest'
         required: true
       responses:
         '200':
-          description: |
-            JSON RESPUESTA
+          description: Resumen diario registrado y enviado; SUNAT devolvió un ticket
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaResumen'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: |
+            Error de negocio. Mensaje típico:
+            - `No se encontraron documentos con fecha de emisión {fecha}.` (no hay boletas
+              pendientes de declarar en esa fecha)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - fastura_auth:
-            - write
-            - read 
-          
-# Formato Json de REGISTRAR Y ENVIAR RESÚMEN
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    ResumenRequest:
       type: object
       properties:
         fecha_de_emision_de_documentos:
           type: string
           format: date
-          example: "2024-11-04"
+          description: |-
+            Fecha de emisión de las boletas a declarar, en formato **Y-m-d** (año-mes-día).
+            El sistema incluye automáticamente todas las boletas y notas de boleta de esa fecha
+            que aún no hayan sido declaradas.
+          example: "2026-07-22"
         codigo_tipo_proceso:
           type: string
+          description: '"1" = resumen diario de boletas y sus notas. (Con "3" se anulan boletas, ver ANULACIÓN DE BOLETAS.)'
           example: "1"
-        
       required:
         - fecha_de_emision_de_documentos
         - codigo_tipo_proceso
-    Response:
+
+    RespuestaResumen:
       type: object
       properties:
         success:
@@ -106,40 +140,67 @@ components:
           properties:
             external_id:
               type: string
-              example: "aa14c769-3df8-405c-a510-e00ef3634d72"
+              description: Identificador único del resumen. Guardarlo para consultar el estado.
+              example: "8cf16a43-9134-4809-8677-f0ecafede0b2"
             ticket:
               type: string
-              example: "1730915497341"
-            
+              description: Ticket asignado por SUNAT. Consultarlo después con `POST /api/summaries/status`.
+              example: "1784778434733"
+      required:
+        - success
+        - data
 
-  requestBodies:
-    Pet:
-      description: Información...
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: Lista...
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            fecha_de_emision_de_documentos: ["El campo fecha de emision de documentos es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encontraron documentos con fecha de emisión 2026-07-22."
+
   securitySchemes:
-    fastura_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write: Modificar...
-            read: Leer..
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

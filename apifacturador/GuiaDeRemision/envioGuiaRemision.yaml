@@ -2,31 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas.
-    
-    Los documentos que se encuentran contemplados son:
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generar Notas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/dispatches/send:
@@ -34,60 +38,92 @@ paths:
       tags:
         - api
       summary: Envio - Guia de Remisión
-      description: |  
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://empresa1.demo3pro6.ibu.pe/api/dispatches/send  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt  
+      description: |
+        **Paso 2 del flujo de guías de remisión**: envía a SUNAT una guía ya generada con
+        `POST /api/dispatches` (remitente "09" o transportista "31"). Se envía el
+        `external_id` devuelto al generar la guía; el sistema transmite el XML firmado al
+        **API GRE de SUNAT** y obtiene un **número de ticket**. La guía pasa a estado
+        `03` Enviado.
+
+        Después de este paso, consultar el resultado con
+        `POST /api/dispatches/status_ticket` (paso 3), que descarga el CDR y actualiza
+        el estado (`05` Aceptado).
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/dispatches/send`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        **Errores de negocio** (respuesta con `success: false`):
+        - `"El external id es incorrecto"` — el `external_id` no corresponde a ninguna guía.
+        - `"No se obtuvo el ticket correctamente"` — SUNAT no devolvió el ticket.
+        - `"No fue posible enviar a SUNAT"` — fallo de comunicación con el API GRE.
+
+        > **No existe ambiente de pruebas (beta) de SUNAT para guías de remisión** — a diferencia
+        > de facturas/boletas/notas. El envío usa el **API GRE de SUNAT en producción** y requiere
+        > credenciales configuradas en la empresa: `client_id` / `client_secret` del API GRE +
+        > usuario secundario SUNAT. Sin credenciales, este endpoint responde:
+        > `{"success":false,"message":"Code: 0 - Message: Error al obtener token - error_description:  error: "}`
       operationId: envioGuiaRemision
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/EnvioGuiaRequest'
         required: true
       responses:
         '200':
-          description: |
-            JSON RESPUESTA
+          description: Guía enviada a SUNAT; se obtuvo el número de ticket (estado `03` Enviado)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaEnvio'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos (falta `external_id`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: |-
+            Error de negocio. Mensajes reales:
+            - `"El external id es incorrecto"`
+            - `"No se obtuvo el ticket correctamente"`
+            - `"No fue posible enviar a SUNAT"`
+            - `"Code: 0 - Message: Error al obtener token - error_description:  error: "` (faltan credenciales del API GRE en la empresa)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - fastura_auth:
-            - write
-            - read 
-          
-# Formato Json de Envio - Guia de Remisión
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    EnvioGuiaRequest:
       type: object
+      required:
+        - external_id
       properties:
         external_id:
           type: string
-          example: "7d462447-e406-4a59-adb3-b3f6bc03cf73"
+          description: Identificador devuelto por `POST /api/dispatches` al generar la guía.
+          example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
 
-
-      required:
-        - external_id
-
-    Response:
+    RespuestaEnvio:
       type: object
       properties:
         success:
@@ -95,36 +131,63 @@ components:
           example: true
         message:
           type: string
-          example: ".........."
+          description: Incluye el número de ticket asignado por SUNAT, la fecha de recepción y el ID de la guía.
+          example: "Se obtuvo el nro. de ticket correctamente. Ticket: 1626549853420, Fecha de recepción: 2026-07-22 10:15:00, ID guia: 12312312312-09-T001-1"
+      required:
+        - success
+        - message
 
-  requestBodies:
-    Pet:
-      description: Información...
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: Lista...
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            external_id: ["El campo external id es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "El external id es incorrecto"
+
   securitySchemes:
-    fastura_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write: Modificar...
-            read: Leer..
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

@@ -2,31 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas.
-    
-    Los documentos que se encuentran contemplados son:
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generar Notas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/voided:
@@ -34,78 +38,107 @@ paths:
       tags:
         - api
       summary: REGISTRAR Y ENVIAR ANULACIÓN
-      description: |  
-        Cuando se genera una anulación de facturas o notas (generadas a partir de facturas), esta no se envía inmediatamente a **Sunat**. Este documento se envía mediante un 
-        grupo o de forma individual, para registrar y enviar la anulación, puede usar el siguiente servicio, necesitará la **url**, el **token, la fecha de emisión de documentos** 
-        que conformarán la anulación, y la **data de los documentos**.  
+      description: |
+        Las **facturas** y las **notas de crédito/débito generadas a partir de facturas** se anulan
+        mediante una **comunicación de baja** enviada a SUNAT. Una misma comunicación puede agrupar
+        uno o más documentos, siempre que todos hayan sido **emitidos en la fecha indicada** en
+        `fecha_de_emision_de_documentos`.
 
-        Cuando haya culminado este procedimiento, deberá consultar el ticket de la anulación generada, se explicará en el siguiente punto.  
+        El proceso es **asíncrono**: al registrar la baja, SUNAT devuelve un **ticket**
+        (`data.ticket`). Luego se debe consultar ese ticket con `POST /api/voided/status`
+        hasta obtener la aceptación; recién entonces los documentos quedan **Anulados** (estado `11`).
 
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://empresa1.demo3pro6.ibu.pe/api/voided  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt
+        **Notas importantes:**
+        - En este endpoint la fecha se envía en formato **día-mes-año (`d-m-Y`)**, por ejemplo
+          `"22-07-2026"`. Ojo: es distinto de `/api/summaries`, que usa `Y-m-d`.
+        - `external_id` es el identificador devuelto al emitir el comprobante
+          (`data.external_id` de `POST /api/documents`).
+        - Las **boletas** NO se anulan por este endpoint: se anulan vía resumen con
+          `POST /api/summaries` y `codigo_tipo_proceso: "3"`.
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/voided`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
       operationId: registrar&enviarAnulacion
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/AnulacionRequest'
         required: true
       responses:
         '200':
-          description: |
-            JSON RESPUESTA
+          description: Comunicación de baja registrada y enviada; SUNAT devolvió un ticket
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaAnulacion'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: |
+            Error de negocio. Mensajes típicos:
+            - `No se enviaron documentos para la anulación.`
+            - `El código externo {external_id} no fue encontrado o la fecha indica no corresponde al documento.`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - fastura_auth:
-            - write
-            - read 
-          
-# Formato Json de REGISTRAR Y ENVIAR ANULACION
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    AnulacionRequest:
       type: object
       properties:
         fecha_de_emision_de_documentos:
           type: string
-          format: date
-          example: "2024-11-04"
+          description: |-
+            Fecha de emisión de los documentos a anular, en formato **d-m-Y** (día-mes-año).
+            Todos los documentos del array deben haber sido emitidos en esta fecha.
+          example: "22-07-2026"
         documentos:
           type: array
+          description: Documentos (facturas o notas de factura) que conforman la comunicación de baja.
+          minItems: 1
           items:
             type: object
+            required:
+              - external_id
+              - motivo_anulacion
             properties:
               external_id:
                 type: string
-                example: "bb506066-4635-4614-88e5-2d1fe0b5bff4"
+                description: Identificador único del comprobante, devuelto al emitirlo (`data.external_id`).
+                example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
               motivo_anulacion:
                 type: string
+                description: Motivo de la anulación que se informará a SUNAT.
                 example: "Se duplicó documento"
-        
-
       required:
         - fecha_de_emision_de_documentos
-        - external_id
-    Response:
+        - documentos
+
+    RespuestaAnulacion:
       type: object
       properties:
         success:
@@ -116,40 +149,67 @@ components:
           properties:
             external_id:
               type: string
-              example: "bcaeff82-578d-4c0b-bd2a-76a962da39a9"
+              description: Identificador único de la comunicación de baja. Guardarlo para consultar el estado.
+              example: "f7f2f1c5-526f-4cb8-8320-f2df3cc8765c"
             ticket:
               type: string
-              example: "1730921062042"
-            
+              description: Ticket asignado por SUNAT. Consultarlo después con `POST /api/voided/status`.
+              example: "1784778800651"
+      required:
+        - success
+        - data
 
-  requestBodies:
-    Pet:
-      description: Información...
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: Lista...
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            fecha_de_emision_de_documentos: ["El campo fecha de emision de documentos es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se enviaron documentos para la anulación."
+
   securitySchemes:
-    fastura_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write: Modificar...
-            read: Leer..
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

@@ -2,33 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    Para la implementación de la **Facturación Electrónica**, la SUNAT ha puesto a su disposición diversos manuales y documentos técnicos, los cuales inicialmente son complejos de entender y utilizar.
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    La api le permitirá generar diversos documentos electrónicos, y de cada uno obtendrá los 3 archivos indispensables **(XML Firmado, Documento PDF, y CDR)**.
+    Documentos contemplados:
 
-    Los documentos que se encuentran contemplados son:
-
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generador de facturas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/documents/updatedocumentstatus:
@@ -37,107 +39,157 @@ paths:
         - api
       summary: ACTUALIZAR ESTADO DEL DOCUMENTO
       description: |
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://demo.pro5.fastura.app/api/documents/updatedocumentstatus 
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt
+        Actualiza manualmente el estado interno de un documento en el sistema. **No comunica nada
+        a SUNAT**: sirve para sincronizar el estado cuando este se gestionó por otra vía (por
+        ejemplo, consulta manual del CDR o regularización externa).
+
+        :::warning El nombre del campo lleva un typo histórico
+
+        El campo del cuerpo se llama **`externail_id`** (así, con "ail"). Corresponde al
+        `external_id` del documento, pero el backend lee exactamente la clave `externail_id`;
+        enviar `external_id` no funciona.
+
+        :::
+
+        **Estados posibles (`state_type_id`):**
+
+        - `01` Registrado
+        - `03` Enviado
+        - `05` Aceptado
+        - `07` Observado
+        - `09` Rechazado
+        - `11` Anulado
+        - `13` Por anular
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/documents/updatedocumentstatus`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
       operationId: updatedocumentstatus
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/ActualizarEstadoRequest'
         required: true
       responses:
         '200':
-          description: |
-            JSON RESPUESTA
-
-            **Nota Importante:** Para completar `state_type_id` tiene que tomar en cuenta la lista de estados de un documento:
-          
-            - 05: Aceptado
-            - 11: Anulado
-            - 03: Enviado
-            - 07: Observado
-            - 13: Por anular
-            - 09: Rechazados
-            - 01: Registrado
+          description: Estado actualizado correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaActualizarEstado'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: Error de negocio (documento no encontrado, estado inválido, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-          
-# Formato Json de Actualizar estado del documento
+        - bearerAuth: []
 
 components:
   schemas:
-    Pet:
+    ActualizarEstadoRequest:
       type: object
       properties:
         externail_id:
           type: string
-          example: "2dded172-cd17-4078-9c88-10a9b1177f2d"
+          description: |-
+            `external_id` del documento (devuelto en `data.external_id` al emitirlo).
+            OJO: la clave se escribe `externail_id`, con el typo histórico — el backend
+            lee exactamente ese nombre.
+          example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
         state_type_id:
           type: string
-          example: "01"
-      
+          description: |-
+            Nuevo estado del documento: "01" Registrado, "03" Enviado, "05" Aceptado,
+            "07" Observado, "09" Rechazado, "11" Anulado, "13" Por anular.
+          enum: ["01", "03", "05", "07", "09", "11", "13"]
+          example: "05"
       required:
-        - external_id
+        - externail_id
         - state_type_id
-    
-    Response:
+
+    RespuestaActualizarEstado:
       type: object
       properties:
         success:
           type: boolean
           example: true
+      required:
+        - success
 
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            state_type_id: ["El campo state type id es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "El documento no se encuentra registrado."
+
   securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

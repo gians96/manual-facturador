@@ -2,94 +2,111 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    Para la implementación de la **Facturación Electrónica**, la SUNAT ha puesto a su disposición diversos manuales y documentos técnicos, los cuales inicialmente son complejos de entender y utilizar.
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    La api le permitirá generar diversos documentos electrónicos, y de cada uno obtendrá los 3 archivos indispensables **(XML Firmado, Documento PDF, y CDR)**.
+    Documentos contemplados:
 
-    Los documentos que se encuentran contemplados son:
-
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generador de facturas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/documents/send:
     post:
       tags:
         - api
-      summary: ENVIAR FACTURA GENERADA OFFLINE
+      summary: ENVIAR FACTURA REGISTRADA (SIN ENVIAR)
       description: |
-        Para enviar a Sunat la factura generada en modo offline, puede usar el siguiente servicio, necesitará la url, el token y el external_id del documento generado.
+        Envía a SUNAT una factura que quedó en estado **Registrado** (`state_type_id: "01"`),
+        por ejemplo la emitida con `acciones.enviar_xml_firmado: false` (ver
+        *FACTURA GRAVADA SIN ENVIAR*). Solo se necesita el `external_id` que devolvió la emisión.
+        Al aceptarse, el documento pasa a estado **Aceptado** (`05`) y queda disponible el CDR.
 
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** http://demo.fastura.app/api/documents/send  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt
+        **Solo aplica a facturas y a notas de crédito/débito de factura.** Las boletas de venta
+        (y sus notas) no se envían individualmente a SUNAT: se declaran mediante el
+        **resumen diario**.
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/documents/send`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
       operationId: facturaGeneradaOffline
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/EnviarDocumentoRequest'
         required: true
       responses:
         '200':
-          description: JSON RESPUESTA
+          description: Documento enviado a SUNAT correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaEnvio'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: Error de negocio (documento no encontrado, tipo de documento no permitido, error de SUNAT, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
-          
-# Formato Json de ENVIAR FACTURA GENERADA OFFLINE
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    EnviarDocumentoRequest:
       type: object
       properties:
         external_id:
           type: string
-          example: "2dded172-cd17-4078-9c88-10a9b1177f2d"
-
+          description: Identificador único del documento, devuelto en `data.external_id` al emitirlo.
+          example: "eada8140-d0cb-4f4c-bd84-6fed5879493c"
       required:
         - external_id
 
-    Response:
+    RespuestaEnvio:
       type: object
       properties:
         success:
@@ -100,66 +117,97 @@ components:
           properties:
             number:
               type: string
-              example: "F001-15"
+              example: "F001-8"
             filename:
               type: string
-              example: "20415963255-01-F001-15"
+              example: "12312312312-01-F001-8"
             external_id:
               type: string
-              example: "7d9feb66-16e9-47a9-86fd-ebccdb662678"
+              example: "eada8140-d0cb-4f4c-bd84-6fed5879493c"
+            state_type_id:
+              type: string
+              description: Estado resultante. "05" Aceptado si SUNAT aceptó el comprobante.
+              example: "05"
+            state_type_description:
+              type: string
+              example: "Aceptado"
         links:
           type: object
           properties:
             cdr:
               type: string
-              example: "http://demo26.multifacturalonew.oo:8084/downloads/document/cdr/7d9feb66-16e9-47a9-86fd-ebccdb662678"
+              description: Descarga del CDR obtenido de SUNAT.
+              example: "https://tu-dominio.com/downloads/document/cdr/eada8140-d0cb-4f4c-bd84-6fed5879493c"
         response:
           type: object
+          description: Respuesta de SUNAT.
           properties:
             code:
               type: string
               example: "0"
             description:
               type: string
-              example: "La Factura numero F001-15, ha sido aceptada"
+              example: "La Factura numero F001-8, ha sido aceptada"
             notes:
               type: array
               items:
                 type: string
-              example: [] 
-
+              example: []
       required:
+        - success
         - data
-        - responde
 
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            external_id: ["El campo external id es obligatorio."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "El documento no se encuentra registrado."
+
   securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

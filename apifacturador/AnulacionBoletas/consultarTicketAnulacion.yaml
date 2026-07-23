@@ -2,31 +2,35 @@ openapi: 3.0.3
 info:
   title: Introducción
   description: |-
-    En ocasiones, se producen **errores en la emisión de facturas** a compradores o clientes. Esto provoca que estos errores se deban solventar con diferentes mecanismos, ya que la Ley prohíbe la eliminación de facturas ya emitidas.
-    
-    Los documentos que se encuentran contemplados son:
+    La API del **Facturador PRO 8** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
 
-    1. Factura  
-    2. Boleta  
-    3. Nota de Débito  
-    4. Nota de Crédito  
-    5. Resúmenes  
-    6. Anulaciones  
-    7. Guia de remisión  
-    8. Cotización  
-    9. Inventarios  
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
     10. Productos
 
-  version: 1.0.11
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://empresa.pro8.uio.la
+    description: Demostración
 tags:
   - name: api
-    description: Generar Notas
-    externalDocs:
-      description: Más
-      url: https://demo.pro5.fastura.app
-      
+    description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
   /api/summaries/status:
@@ -34,67 +38,82 @@ paths:
       tags:
         - api
       summary: CONSULTAR TICKET ANULACIÓN
-      description: |  
-        Para consultar el ticket del resumen de anulación generado puede usar el siguiente servicio, necesitará la **url**, el **token**, 
-        el **external_id** (resumen) y el **numero de ticket**.  
+      description: |
+        Consulta ante SUNAT el estado de un **resumen** registrado previamente con
+        `POST /api/summaries` (en este caso, el resumen de anulación de boletas,
+        `codigo_tipo_proceso: "3"`). Se puede identificar el resumen por su `external_id`
+        **o** por su `ticket` (basta enviar uno de los dos).
 
-        ***Ejemplo:***  
-         - **Método:** POST  
-         - **URL:** https://empresa1.demo3pro6.ibu.pe/api/summaries/status  
-         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt  
+        Cuando SUNAT acepta el resumen (`response.code: "0"`), las boletas que lo conforman
+        quedan **Anuladas** y se dispone de los enlaces de descarga del **XML** y del **CDR**.
+        Si SUNAT aún está procesando el ticket, repetir la consulta más tarde.
 
-        Cuando haya culminado este procedimiento, el resumen de anulación con la boletas que lo conforman han sido aceptadas exitosamente por Sunat, 
-        es decir el (los) documento(s) han sido anulados.
-
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/summaries/status`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
       operationId: consultarTicketAnulacion
       requestBody:
-        description: 1. JSON A ENVIAR
+        description: JSON a enviar (enviar `external_id` o `ticket`, al menos uno)
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Pet'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Pet'
+              $ref: '#/components/schemas/ConsultaTicketRequest'
         required: true
       responses:
         '200':
-          description: |
-            JSON RESPUESTA
+          description: Estado del resumen de anulación (aceptado por SUNAT)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-            application/xml:
+                $ref: '#/components/schemas/RespuestaConsultaTicket'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
               schema:
-                $ref: '#/components/schemas/Response'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Validation exception
+          description: Error de validación de campos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorValidacion'
+        '500':
+          description: |
+            Error de negocio. Mensajes típicos:
+            - `Es requerido el código externo o ticket` (no se envió ninguno de los dos)
+            - `El código externo {external_id} es inválido, no se encontró resumen relacionado`
+            - `El ticket {ticket} es inválido, no se encontró resumen relacionado`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
       security:
-        - fastura_auth:
-            - write
-            - read 
-          
-# Formato Json de CONSULTAR TICKET DE ANULACIÓN
+        - bearerAuth: []
+
 components:
   schemas:
-    Pet:
+    ConsultaTicketRequest:
       type: object
+      description: Enviar `external_id` o `ticket` (al menos uno de los dos).
       properties:
         external_id:
           type: string
-          example: "0a1382c6-e639-46fc-a8ae-d4659b63c4bd"
+          description: Identificador del resumen (`data.external_id` de `POST /api/summaries`). Alternativa a `ticket`.
+          example: "8cf16a43-9134-4809-8677-f0ecafede0b2"
         ticket:
           type: string
-          example: "1730924660248"
+          description: Ticket SUNAT devuelto al registrar el resumen (`data.ticket`). Alternativa a `external_id`.
+          example: "1784778434733"
 
-
-    Response:
+    RespuestaConsultaTicket:
       type: object
       properties:
         success:
@@ -105,61 +124,93 @@ components:
           properties:
             filename:
               type: string
-              example: "20415963255-RC-20190126-6"
+              description: Nombre del archivo del resumen (RUC-RC-fecha-correlativo).
+              example: "20123456789-RC-20260722-1"
             external_id:
               type: string
-              example: "0a1382c6-e639-46fc-a8ae-d4659b63c4bd"
+              example: "8cf16a43-9134-4809-8677-f0ecafede0b2"
         links:
           type: object
           properties:
             xml:
               type: string
-              example: "http://demo26.multifacturalonew.oo:8084/downloads/voided/xml/0a1382c6-e639-46fc-a8ae-d4659b63c4bd"
+              description: URL de descarga del XML firmado del resumen.
+              example: "https://tu-dominio.com/downloads/summary/xml/8cf16a43-9134-4809-8677-f0ecafede0b2"
             cdr:
               type: string
-              example: "http://demo26.multifacturalonew.oo:8084/downloads/voided/cdr/0a1382c6-e639-46fc-a8ae-d4659b63c4bd"
+              description: URL de descarga del CDR emitido por SUNAT.
+              example: "https://tu-dominio.com/downloads/summary/cdr/8cf16a43-9134-4809-8677-f0ecafede0b2"
         response:
           type: object
+          description: Respuesta de SUNAT.
           properties:
             code:
               type: string
+              description: '"0" indica aceptación.'
               example: "0"
             description:
               type: string
-              example: "La Comunicación de baja RA-20190126-1, ha sido aceptada"
+              example: "El Resumen diario RC-20260722-1, ha sido aceptado"
             notes:
               type: array
+              items:
+                type: string
               example: []
-            
+      required:
+        - success
+        - data
 
-  requestBodies:
-    Pet:
-      description: Información...
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pet'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pet'
-    UserArray:
-      description: Lista...
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Response'
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Emisión bloqueada por licencia."
+        message_code:
+          type: string
+          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
+          example: "LICENSE_EMISSION_BLOCKED"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: object
+          description: Objeto con los errores por campo.
+          example:
+            external_id: ["El campo external id debe ser una cadena de texto."]
+
+    ErrorNegocio:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Es requerido el código externo o ticket"
+
   securitySchemes:
-    fastura_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
-          scopes:
-            write: Modificar...
-            read: Leer..
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.
