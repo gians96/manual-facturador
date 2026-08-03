@@ -209,7 +209,7 @@ Tras la instalación:
 
 | Recurso | Valor |
 |---------|-------|
-| App | <http://localhost:8080> |
+| App | `http://localhost:8080` |
 | MySQL | `localhost:3308` (`root` / `secret`) |
 | Redis | `redis_pro8_local:6379` sin password |
 | FPM | `fpm_pro8_local` |

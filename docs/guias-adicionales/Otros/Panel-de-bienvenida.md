@@ -32,7 +32,7 @@ El panel de bienvenida es una ventana informativa que aparece al iniciar sesión
    ![Vista del panel de bienvenida](../img/panel-bienvenida-vista.jpg)
 
 
-<!-- This is a comment 
+{/* This is a comment
 ## Otras Personalizaciones Disponibles
 
 Desde este mismo panel de configuración, puedes realizar otras personalizaciones:
@@ -49,4 +49,4 @@ Desde este mismo panel de configuración, puedes realizar otras personalizacione
 - Los administradores pueden establecer configuraciones predeterminadas para todos los usuarios
 - Si tienes problemas para acceder a estas opciones, verifica tus permisos de usuario en el sistema
 
-Para cualquier consulta adicional, comunícate con el soporte técnico de FactúraloPeru. -->
+Para cualquier consulta adicional, comunícate con el soporte técnico de FactúraloPeru. */}
