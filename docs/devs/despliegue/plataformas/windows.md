@@ -12,7 +12,7 @@ Guía paso a paso para instalar y ejecutar el sistema de facturación en Windows
 
 Antes de instalar, tenga en cuenta que existen dos versiones del facturador: **Pro8** y **ProX**, cada una con sus propios requisitos.
 
-### Pro 8
+### Facturador
 
 | Tecnología | Versión |
 |------------|---------|
@@ -263,4 +263,4 @@ El sistema ya está listo para usar. Si experimenta algún problema, revise cada
 
 ---
 
-*Sistema de Facturación Pro 8*
+*Facturador*

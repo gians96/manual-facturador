@@ -1,6 +1,6 @@
-# Manual de Usuario - Pro 8
+# Manual de Usuario - Facturador
 
-Este repositorio contiene la documentación oficial y el manual de usuario del **Sistema de Facturación Pro 8**. El sitio está construido con [Docusaurus](https://docusaurus.io/).
+Este repositorio contiene la documentación oficial y el manual de usuario del **Facturador** (sistema de facturación electrónica). El sitio está construido con [Docusaurus](https://docusaurus.io/).
 
 ## 🌐 Sitio En Vivo
 

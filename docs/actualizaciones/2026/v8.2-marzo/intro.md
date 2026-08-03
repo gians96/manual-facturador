@@ -6,7 +6,7 @@ slug: /v8.2
 
 ## Introducción
 
-**PRO 8.2** continúa la evolución del Sistema de Facturación Pro 8, enfocándose en optimización de envíos, mejoras en e-commerce y perfeccionamiento del módulo de restaurante. Esta versión introduce funcionalidades clave como gestión de peso en guías de remisión, optimización SEO completa y mejoras significativas en la experiencia del usuario.
+**PRO 8.2** continúa la evolución del Facturador, enfocándose en optimización de envíos, mejoras en e-commerce y perfeccionamiento del módulo de restaurante. Esta versión introduce funcionalidades clave como gestión de peso en guías de remisión, optimización SEO completa y mejoras significativas en la experiencia del usuario.
 
 Con acceso 100% al código fuente y soporte completo, PRO 8.2 representa una solución integral para empresas que requieren control total sobre sus operaciones logísticas, comercio electrónico y servicios de alimentos.
 

@@ -5,7 +5,7 @@ unlisted: true
 
 # Mozo: Configuración Previa
 
-## Configuración en el Facturador Pro 8 o Pro X
+## Configuración en el Facturador o Pro X
 
 ### Paso 1: Configurar Giro de Negocio
 

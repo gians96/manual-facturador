@@ -20,7 +20,7 @@ import DocsCards from '/src/components/global/DocsCards';
 
 ## Introducción
 
-El Sistema Mozo es una extensión del Sistema de Facturación Pro 8 diseñada específicamente para restaurantes, bares y cafeterías. Este sistema facilita la gestión de mesas, pedidos y comandas, integrándose directamente con el módulo de Punto de Venta (POS) para la facturación y cobro.
+El Sistema Mozo es una extensión del Facturador diseñada específicamente para restaurantes, bares y cafeterías. Este sistema facilita la gestión de mesas, pedidos y comandas, integrándose directamente con el módulo de Punto de Venta (POS) para la facturación y cobro.
 
 Existen **dos versiones** del sistema Mozo, cada una diseñada para diferentes necesidades y modelos de negocio:
 
@@ -99,7 +99,7 @@ href="#mozo-compilado-versión-instalable"
 - **Totalmente Personalizable**: Edita imágenes, logos, colores y branding
 - **Sin Limitaciones**: Acceso a todas las funcionalidades del sistema
 - **Usuarios Mozo**: Permite crear y gestionar usuarios con el rol específico de "Mozo"
-- **Integración Completa**: Se integra perfectamente con el Sistema Pro 8 del cliente
+- **Integración Completa**: Se integra perfectamente con el Sistema Facturador del cliente
 - **Control Total**: El cliente tiene control completo sobre su instalación
 
 #### ⚠️ Requisitos
@@ -136,7 +136,7 @@ Ambas versiones del sistema Mozo incluyen las siguientes funcionalidades princip
 
 ### 💰 Módulo POS (Punto de Venta)
 
-- Integración directa con el sistema de facturación Pro 8
+- Integración directa con el sistema de facturación Facturador
 - Generación de comprobantes electrónicos
 - Procesamiento de pagos y cierre de cuentas
 
@@ -215,7 +215,7 @@ href="mesas"
   </DocsCard>
 
 <DocsCard
-header="Sistema Pro 8"
+header="Sistema Facturador"
 href="/"
 
 >

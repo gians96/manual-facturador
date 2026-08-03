@@ -1,6 +1,6 @@
 ---
 title: Actualizar o Migrar el Sistema
-description: "Guía para actualizar el sistema Pro 8 o migrar desde versiones anteriores."
+description: "Guía para actualizar el sistema Facturador o migrar desde versiones anteriores."
 sidebar_position: 5
 ---
 
@@ -14,15 +14,15 @@ Se ha añadido un nuevo contenedor Redis. **Tener cuidado al momento de actualiz
 
 ## ❌ IMPORTANTE - Migración desde Pro 7
 
-Si estás actualizando desde **Pro 7 (rama main)** a **Pro 8**, **es obligatorio seguir primero el manual de migración**.
+Si estás actualizando desde **Pro 7 (rama main)** a **Facturador**, **es obligatorio seguir primero el manual de migración**.
 
-👉 **[Manual de Upgrade Pro 7 a Pro 8](https://pro8.jczap.net/devs/instalacion/Upgrade-Docs)**
+👉 **[Manual de Upgrade Pro 7 a Facturador](https://pro8.jczap.net/devs/instalacion/Upgrade-Docs)**
 
 ### Cambios Importantes
 
 Al actualizar debes tener en cuenta:
 
-- **Dependencias del proyecto** - Necesarias para Pro 8
+- **Dependencias del proyecto** - Necesarias para Facturador
 - **Estructura de archivos y carpetas** - Cambios en la organización
 - **Configuraciones del sistema** - Nuevos parámetros requeridos
 
@@ -45,8 +45,8 @@ Antes de comenzar, asegúrate de tener:
 
 | Guía                        | Descripción                                                                                        |
 | --------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Actualización Estándar**  | Para usuarios que ya tienen Pro 8 y solo necesitan actualizar a la última versión.                 |
-| **Migración Pro 7 → Pro 8** | Para clientes que desean migrar desde Pro 7 a la nueva versión Pro 8. Requiere suscripción activa. |
+| **Actualización Estándar**  | Para usuarios que ya tienen Facturador y solo necesitan actualizar a la última versión.                 |
+| **Migración Pro 7 → Facturador** | Para clientes que desean migrar desde Pro 7 a la nueva versión Facturador. Requiere suscripción activa. |
 | **Solución de Problemas**   | Ayuda para resolver errores comunes durante el proceso de actualización.                           |
 
 ---
@@ -105,7 +105,7 @@ git remote set-url origin https://git.buho.la/facturaloperu/facturador/pro8.git
 
 ## 3. Actualización Estándar
 
-Para usuarios que ya tienen Pro 8 instalado.
+Para usuarios que ya tienen Facturador instalado.
 
 ### 3.1 Descargar cambios
 
@@ -141,15 +141,15 @@ php artisan migrate && php artisan tenancy:migrate && php artisan config:cache &
 
 ---
 
-## 4. Migración de Pro 7 a Pro 8
+## 4. Migración de Pro 7 a Facturador
 
 > **⚠️ Importante:** Debes tener una **suscripción activa** para realizar esta migración. Si tu suscripción no está vigente, contacta al área comercial antes de continuar.
 
 ### ❗ ATENCIÓN - Pasos Obligatorios
 
-**Antes de migrar de Pro 7 a Pro 8, es obligatorio seguir el manual oficial de upgrade:**
+**Antes de migrar de Pro 7 a Facturador, es obligatorio seguir el manual oficial de upgrade:**
 
-👉 **[Manual de Upgrade Pro 7 a Pro 8](https://pro8.jczap.net/devs/instalacion/Upgrade-Docs)**
+👉 **[Manual de Upgrade Pro 7 a Facturador](https://pro8.jczap.net/devs/instalacion/Upgrade-Docs)**
 
 Este manual incluye:
 
@@ -190,7 +190,7 @@ Después de completar la migración:
 - ✅ Confirma que todos los datos se migraron correctamente
 - ✅ Verifica el funcionamiento de las principales funcionalidades
 - ✅ Revisa y ajusta configuraciones según tus necesidades
-- ✅ Comprueba que las nuevas dependencias de Pro 8 estén instaladas
+- ✅ Comprueba que las nuevas dependencias de Facturador estén instaladas
 
 ---
 

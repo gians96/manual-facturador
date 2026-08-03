@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # API Documentation
 
-Bienvenido a la documentación de la API del Facturador Pro 8.
+Bienvenido a la documentación de la API del Facturador.
 
 ## Introducción
 
@@ -12,7 +12,7 @@ Esta sección contiene toda la documentación necesaria para integrar tu aplicac
 
 :::tip ¿Integras desde otra aplicación?
 Además de esta página, revisa **[Items, productos y clientes](./emision-items-y-catalogo.md)**:
-explica en detalle cómo el Pro 8 **crea o reutiliza los productos** del catálogo al emitir (con la
+explica en detalle cómo el Facturador **crea o reutiliza los productos** del catálogo al emitir (con la
 llave `codigo_interno`), cómo hace **upsert del cliente**, y cómo **evitar comprobantes duplicados**
 con `offline_id`.
 :::

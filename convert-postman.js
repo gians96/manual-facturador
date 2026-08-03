@@ -16,11 +16,11 @@ async function convert() {
     const openapi = {
       openapi: '3.0.3',
       info: {
-        title: postmanData.info.name || 'API FACTURADOR PRO 8',
-        description: 'API REST para el Sistema de Facturación Electrónica Pro 8',
+        title: postmanData.info.name || 'API FACTURADOR',
+        description: 'API REST para el Sistema de Facturación Electrónica',
         version: '1.0.0',
         contact: {
-          name: 'Soporte Pro 8',
+          name: 'Soporte Facturador',
           email: 'soporte@pro8.pe'
         }
       },

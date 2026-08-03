@@ -1,25 +1,25 @@
 ---
 title: Introducción
-description: "Manual de uso para la aplicación móvil del Sistema de Facturación Pro 8: versión compacta y optimizada para gestionar tus operaciones desde cualquier lugar."
+description: "Manual de uso para la aplicación móvil del Facturador: versión compacta y optimizada para gestionar tus operaciones desde cualquier lugar."
 sidebar_position: 0
 ---
 
 import DocsCard from '/src/components/global/DocsCard';
 import DocsCards from '/src/components/global/DocsCards';
 
-# Manual de la Aplicación Móvil Pro 8
+# Manual de la Aplicación Móvil Facturador
 
 <head>
-  <title>App Móvil de Facturación Pro 8 - Facturalo Perú</title>
+  <title>App Móvil de Facturación Facturador - Facturalo Perú</title>
   <meta
     name="description"
-    content="Manual de uso para la aplicación móvil del Sistema de Facturación Pro 8: versión compacta y optimizada para gestionar tus operaciones desde cualquier lugar."
+    content="Manual de uso para la aplicación móvil del Facturador: versión compacta y optimizada para gestionar tus operaciones desde cualquier lugar."
   />
 </head>
 
 ## Introducción
 
-La aplicación móvil Pro 8 es una versión optimizada y compacta de nuestro sistema de facturación electrónica, diseñada específicamente para facilitar la gestión de tu negocio desde cualquier lugar. Disponible tanto para dispositivos Android como iOS, nuestra app te permite realizar las operaciones esenciales de facturación cumpliendo con todos los requisitos de SUNAT.
+La aplicación móvil Facturador es una versión optimizada y compacta de nuestro sistema de facturación electrónica, diseñada específicamente para facilitar la gestión de tu negocio desde cualquier lugar. Disponible tanto para dispositivos Android como iOS, nuestra app te permite realizar las operaciones esenciales de facturación cumpliendo con todos los requisitos de SUNAT.
 
 Comienza ahora explorando las funcionalidades principales de la aplicación o consulta nuestras guías específicas para sacar el máximo provecho a la versión móvil.
 
@@ -64,7 +64,7 @@ href="aperturar-caja"
 
 ## Descripción General
 
-La aplicación móvil Pro 8 está diseñada como una herramienta complementaria a la versión web, enfocándose en las operaciones esenciales que necesitas realizar en movimiento. Con una interfaz simplificada y optimizada para pantallas táctiles, te permite emitir comprobantes electrónicos, gestionar clientes y productos, y controlar tu caja desde cualquier lugar.
+La aplicación móvil Facturador está diseñada como una herramienta complementaria a la versión web, enfocándose en las operaciones esenciales que necesitas realizar en movimiento. Con una interfaz simplificada y optimizada para pantallas táctiles, te permite emitir comprobantes electrónicos, gestionar clientes y productos, y controlar tu caja desde cualquier lugar.
 
 ## Características Principales
 
@@ -84,4 +84,4 @@ La aplicación móvil Pro 8 está diseñada como una herramienta complementaria 
 
 ## Limitaciones y Complementariedad
 
-La aplicación móvil está diseñada como una versión compacta del sistema web, por lo que algunas funciones avanzadas y configuraciones solo están disponibles en la versión completa. Para configuraciones del sistema, reportes detallados y funcionalidades administrativas, deberás acceder a la versión web de Pro 8.
+La aplicación móvil está diseñada como una versión compacta del sistema web, por lo que algunas funciones avanzadas y configuraciones solo están disponibles en la versión completa. Para configuraciones del sistema, reportes detallados y funcionalidades administrativas, deberás acceder a la versión web de Facturador.

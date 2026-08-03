@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
-  title: API FACTURADOR PRO 8
-  description: API REST para el Sistema de Facturación Electrónica Pro 8
+  title: API FACTURADOR
+  description: API REST para el Sistema de Facturación Electrónica
   version: 1.0.0
   contact:
-    name: Soporte Pro 8
+    name: Soporte Facturador
     email: soporte@pro8.pe
 servers:
   - url: https://tu-dominio.com
@@ -270,7 +270,7 @@ paths:
       summary: Documentos - Filtro rango de fechas
       description: Documentos - Filtro rango de fechas
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -290,7 +290,7 @@ paths:
       summary: Documento - Actualizar estado
       description: Documento - Actualizar estado
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -319,7 +319,7 @@ paths:
       summary: Factura Gravada
       description: Factura Gravada
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -391,7 +391,7 @@ paths:
       summary: Factura Gravada - Cargo Global
       description: Factura Gravada - Cargo Global
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -470,7 +470,7 @@ paths:
       summary: Factura Gratuita
       description: Factura Gratuita
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -545,7 +545,7 @@ paths:
       summary: Factura - Gravada/Gratuita
       description: Factura - Gravada/Gratuita
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -633,7 +633,7 @@ paths:
       summary: Factura Exonerada
       description: Factura Exonerada
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -705,7 +705,7 @@ paths:
       summary: Factura Exonerada - Impuesto bolsa plastica
       description: Factura Exonerada - Impuesto bolsa plastica
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -796,7 +796,7 @@ paths:
       summary: Factura Gravada - Detracción
       description: Factura Gravada - Detracción
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -877,7 +877,7 @@ paths:
       summary: Factura Gravada Dolares
       description: Factura Gravada Dolares
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -949,7 +949,7 @@ paths:
       summary: Factura Gravada - Impuesto bolsa plastica
       description: Factura Gravada - Impuesto bolsa plastica
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1022,7 +1022,7 @@ paths:
       summary: Factura Gravada - Descuento Global y Lineal
       description: Factura Gravada - Descuento Global y Lineal
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1107,7 +1107,7 @@ paths:
       summary: Factura Gravada - Contingencia
       description: Factura Gravada - Contingencia
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1178,7 +1178,7 @@ paths:
       summary: Factura Gravada Anticipos
       description: Factura Gravada Anticipos
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1263,7 +1263,7 @@ paths:
       summary: Factura Gravada Sin Enviar
       description: Factura Gravada Sin Enviar
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1336,7 +1336,7 @@ paths:
       summary: Factura Inafecta
       description: Factura Inafecta
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1408,7 +1408,7 @@ paths:
       summary: Factura - Documento relacionado
       description: Factura - Documento relacionado
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1487,7 +1487,7 @@ paths:
       summary: Factura Gravada - Descuento Global
       description: Factura Gravada - Descuento Global
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1565,7 +1565,7 @@ paths:
       summary: Factura - Datos Adicionales Item (placa)
       description: Factura - Datos Adicionales Item (placa)
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1641,7 +1641,7 @@ paths:
       summary: Factura Gravada - Pago Credito
       description: Factura Gravada - Pago Credito
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1720,7 +1720,7 @@ paths:
       summary: Factura Gravada - Pago Contado
       description: Factura Gravada - Pago Contado
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1792,7 +1792,7 @@ paths:
       summary: Factura Gravada - Pagos
       description: Factura Gravada - Pagos
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1871,7 +1871,7 @@ paths:
       summary: Factura Gravada - Descuento Lineal
       description: Factura Gravada - Descuento Lineal
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1950,7 +1950,7 @@ paths:
       summary: Factura - Generar documento desde nota de venta
       description: Factura - Generar documento desde nota de venta
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -1984,7 +1984,7 @@ paths:
       summary: Factura Exportacion
       description: Factura Exportacion
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2061,7 +2061,7 @@ paths:
       summary: Factura - Campo Adicional Guia
       description: Factura - Campo Adicional Guia
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2138,7 +2138,7 @@ paths:
       summary: Boleta Gravada
       description: Boleta Gravada
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2209,7 +2209,7 @@ paths:
       summary: Boleta Exportacion
       description: Boleta Exportacion
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2286,7 +2286,7 @@ paths:
       summary: Boleta Gravada - Contingencia
       description: Boleta Gravada - Contingencia
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2357,7 +2357,7 @@ paths:
       summary: Nota Credito - Factura
       description: Nota Credito - Factura
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2432,7 +2432,7 @@ paths:
       summary: Nota Credito Sin External Id - Factura
       description: Nota Credito Sin External Id - Factura
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2509,7 +2509,7 @@ paths:
       summary: Nota Debito Sin External Id - Factura
       description: Nota Debito Sin External Id - Factura
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2586,7 +2586,7 @@ paths:
       summary: Nota Debito - Factura
       description: Nota Debito - Factura
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2659,7 +2659,7 @@ paths:
       summary: Nota de venta
       description: Nota de venta
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2799,7 +2799,7 @@ paths:
       summary: Anulacion
       description: Anulacion
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2830,7 +2830,7 @@ paths:
       summary: Anulacion Ticket
       description: Anulacion Ticket
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2859,7 +2859,7 @@ paths:
       summary: Accion Enviar Xml
       description: Accion Enviar Xml
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2887,7 +2887,7 @@ paths:
       summary: Resumen Diario Ticket
       description: Resumen Diario Ticket
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2916,7 +2916,7 @@ paths:
       summary: Resumen Diario
       description: Resumen Diario
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2945,7 +2945,7 @@ paths:
       summary: Resumen Diario Anulacion
       description: Resumen Diario Anulacion
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -2977,7 +2977,7 @@ paths:
       summary: Percepción
       description: Percepción
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -3070,7 +3070,7 @@ paths:
       summary: Retencion
       description: Retencion
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response
@@ -3163,7 +3163,7 @@ paths:
       summary: Guia Remisión
       description: Guia Remisión
       tags:
-        - 'API FACTURADOR PRO8 '
+        - 'API FACTURADOR '
       responses:
         '200':
           description: Successful response

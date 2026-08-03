@@ -6,7 +6,7 @@ slug: /v8.1
 
 ## Introducción
 
-**PRO 8.1** marca un hito importante en la evolución del Sistema de Facturación Pro 8, enfocándose en optimización de inventarios, mejoras en la gestión de productos y cumplimiento normativo actualizado. Esta versión introduce funcionalidades clave como traslados masivos por Excel, mejoras sustanciales en el sistema de presentaciones de productos y actualización del IGV para sectores específicos según normativa SUNAT.
+**PRO 8.1** marca un hito importante en la evolución del Facturador, enfocándose en optimización de inventarios, mejoras en la gestión de productos y cumplimiento normativo actualizado. Esta versión introduce funcionalidades clave como traslados masivos por Excel, mejoras sustanciales en el sistema de presentaciones de productos y actualización del IGV para sectores específicos según normativa SUNAT.
 
 Con un enfoque en la eficiencia operativa y la experiencia del usuario, PRO 8.1 representa una solución integral para empresas que requieren mayor control sobre sus inventarios y operaciones comerciales.
 

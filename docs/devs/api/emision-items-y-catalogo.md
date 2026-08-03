@@ -8,7 +8,7 @@ sidebar_label: "Items, productos y clientes"
 
 Esta guía explica, para una **aplicación externa** que consume el API, qué ocurre con los
 **productos (items)** y con el **cliente** cuando emites una factura, boleta, nota o guía de
-remisión: cómo se crean en el catálogo del Pro 8 si no existen, y cómo `codigo_interno` evita
+remisión: cómo se crean en el catálogo del Facturador si no existen, y cómo `codigo_interno` evita
 duplicarlos.
 
 :::info Requisito previo
@@ -33,12 +33,12 @@ comprobante a SUNAT, el sistema ejecuta este pipeline:
 :::warning Efecto secundario importante
 La creación de **productos** y del **cliente** ocurre como *efecto secundario* de emitir, **antes**
 de que el comprobante llegue a SUNAT. No necesitas pre-cargar el catálogo: puedes emitir con un
-producto que no existe y el Pro 8 lo crea al vuelo.
+producto que no existe y el Facturador lo crea al vuelo.
 :::
 
 ## Productos (items): creación y anti-duplicado
 
-La llave con la que el Pro 8 identifica un producto es **`codigo_interno`** (campo interno
+La llave con la que el Facturador identifica un producto es **`codigo_interno`** (campo interno
 `internal_id`, **máximo 30 caracteres**).
 
 | Situación (según `codigo_interno`) | Comportamiento |
@@ -83,7 +83,7 @@ mandas en la línea, no los del catálogo. Por eso puedes emitir aunque el produ
 - **El precio del catálogo se fija con el primer `precio_unitario`** visto para ese código; las
   emisiones posteriores con el mismo código **no** actualizan el precio del catálogo (el
   comprobante sí usa el precio que envías). Si tú administras los precios, esto no te afecta.
-- Si administras las descripciones en tu sistema y **no** quieres que el catálogo del Pro 8 cambie,
+- Si administras las descripciones en tu sistema y **no** quieres que el catálogo del Facturador cambie,
   envía **`actualizar_descripcion: false`** en la línea.
 
 ### Ejemplo de línea de item
@@ -121,7 +121,7 @@ llave es **tipo de documento de identidad + número**:
   ubigeo, correo, teléfono, etc.
 
 :::note
-Reemitir al mismo RUC/DNI con datos distintos **actualiza** ese cliente en el Pro 8. En la guía de
+Reemitir al mismo RUC/DNI con datos distintos **actualiza** ese cliente en el Facturador. En la guía de
 transportista (tipo `31`) no se procesa cliente.
 :::
 

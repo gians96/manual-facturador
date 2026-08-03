@@ -7,8 +7,8 @@ import type * as OpenApiPlugin from "docusaurus-plugin-openapi-docs";
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: "PRO 8",
-  tagline: "Facturador Electrónico Pro 8",
+  title: "Facturador",
+  tagline: "Facturador Electrónico",
   favicon: "img/pro8-favicon.ico",
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -243,9 +243,9 @@ const config: Config = {
       indexName: "Pro 8",
     },*/
     navbar: {
-      title: "Pro 8",
+      title: "Facturador",
       logo: {
-        alt: "Facturador Pro 8",
+        alt: "Facturador",
         src: "img/pro8-logo.svg",
       },
       items: [

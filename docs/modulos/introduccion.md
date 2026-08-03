@@ -1,25 +1,25 @@
 ---
 title: Introducción
-description: "Conoce los módulos y funcionalidades principales del Sistema de Facturación Pro 8 para gestionar tu negocio de manera eficiente."
+description: "Conoce los módulos y funcionalidades principales del Facturador para gestionar tu negocio de manera eficiente."
 sidebar_position: 0
 ---
 
 import DocsCard from '/src/components/global/DocsCard';
 import DocsCards from '/src/components/global/DocsCards';
 
-# Introducción a la plataforma Pro 8
+# Introducción a la plataforma Facturador
 
 <head>
-  <title>Introducción a los módulos de Pro 8</title>
+  <title>Introducción a los módulos de Facturador</title>
   <meta
     name="description"
-    content="Conoce los módulos y funcionalidades principales del Sistema de Facturación Pro 8 para gestionar tu negocio de manera eficiente."
+    content="Conoce los módulos y funcionalidades principales del Facturador para gestionar tu negocio de manera eficiente."
   />
 </head>
 
 ## Visión General
 
-Pro 8 es una plataforma integral que ofrece múltiples módulos diseñados para cubrir todas las necesidades de gestión y facturación de tu negocio. Desde el dashboard inicial hasta módulos especializados por sector, nuestro sistema te proporciona herramientas potentes y fáciles de usar.
+Facturador es una plataforma integral que ofrece múltiples módulos diseñados para cubrir todas las necesidades de gestión y facturación de tu negocio. Desde el dashboard inicial hasta módulos especializados por sector, nuestro sistema te proporciona herramientas potentes y fáciles de usar.
 
 <DocsCards>
   <DocsCard 
@@ -157,17 +157,17 @@ Módulos en fase beta para gestionar diferentes tipos de suscripciones de client
 
 ## Aplicaciones Conectadas
 
-El sistema Pro 8 se complementa con diversas aplicaciones que amplían sus funcionalidades y permiten gestionar tu negocio desde cualquier lugar, como VendeYa o Mozo, permitiéndote acceder a las funciones esenciales desde cualquier dispositivo.
+El sistema Facturador se complementa con diversas aplicaciones que amplían sus funcionalidades y permiten gestionar tu negocio desde cualquier lugar, como VendeYa o Mozo, permitiéndote acceder a las funciones esenciales desde cualquier dispositivo.
 
 ---
 
 ## Integraciones y Conexiones
 
-### API Pro 8
+### API Facturador
 
-Nuestro sistema cuenta con una API robusta que permite integrar Pro 8 con otras plataformas y sistemas. Ideal para desarrolladores que desean automatizar procesos o crear soluciones personalizadas.
+Nuestro sistema cuenta con una API robusta que permite integrar Facturador con otras plataformas y sistemas. Ideal para desarrolladores que desean automatizar procesos o crear soluciones personalizadas.
 
-Puedes descargar la coleccion desde [API Pro 8](https://drive.google.com/file/d/1JQctRCIZdC7K30JiizruKkPUaBSs_xml/view?usp=drive_link)
+Puedes descargar la coleccion desde [API Facturador](https://drive.google.com/file/d/1JQctRCIZdC7K30JiizruKkPUaBSs_xml/view?usp=drive_link)
 
 ### Exportación e Importación
 
@@ -193,7 +193,7 @@ Implementamos estrictos protocolos de seguridad para proteger tus datos comercia
 
 ## Requisitos del Sistema
 
-Para aprovechar al máximo el Sistema de Facturación Pro 8, recomendamos:
+Para aprovechar al máximo el Facturador, recomendamos:
 
 - Conexión a internet estable
 - Navegador web actualizado (Chrome, Firefox, Edge o Safari)

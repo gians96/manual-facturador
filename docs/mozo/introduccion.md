@@ -12,13 +12,13 @@ import DocsCards from '/src/components/global/DocsCards';
   <title>Mozo.pe</title>
   <meta
     name="description"
-    content="Mozo.pe: Aplicación de toma de pedidos para restaurantes, compatible con el Sistema de Facturación Pro 8 para una gestión completa de comandas."
+    content="Mozo.pe: Aplicación de toma de pedidos para restaurantes, compatible con el Facturador para una gestión completa de comandas."
   />
 </head>
 
 ## Introducción
 
-Mozo.pe es una aplicación especializada para la toma y gestión de pedidos en restaurantes, diseñada para optimizar el flujo de trabajo desde la mesa hasta la cocina. Totalmente integrada con el sistema de Facturación Pro 8, permite agilizar el servicio mientras mantiene un control completo de las comandas y la facturación electrónica.
+Mozo.pe es una aplicación especializada para la toma y gestión de pedidos en restaurantes, diseñada para optimizar el flujo de trabajo desde la mesa hasta la cocina. Totalmente integrada con el sistema de Facturación Facturador, permite agilizar el servicio mientras mantiene un control completo de las comandas y la facturación electrónica.
 
 <DocsCards>
   <DocsCard 
@@ -44,7 +44,7 @@ href="introduccion#integración-con-pro-8"
 
 >
 
-    <p>Emisión de comprobantes electrónicos integrados con Pro 8.</p>
+    <p>Emisión de comprobantes electrónicos integrados con Facturador.</p>
 
   </DocsCard>
 
@@ -62,7 +62,7 @@ Mozo.pe ofrece una solución super simple pero potente para restaurantes que nec
 - **Búsqueda Avanzada:** Localización de productos por texto o código de barras.
 - **Gestión de Cocina:** Panel especial para visualizar órdenes recibidas, en preparación y listas para entrega.
 - **Emisión de Comprobantes:** Generación instantánea de boletas, facturas o notas de venta.
-- **Compatibilidad Total:** Funciona perfectamente con el sistema Pro 8.
+- **Compatibilidad Total:** Funciona perfectamente con el sistema Facturador.
 
 ## Flujo de Trabajo
 
@@ -100,9 +100,9 @@ El módulo de cocina de Mozo.pe organiza los pedidos en tres columnas para una g
 
 Este sistema permite al personal de cocina organizar su trabajo y priorizar pedidos, mientras los mozos pueden conocer el estado de las órdenes en tiempo real.
 
-## Integración con Pro 8
+## Integración con Facturador
 
-Mozo.pe está completamente integrado con el Sistema de Facturación Pro 8, permitiendo:
+Mozo.pe está completamente integrado con el Facturador, permitiendo:
 
 - Sincronización automática del catálogo de productos
 - Emisión de comprobantes electrónicos que cumplen con requisitos fiscales

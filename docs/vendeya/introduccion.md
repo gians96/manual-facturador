@@ -12,13 +12,13 @@ import DocsCards from '/src/components/global/DocsCards';
   <title>VendeYa.pe</title>
   <meta
     name="description"
-    content="VendeYa.pe: Plataforma de venta rápida orientada a negocios con flujo de caja ágil, compatible con el Sistema de Facturación Pro 8."
+    content="VendeYa.pe: Plataforma de venta rápida orientada a negocios con flujo de caja ágil, compatible con el Facturador."
   />
 </head>
 
 ## Introducción
 
-VendeYa.pe es una plataforma de venta rápida diseñada específicamente para negocios que requieren un flujo de caja ágil y continuo. Integrada con el Sistema de Facturación Pro 8 y Pro X, permite realizar ventas de manera eficiente mientras cumple con los requisitos de facturación electrónica de SUNAT en Perú.
+VendeYa.pe es una plataforma de venta rápida diseñada específicamente para negocios que requieren un flujo de caja ágil y continuo. Integrada con el Facturador y Pro X, permite realizar ventas de manera eficiente mientras cumple con los requisitos de facturación electrónica de SUNAT en Perú.
 
 <DocsCards>
   <DocsCard 
@@ -83,9 +83,9 @@ Es importante considerar las siguientes limitaciones al utilizar VendeYa.pe:
 6. **Registro de pago:** Ingresa el monto recibido y calcula automáticamente el vuelto
 7. **Nueva venta:** Inicia inmediatamente una nueva transacción
 
-## Integración con Pro 8 y Pro X
+## Integración con Facturador y Pro X
 
-VendeYa.pe está completamente integrado con los Sistemas de Facturación Pro 8 y Pro X, en sus ultimas versiones, permitiendo:
+VendeYa.pe está completamente integrado con los Sistemas de Facturación Facturador y Pro X, en sus ultimas versiones, permitiendo:
 
 - Emisión de comprobantes electrónicos que cumplen con los requisitos de SUNAT
 - Sincronización de catálogo de productos

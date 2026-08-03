@@ -265,4 +265,4 @@ Antes de dar por finalizado el cambio, verifique:
 - [ ] No hay errores en los logs de Docker
 - [ ] Los clientes pueden acceder a sus subdominios (si aplica)
 
-_Sistema de Facturación Pro 8_
+_Facturador_

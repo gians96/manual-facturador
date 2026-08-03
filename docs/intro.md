@@ -1,6 +1,6 @@
 ---
-title: Sistema de Facturación Pro 8
-description: "Sistema de Facturación Pro 8: Solución completa de facturación electrónica para empresas peruanas que cumple con los requisitos de SUNAT."
+title: Facturador
+description: "Facturador: Solución completa de facturación electrónica para empresas peruanas que cumple con los requisitos de SUNAT."
 slug: /
 sidebar_position: 0
 ---
@@ -8,19 +8,19 @@ sidebar_position: 0
 import DocsCard from '/src/components/global/DocsCard';
 import DocsCards from '/src/components/global/DocsCards';
 
-# Sistema de Facturación Pro 8
+# Facturador
 
 <head>
-  <title>Sistema de Facturación Pro 8 - Facturalo Perú</title>
+  <title>Facturador - Facturalo Perú</title>
   <meta
     name="description"
-    content="Sistema de Facturación Pro 8: Solución completa de facturación electrónica para empresas peruanas que cumple con los requisitos de SUNAT."
+    content="Facturador: Solución completa de facturación electrónica para empresas peruanas que cumple con los requisitos de SUNAT."
   />
 </head>
 
 ## Introducción
 
-Pro 8 es un sistema completo de facturación electrónica diseñado específicamente para cumplir con los requerimientos fiscales de SUNAT en Perú. Nuestra plataforma permite emitir comprobantes electrónicos de manera eficiente, gestionar inventarios, controlar ventas y administrar tu negocio desde cualquier dispositivo.
+Facturador es un sistema completo de facturación electrónica diseñado específicamente para cumplir con los requerimientos fiscales de SUNAT en Perú. Nuestra plataforma permite emitir comprobantes electrónicos de manera eficiente, gestionar inventarios, controlar ventas y administrar tu negocio desde cualquier dispositivo.
 
 Comienza ahora siguiendo nuestra [Guía de Configuracion esencial para tu cuenta](../docs/guias-adicionales/Configuracion/01-Configuracion-esencial-para-tu-cuenta-de-facturacion.md) o explorando las funcionalidades principales del sistema.
 
@@ -29,7 +29,7 @@ Comienza ahora siguiendo nuestra [Guía de Configuracion esencial para tu cuenta
     header="Guía de Despliegue"
     href="despliegue"
   >
-    <p>Guías paso a paso para configurar e instalar el Sistema de Facturación Pro 8.</p>
+    <p>Guías paso a paso para configurar e instalar el Facturador.</p>
   </DocsCard>
 
 <DocsCard
@@ -58,14 +58,14 @@ href="mozo"
 
 >
 
-    <p>Encuentra ayuda sobre nuestra aplicación Mozo, una extensión del sistema Pro 8 diseñada para restaurantes.</p>
+    <p>Encuentra ayuda sobre nuestra aplicación Mozo, una extensión del sistema Facturador diseñada para restaurantes.</p>
 
   </DocsCard>
 </DocsCards>
 
 ## Descripción General
 
-Pro 8 se enfoca en proporcionar un sistema de facturación electrónica completo y fácil de usar, permitiendo a las empresas peruanas cumplir con las normativas de SUNAT mientras optimizan sus procesos de venta e inventario. La plataforma está diseñada para ser accesible desde múltiples dispositivos, incluyendo computadoras de escritorio, tablets y smartphones.
+Facturador se enfoca en proporcionar un sistema de facturación electrónica completo y fácil de usar, permitiendo a las empresas peruanas cumplir con las normativas de SUNAT mientras optimizan sus procesos de venta e inventario. La plataforma está diseñada para ser accesible desde múltiples dispositivos, incluyendo computadoras de escritorio, tablets y smartphones.
 
 ## Funcionalidades Principales
 
@@ -78,7 +78,7 @@ Pro 8 se enfoca en proporcionar un sistema de facturación electrónica completo
 
 ## Enfoque en el Rendimiento
 
-Pro 8 está construido para funcionar de manera óptima incluso en situaciones de alta demanda, con transiciones eficientes y una interfaz táctil optimizada para dispositivos móviles.
+Facturador está construido para funcionar de manera óptima incluso en situaciones de alta demanda, con transiciones eficientes y una interfaz táctil optimizada para dispositivos móviles.
 
 ## Diseño Limpio, Simple y Funcional
 
@@ -86,7 +86,7 @@ Nuestro sistema presenta una interfaz de usuario intuitiva y moderna que facilit
 
 ### Optimizado para Web y Dispositivos Móviles
 
-Pro 8 funciona perfectamente en navegadores web y como aplicación móvil, adaptándose a las necesidades de tu negocio y permitiéndote trabajar desde cualquier lugar.
+Facturador funciona perfectamente en navegadores web y como aplicación móvil, adaptándose a las necesidades de tu negocio y permitiéndote trabajar desde cualquier lugar.
 
 ## Tecnologías
 
@@ -108,7 +108,7 @@ La interfaz de usuario está construida con **Bootstrap 5.3.7**, proporcionando 
 
 ### ⚡ Vite
 
-Pro 8 utiliza **Vite 4.4** como herramienta de build moderna, reemplazando Laravel Mix para ofrecer tiempos de compilación ultra-rápidos, Hot Module Replacement instantáneo y una experiencia de desarrollo significativamente mejorada.
+Facturador utiliza **Vite 4.4** como herramienta de build moderna, reemplazando Laravel Mix para ofrecer tiempos de compilación ultra-rápidos, Hot Module Replacement instantáneo y una experiencia de desarrollo significativamente mejorada.
 
 ### 📊 Chart.js
 
@@ -120,7 +120,7 @@ El sistema implementa **XMLSecLibs 3.1** para garantizar la firma digital y segu
 
 ### 📄 Generación de PDFs
 
-Pro 8 integra múltiples soluciones para la generación de documentos:
+Facturador integra múltiples soluciones para la generación de documentos:
 
 - **DomPDF 2.0**: Generación de PDFs desde HTML
 - **mPDF 8.0**: PDFs avanzados con soporte completo para UTF-8 y diseños complejos
@@ -166,8 +166,8 @@ Implementa **Hyn Multi-Tenant 5.8** para soporte robusto de múltiples empresas,
 
 ## Compatibilidad con Ecosistema
 
-Pro 8 es compatible con **VendeYa.pe** y **Mozo.pe**, ampliando sus capacidades para adaptarse a diferentes necesidades comerciales y puntos de venta.
+Facturador es compatible con **VendeYa.pe** y **Mozo.pe**, ampliando sus capacidades para adaptarse a diferentes necesidades comerciales y puntos de venta.
 
 ## Comunidad
 
-Pro 8 es desarrollado y mantenido activamente por un equipo central, y su ecosistema está guiado por una comunidad de desarrolladores y contribuyentes que impulsan su crecimiento y adopción. Empresas de todos los tamaños utilizan Pro 8 para gestionar sus operaciones de facturación electrónica en Perú.
+Facturador es desarrollado y mantenido activamente por un equipo central, y su ecosistema está guiado por una comunidad de desarrolladores y contribuyentes que impulsan su crecimiento y adopción. Empresas de todos los tamaños utilizan Facturador para gestionar sus operaciones de facturación electrónica en Perú.

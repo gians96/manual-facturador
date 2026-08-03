@@ -161,4 +161,4 @@ Este comando mostrará todos los certificados instalados, su fecha de expiració
 
 ---
 
-\_Sistema de Facturación Pro 8
+\_Facturador

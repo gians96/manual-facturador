@@ -1,5 +1,5 @@
 {
-  "index_name": "Pro 8",
+  "index_name": "Facturador",
   "start_urls": ["https://manual.pro8.uio.la/"],
   "sitemap_urls": ["https://manual.pro8.uio.la/sitemap.xml"],
   "sitemap_alternate_links": true,

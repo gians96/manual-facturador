@@ -9,10 +9,10 @@ import DocsCards from '/src/components/global/DocsCards';
 # Módulo de Preventas - Gestión comercial previa a la facturación
 
 <head>
-  <title>Módulo de Preventas Pro 8</title>
+  <title>Módulo de Preventas Facturador</title>
   <meta
     name="description"
-    content="Módulo de Preventas Pro 8: Herramienta completa para gestionar procesos comerciales previos a la emisión de comprobantes oficiales, con múltiples tipos de documentos comerciales."
+    content="Módulo de Preventas Facturador: Herramienta completa para gestionar procesos comerciales previos a la emisión de comprobantes oficiales, con múltiples tipos de documentos comerciales."
   />
 </head>
 

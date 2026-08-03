@@ -6,19 +6,19 @@ sidebar_position: 0
 import DocsCard from '/src/components/global/DocsCard';
 import DocsCards from '/src/components/global/DocsCards';
 
-# Hotel Pro 8 - Gestión hotelera simplificada con facturación electrónica ⚡
+# Hotel Facturador - Gestión hotelera simplificada con facturación electrónica ⚡
 
 <head>
-  <title>Módulo Hotel Pro 8</title>
+  <title>Módulo Hotel Facturador</title>
   <meta
     name="description"
-    content="Módulo Hotel Pro 8: Solución completa para gestión hotelera con interfaz visual rediseñada, compatible con el Sistema de Facturación Pro 8."
+    content="Módulo Hotel Facturador: Solución completa para gestión hotelera con interfaz visual rediseñada, compatible con el Facturador."
   />
 </head>
 
 ## Introducción
 
-El Módulo Hotel de Pro 8 ofrece una solución completa para la gestión hotelera, con una interfaz visual rediseñada que facilita los procesos de recepción, check-in y check-out. Compatible con el Sistema de Facturación Pro 8 y Pro X, permite administrar múltiples hoteles desde un solo lugar mientras cumple con los requisitos de facturación electrónica.
+El Módulo Hotel de Facturador ofrece una solución completa para la gestión hotelera, con una interfaz visual rediseñada que facilita los procesos de recepción, check-in y check-out. Compatible con el Facturador y Pro X, permite administrar múltiples hoteles desde un solo lugar mientras cumple con los requisitos de facturación electrónica.
 
 <DocsCards>
   <DocsCard 
@@ -82,7 +82,7 @@ href="/modulos/rubros/hoteles/Habitaciones"
 
 ## Descripción General
 
-El Módulo Hotel Pro 8 proporciona una experiencia visual mejorada para la gestión hotelera, facilitando los procesos de recepción y control de habitaciones. Con una interfaz intuitiva y altamente visual, los procesos de check-in y check-out se completan en pocos pasos, permitiendo una operación más eficiente mientras se mantiene el cumplimiento con las normas de facturación electrónica.
+El Módulo Hotel Facturador proporciona una experiencia visual mejorada para la gestión hotelera, facilitando los procesos de recepción y control de habitaciones. Con una interfaz intuitiva y altamente visual, los procesos de check-in y check-out se completan en pocos pasos, permitiendo una operación más eficiente mientras se mantiene el cumplimiento con las normas de facturación electrónica.
 
 ## Características Principales
 
@@ -95,7 +95,7 @@ El Módulo Hotel Pro 8 proporciona una experiencia visual mejorada para la gesti
 
 ## Casos de Uso Ideales
 
-El Módulo Hotel Pro 8 está especialmente diseñado para:
+El Módulo Hotel Facturador está especialmente diseñado para:
 
 - **Hoteles independientes:** Gestión completa de habitaciones y huéspedes con facturación integrada.
 - **Cadenas hoteleras:** Administración centralizada de múltiples propiedades.
@@ -113,9 +113,9 @@ El Módulo Hotel Pro 8 está especialmente diseñado para:
 6. **Personalización de servicios:** Agrega productos o servicios adicionales
 7. **Destino de pago:** Selecciona cómo se registrará el pago del hospedaje
 
-## Integración con Pro 8 y Pro X
+## Integración con Facturador y Pro X
 
-El Módulo Hotel está completamente integrado con los Sistemas de Facturación Pro 8 y Pro X, permitiendo:
+El Módulo Hotel está completamente integrado con los Sistemas de Facturación Facturador y Pro X, permitiendo:
 
 - Emisión de comprobantes electrónicos para servicios de hospedaje
 - Sincronización con el sistema de inventario para productos y servicios
