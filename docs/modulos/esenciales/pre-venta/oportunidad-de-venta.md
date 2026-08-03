@@ -27,7 +27,7 @@ Al seleccionar el botón **Nuevo**, se encontrará el formulario de la oportunid
 
 Se completarán los siguientes datos:
 
-1. **Cliente:** Ingresa el cliente  para la creación de la oportunidad, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.pro8.uio.la/modulos/esenciales/clientes/Clientes-creacion-individual)**.
+1. **Cliente:** Ingresa el cliente  para la creación de la oportunidad, si no está creado, podrá realizarlo paso a paso en este **[artículo](/modulos/esenciales/clientes/clientes-creacion-individual)**.
 2. **Moneda:** Selecciona el tipo de moneda en dólares americanos o Soles
 3. **Observaciones:** Ingresa alguna observacion respecto a la oportunidad de venta
 4. **Detalles:** Ingresa algún detalle o carácterística del servicio/proyecto
@@ -42,7 +42,7 @@ Se procederá a ingresar los siguientes datos:
 
 ![Alt text](img/oportunidad_venta_new_5.png)
 
-1. **Producto/Servicio:** Selecciona el producto creado previamente,si no está creado,podrá realizarlo paso a paso,en este **[artículo](https://manual.pro8.uio.la/modulos/esenciales/productos-servicios/Productos-Creacion-basica)**.
+1. **Producto/Servicio:** Selecciona el producto creado previamente,si no está creado,podrá realizarlo paso a paso,en este **[artículo](/modulos/esenciales/productos-servicios/productos-creacion-basica)**.
 2. **Cantidad:** Ingresa la cantidad de producto/servicio
 3. **Precio unitario:** Deberá colocar el valor de su producto/servicio.
 
@@ -69,8 +69,8 @@ Contaremos con las siguientes opciones o botones:
 - **Archivos:** Se visualizará la imagen/archivo del producto
 - **Acciones**
  
-    - **Generar O.Compra:** Permite generar la orden de compra, puedes encontrar el procedimiento paso a paso en este **[artículo](https://manual.pro8.uio.la/modulos/esenciales/compras/nueva-compra)**.
-    - **Generar Cotización:** Permite generar la cotización del proyecto. Te invitamos a leer nuestro **[artículo](https://manual.pro8.uio.la/modulos/esenciales/pre-venta/cotizaciones)** ,donde te explicaremos paso a paso, la creación de una cotización.
+    - **Generar O.Compra:** Permite generar la orden de compra, puedes encontrar el procedimiento paso a paso en este **[artículo](/modulos/esenciales/compras/nueva-compra)**.
+    - **Generar Cotización:** Permite generar la cotización del proyecto. Te invitamos a leer nuestro **[artículo](/modulos/esenciales/pre-venta/cotizaciones)** ,donde te explicaremos paso a paso, la creación de una cotización.
     - **Editar:** Permite la edición del formulario de la oportunidad de venta
     - **Opciones:** Permite imprimir la oportunidad en formato A4.
 

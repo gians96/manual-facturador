@@ -32,4 +32,4 @@ Mantén actualizado el sistema para garantizar compatibilidad con los cambios no
 
 Con esta configuración, el sistema de facturación estará listo para validar y emitir comprobantes electrónicos sin inconvenientes, cumpliendo con los estándares de SUNAT.
 
-Para mayor información, puedes consultar la documentación en el siguiente **[artículo](https://manual.pro8.uio.la/modulos/complementarios/reportes/general/validador-de-documentos)**.
+Para mayor información, puedes consultar la documentación en el siguiente **[artículo](/modulos/Complementarios/reportes/General/validador-de-documentos)**.

@@ -33,7 +33,7 @@ Se encontrará el formulario del tipo de comprobante y se completarán los sigui
 - **Fecha de vencimiento:** Es el día que se tiene que pagar el comprobante.
 
 **2. Cliente**
-Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.pro8.uio.la/modulos/esenciales/clientes/clientes-creacion-individual)**.
+Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](/modulos/esenciales/clientes/clientes-creacion-individual)**.
 
 **3. Agregar producto**
 Selecciona el botón **Agregar producto** y posteriormente encontrará el formulario de Agregar producto o servicio.
@@ -42,7 +42,7 @@ Selecciona el botón **Agregar producto** y posteriormente encontrará el formul
 
 Se procederá a ingresar los siguientes datos:
 
-- **Producto/Servicio:** Seleccione el producto creado previamente,si no está creado,podrá realizarlo paso a paso,en este **[artículo](https://manual.pro8.uio.la/modulos/esenciales/productos-servicios/productos-creacion-basica)**.
+- **Producto/Servicio:** Seleccione el producto creado previamente,si no está creado,podrá realizarlo paso a paso,en este **[artículo](/modulos/esenciales/productos-servicios/productos-creacion-basica)**.
 - **Cantidad:** Ingresa la cantidad de producto/servicio
 - **Precio unitario:** Deberá colocar la **cantidad de dinero que se anticipa** o adelanta.
 

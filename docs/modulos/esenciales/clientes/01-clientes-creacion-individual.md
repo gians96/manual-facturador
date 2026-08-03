@@ -25,12 +25,12 @@ Se completarán los siguientes datos:
 5. **Días de crédito**
 6. **Código Interno:** Ingresa el código del cliente.
 7. **Nacionalidad:** Selecciona la nacionalidad del cliente.
-8. **Tipo de cliente:** Ingresa la clasificación de su cliente, para conocer cómo crearlo, te invitamos a leer nuestro **[artículo](https://manual.pro8.uio.la/modulos/Esenciales/clientes/Configurar-tipos-de-clientes)**.
+8. **Tipo de cliente:** Ingresa la clasificación de su cliente, para conocer cómo crearlo, te invitamos a leer nuestro **[artículo](/modulos/esenciales/clientes/Configurar-tipos-de-clientes)**.
 9. **Código de barra:** Ingresa el código de barra del cliente.
 10. **Descuento:** Ingresa el descuento que se le aplicará al cliente, se divide en 3 opciones Tiene descuento? Tipo de Descuento y Descuento (Monto).
 
 :::info IMPORTANTE:
-Tener en cuenta los siguientes puntos: [artículo](https://manual.pro8.uio.la/guias-adicionales/APIDesarrollo/Consulta-Api)
+Tener en cuenta los siguientes puntos: [artículo](/guias-adicionales/api-desarrollo/Consulta-Api)
 
 :::
 

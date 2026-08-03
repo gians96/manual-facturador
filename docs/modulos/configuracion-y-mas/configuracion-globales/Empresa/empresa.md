@@ -67,7 +67,7 @@ Después de completar todos los campos, selecciona el botón **Guardar** para ap
 
 - Para realizar impresiónes directamente desde aplicaciones web hacia impresoras conectadas localmente.
 - Esta funcionalidad elimina la necesidad de cuadros de diálogo y configuraciones adicionales, facilitando la impresión automatizada de tickets, etiquetas y otros documentos.
-- Como realizar la configuracion **[Aquí](https://manual.pro8.uio.la/guias-adicionales/Certificados/Generar-Certificado-QZ-Tray)**.
+- Como realizar la configuracion **[Aquí](/devs/custom/impresion-automatica)**.
 
 ## 4. Servicio PSE
 

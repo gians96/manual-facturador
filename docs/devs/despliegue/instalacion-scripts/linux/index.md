@@ -14,7 +14,7 @@ Scripts para instalar y mantener Facturador sobre Docker en hosts Linux nativos.
 ## Instalación producción
 
 ```bash
-curl -O https://manual.pro8.uio.la/install-scripts/linux/install.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/linux/install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
@@ -30,7 +30,7 @@ esta cayendo como tenant en vez de panel administrativo, actualiza y ejecuta:
 
 ```bash
 cd /opt/proyectos                  # o la raiz donde esta nt-suite.pro/
-sudo curl -fSL -o updateSSL.sh https://manual.pro8.uio.la/install-scripts/linux/updateSSL.sh
+sudo curl -fSL -o updateSSL.sh https://manual-facturador.nube-tec.com/install-scripts/linux/updateSSL.sh
 sudo chmod +x updateSSL.sh
 
 sudo ./updateSSL.sh nt-suite.pro --repair-proxy
@@ -189,7 +189,7 @@ docker compose restart fpm_1 supervisor_1 scheduling_1
 Equivalente Linux nativo del `02-install-dev.sh` de Windows Server. Monta el stack con `scripts/local-setup.sh` del propio proyecto: 7 containers, sin proxy ni SSL.
 
 ```bash
-curl -O https://manual.pro8.uio.la/install-scripts/linux/install-local.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/linux/install-local.sh
 chmod +x install-local.sh
 ./install-local.sh          # NO usar sudo; el script pide sudo solo cuando hace falta
 ```
@@ -284,7 +284,7 @@ El script que debes ejecutar en produccion es `update.sh` en modo `prod`, sin `-
 
 ```bash
 cd /var/nt-suite.pro                         # o la carpeta real del proyecto
-curl -fsSLo update.sh https://manual.pro8.uio.la/install-scripts/linux/update.sh
+curl -fsSLo update.sh https://manual-facturador.nube-tec.com/install-scripts/linux/update.sh
 chmod +x update.sh
 sudo ./update.sh prod
 ```
@@ -352,7 +352,7 @@ Usa el script `update.sh` para regenerar todo en un solo paso:
 
 ```bash
 cd /opt/proyectos/mi-empresa.com           # o donde tengas el proyecto
-curl -O https://manual.pro8.uio.la/install-scripts/linux/update.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/linux/update.sh
 chmod +x update.sh
 sudo ./update.sh prod                       # "dev" para desarrollo
 # No uses --skip-backup en produccion si quieres el flujo con backup automatico.

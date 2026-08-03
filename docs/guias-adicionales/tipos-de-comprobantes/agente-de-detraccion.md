@@ -17,13 +17,13 @@ Completa los siguientes datos:
 
 ![Alt text](img/comprobante_detraccion_new_2.png)
 
-- **Bienes y servicios sujetos a detracciones:** Selecciona la opción que más se acomode a sus requerimientos. Para añadir otros Bienes y servicios sujetos a detracciones, sigue este **[artículo](https://manual.pro8.uio.la/modulos/configuracion-y-mas/configuracion-globales/sunat/listado-de-tipos-de-detracciones)**.
+- **Bienes y servicios sujetos a detracciones:** Selecciona la opción que más se acomode a sus requerimientos. Para añadir otros Bienes y servicios sujetos a detracciones, sigue este **[artículo](/modulos/configuracion-y-mas/configuracion-globales/Sunat/Listado-de-tipos-de-detracciones)**.
 - **N° Cta Detracciones:** Se requiere configuarlo, en el módulo **Configuraciones Globales**, la subcategoría **Empresa** selecciona **Empresa**, en **Datos de la empresa** se encuentra el campo a llenar.
 
 ![Alt text](img/comprobante_detraccion_new_3.png)
 
 - **N° Constancia de pago - detracción:** Se puede adjuntar la constancia de pago de la detracción, este campo no es obligatorio.
 - **Monto de la detracción:** Se calcula automaticamente en base al total del comprobante.
-- **Método de pago - Detracción:** Selecciona el método de pago de la detracción. Para añadir otro método de pago, sigue este **[artículo](https://manual.pro8.uio.la/modulos/configuracion-y-mas/configuracion-globales/ingresos-egresos/listado-de-metodos-de-pago)**.
+- **Método de pago - Detracción:** Selecciona el método de pago de la detracción. Para añadir otro método de pago, sigue este **[artículo](/modulos/configuracion-y-mas/configuracion-globales/ingresos-egresos/listado-de-metodos-de-pago)**.
 
 Después de agregar el cliente y el producto respectivo, que debe ser del valor de S/ 700.00 o más. Selecciona el botón **Generar**.

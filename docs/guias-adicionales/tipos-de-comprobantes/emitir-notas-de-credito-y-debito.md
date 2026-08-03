@@ -43,7 +43,7 @@ En caso el motivo sea modificar la cantidad del monto, cantidad del producto o a
 
 Se procederá a ingresar los siguientes datos:
 
-- **Producto/Servicio:** Si el producto se creó previamente, se visualizará en la lista de opciones,si no lo está,podrá crear el producto paso a paso en nuestro **[artículo](https://manual.pro8.uio.la/modulos/esenciales/productos-servicios/productos-creacion-basica)**.
+- **Producto/Servicio:** Si el producto se creó previamente, se visualizará en la lista de opciones,si no lo está,podrá crear el producto paso a paso en nuestro **[artículo](/modulos/esenciales/productos-servicios/productos-creacion-basica)**.
 - **Cantidad:** Ingresa la cantidad de productos
 - **Precio unitario:** Indicará el monto de la nota.
 - **Nombre del producto en PDF:** Ingresa la descripción del producto

@@ -243,7 +243,7 @@ servidor existente:
 ```bash
 mkdir -p /opt/proyectos && cd /opt/proyectos
 
-BASE_URL="https://manual.pro8.uio.la/install-scripts/onpremise"
+BASE_URL="https://manual-facturador.nube-tec.com/install-scripts/onpremise"
 
 for file in install.sh update.sh ssl.sh uninstall.sh set-hosts.sh set-hosts.ps1 README.md ARQUITECTURA-Y-CONTEXTO.md configurar-pcs-host.md; do
     curl -fSL -o "$file" "$BASE_URL/$file"
@@ -421,7 +421,7 @@ ejecutar:
 
 ```bash
 cd /opt/proyectos
-curl -fSL -o ssl.sh https://manual.pro8.uio.la/install-scripts/onpremise/ssl.sh
+curl -fSL -o ssl.sh https://manual-facturador.nube-tec.com/install-scripts/onpremise/ssl.sh
 chmod +x ssl.sh
 
 sudo ./ssl.sh --domain tudominio.pe --repair-proxy

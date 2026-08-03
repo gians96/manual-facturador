@@ -59,5 +59,5 @@ Reinicia la PC antes de instalar de nuevo. No te saltes este paso: es necesario 
 
 ## 6. Volver a instalar BuhoPrinter y probar
 
-- Sigue nuevamente los pasos de la [**Instalación BuhoPrinter**](https://manual.pro8.uio.la/guias-adicionales/buho-printer/buho-printer-manual#instalación-buhoprinter-en-la-computadora-de-la-impresora) de este manual para instalarlo desde cero
-- Después entra al sistema, vuelve a hacer clic en "Verificar y actualizar" (como se indica en la [**Configuración de impresoras**](https://manual.pro8.uio.la/guias-adicionales/buho-printer/buho-printer-manual#configurar-las-impresoras-en-el-sistema)) y realiza una impresión de prueba para confirmar que todo quedó funcionando correctamente
+- Sigue nuevamente los pasos de la [**Instalación BuhoPrinter**](/guias-adicionales/buho-printer/buho-printer-manual#instalación-buhoprinter-en-la-computadora-de-la-impresora) de este manual para instalarlo desde cero
+- Después entra al sistema, vuelve a hacer clic en "Verificar y actualizar" (como se indica en la [**Configuración de impresoras**](/guias-adicionales/buho-printer/buho-printer-manual#configurar-las-impresoras-en-el-sistema)) y realiza una impresión de prueba para confirmar que todo quedó funcionando correctamente

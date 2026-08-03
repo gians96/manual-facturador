@@ -9,7 +9,7 @@ title: Comprobante con Descuento Global
 Los descuentos globales son reducciones de precio aplicadas a un conjunto de productos o a una transacción completa en lugar de artículos individuales, utilizados en el comercio para incentivar compras o liquidar inventario.
 
 :::info IMPORTANTE
-Es importante leer este [artículo](https://manual.pro8.uio.la/modulos/esenciales/ventas/nuevo-comprobante) antes de seguir los siguientes pasos.
+Es importante leer este [artículo](/modulos/esenciales/ventas/nuevo-comprobante) antes de seguir los siguientes pasos.
 :::
 
 Ingrese todos los productos, luego puede activar el descuento Global, puede agregar el descuento por monto o por porcentaje.

@@ -20,7 +20,7 @@ PHP/Laravel lee miles de archivos por request. En NTFS (C:\) vía 9P, el TTFB es
 
 ```powershell
 # Descargar el script
-Invoke-WebRequest -Uri "https://manual.pro8.uio.la/install-scripts/windows-server/01-setup-wsl.ps1" -OutFile "01-setup-wsl.ps1"
+Invoke-WebRequest -Uri "https://manual-facturador.nube-tec.com/install-scripts/windows-server/01-setup-wsl.ps1" -OutFile "01-setup-wsl.ps1"
 
 # Ejecutar
 powershell -ExecutionPolicy Bypass -File 01-setup-wsl.ps1
@@ -55,7 +55,7 @@ wsl
 #### Opción A: Producción (dominio, proxy, SSL)
 
 ```bash
-curl -O https://manual.pro8.uio.la/install-scripts/windows-server/02-install-prod.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/windows-server/02-install-prod.sh
 chmod +x 02-install-prod.sh
 sudo ./02-install-prod.sh
 ```
@@ -80,7 +80,7 @@ Incluye:
 #### Opción B: Desarrollo (local, sin proxy ni SSL)
 
 ```bash
-curl -O https://manual.pro8.uio.la/install-scripts/windows-server/02-install-dev.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/windows-server/02-install-dev.sh
 chmod +x 02-install-dev.sh
 ./02-install-dev.sh
 ```
@@ -130,7 +130,7 @@ continua con Composer, Bun y migraciones.
 
 ```bash
 cd ~/proyectos/mi-empresa.com
-curl -O https://manual.pro8.uio.la/install-scripts/windows-server/03-update.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/windows-server/03-update.sh
 chmod +x 03-update.sh
 ./03-update.sh prod
 ./03-update.sh prod --skip-backup   # solo si ya hiciste backup manual

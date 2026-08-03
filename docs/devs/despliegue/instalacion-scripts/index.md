@@ -28,7 +28,7 @@ facturador-pro/
 
 ```sh
 cd /var/
-curl -O https://manual.pro8.uio.la/install-scripts/linux/install.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/linux/install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
@@ -48,7 +48,7 @@ sudo ./install.sh
 
 ```sh
 cd /var/
-curl -O https://manual.pro8.uio.la/install-scripts/linux/updateSSL.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/linux/updateSSL.sh
 chmod +x updateSSL.sh
 ./updateSSL.sh mi-dominio.com
 ```
@@ -63,12 +63,12 @@ Resumen rápido:
 
 ```powershell
 # Fase 1 — PowerShell como Administrador
-Invoke-WebRequest -Uri "https://manual.pro8.uio.la/install-scripts/windows-server/01-setup-wsl.ps1" -OutFile "01-setup-wsl.ps1"
+Invoke-WebRequest -Uri "https://manual-facturador.nube-tec.com/install-scripts/windows-server/01-setup-wsl.ps1" -OutFile "01-setup-wsl.ps1"
 powershell -ExecutionPolicy Bypass -File 01-setup-wsl.ps1
 
 # Fase 2 — Dentro de WSL
 wsl
-curl -O https://manual.pro8.uio.la/install-scripts/windows-server/02-install-prod.sh
+curl -O https://manual-facturador.nube-tec.com/install-scripts/windows-server/02-install-prod.sh
 chmod +x 02-install-prod.sh
 sudo ./02-install-prod.sh
 ```

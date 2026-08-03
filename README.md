@@ -4,7 +4,7 @@ Este repositorio contiene la documentación oficial y el manual de usuario del *
 
 ## 🌐 Sitio En Vivo
 
-Puedes acceder al manual desplegado en: [https://manual.pro8.uio.la](https://manual.pro8.uio.la)
+Puedes acceder al manual desplegado en: [https://manual-facturador.nube-tec.com](https://manual-facturador.nube-tec.com)
 
 ---
 

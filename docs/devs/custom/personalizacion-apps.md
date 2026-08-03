@@ -79,14 +79,14 @@ Una vez realizados los cambios:
 <DocsCards>
   <DocsCard 
     header="Guía Instalación Mozo" 
-    href="https://manual.pro8.uio.la/devs/despliegue/plataformas/mozo-cpanel"
+    href="/devs/despliegue/plataformas/mozo-cpanel"
   >
     <p>Manual completo para desplegar Mozo en cPanel.</p>
   </DocsCard>
 
 <DocsCard
 header="Guía Instalación VendeYA"
-href="https://manual.pro8.uio.la/devs/despliegue/plataformas/vendeya-cpanel"
+href="/devs/despliegue/plataformas/vendeya-cpanel"
 
 >
 
