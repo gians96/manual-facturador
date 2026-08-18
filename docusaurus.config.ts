@@ -24,8 +24,8 @@ const config: Config = {
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: "buhola", // Usually your GitHub org/user name.
-  projectName: "pro8", // Usually your repo name.
+  organizationName: "gians96", // Usually your GitHub org/user name.
+  projectName: "manual-facturador", // Usually your repo name.
 
   onBrokenLinks: "throw",
   clientModules: [require.resolve("./src/js/embed-mode.js")],
@@ -50,7 +50,7 @@ const config: Config = {
           showLastUpdateAuthor: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: "https://github.com/buhola/pro8/tree/main/",
+          editUrl: "https://github.com/gians96/manual-facturador/tree/main/",
         },
         /*blog: {
           showReadingTime: true,

@@ -24,7 +24,7 @@ sudo su
 2. Ejecutar este comando en la terminal
 
 ```bash
-curl https://git.buho.la/-/snippets/66/raw/main/install.sh -o install.sh && chmod +x install.sh
+curl -fSL -o install.sh https://manual-facturador.nube-tec.com/install-scripts/linux/install.sh && chmod +x install.sh
 ```
 
 3.  Ejecutar el script
