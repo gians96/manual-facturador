@@ -60,7 +60,7 @@ La pantalla del POS se divide en **dos secciones principales**:
 
   ![alt text](img/mozo_pos_7.png)
 
-  Recuerde que estas se configuraron en el paso de **Mozo: Configuración Previa**, puede verificarlo en el siguiente [articulo](https://manual.uio.la/Pro7/Mozo.pe/mozo_config_previa#-notas-r%C3%A1pidas)
+  Recuerde que estas se configuraron en el paso de **Mozo: Configuración Previa**, puede verificarlo en el siguiente [articulo](./configuracion-previa/notas-rapidas.md)
 
   ![alt text](img/mozo_pos_8.png)
 

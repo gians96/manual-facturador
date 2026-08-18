@@ -547,8 +547,8 @@ Nuestro equipo de soporte mejorado está disponible para asistirte en:
 
 Para más información sobre funcionalidades específicas, consulta nuestra documentación completa:
 
-- **Manual de Actualización**: [Proceso paso a paso desde 7.0 a 7.1 o 7.2](https://manual.uio.la/Pro7/Devs/instalacion/Upgrade-Docs)
+- **Manual de Actualización**: [Proceso paso a paso desde 7.0 a 7.1 o 7.2](../../../devs/despliegue/mantenimiento/06-Upgrade-Docs.md)
 - **Guía de Gestión de Pagos**: Configuración del módulo completo
-- **Tutorial de SSL Automático**: [Configuración con Cloudflare](https://manual.uio.la/Pro7/Devs/instalacion/configuracion_ssl_cloudflare)
+- **Tutorial de SSL Automático**: [Configuración con Cloudflare](../../../devs/despliegue/seguridad/ssl-cloudflare.md)
 - **Documentación de Consignados**: Uso en GRE y comprobantes
-- **API Documentation**: [Endpoint de control de cuentas](https://manual.uio.la/Pro7/admin)
+- **API Documentation**: [Endpoint de control de cuentas](../../../devs/api/admin/locked-tenant/locked-tenant.api.mdx)

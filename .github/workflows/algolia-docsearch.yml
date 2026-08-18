@@ -32,4 +32,4 @@ jobs:
           crawler-api-key: ${{ secrets.CRAWLER_API_KEY }}
           algolia-app-id: ${{ secrets.ALGOLIA_APP_ID }}
           algolia-api-key: ${{ secrets.ALGOLIA_API_KEY }}
-          site-url: 'https://manual.pro8.uio.la'
+          site-url: 'https://manual-facturador.nube-tec.com'

@@ -26,7 +26,7 @@ Complete los siguientes campos:
 
 ![Alt text](img/proveedores10.jpg)
 
-6. **Producto/Servicio:** Selecciona el producto o servicio, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/productos-servicios/Productos-Creacion-avanzada).**
+6. **Producto/Servicio:** Selecciona el producto o servicio, si no está creado, podrá realizarlo paso a paso en este **[artículo](../productos-servicios/02-Productos-Creacion-avanzada.md).**
 
 Luego presione el botón **Agregar**, observará los productos añadidos en el comprobante.
 

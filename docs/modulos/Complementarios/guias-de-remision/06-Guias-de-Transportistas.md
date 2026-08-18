@@ -44,7 +44,7 @@ Tendrá que rellenar los siguientes campos:
 
 ![Alt text](img/remision_agregar_produc_2.jpg)
 
-   - **1. Producto:** Ingresa el nombre del producto en la **Descripción**. Si necesitas crear uno nuevo, selecciona el botón **+Nuevo** y sigue los pasos en este **[artículo](https://manual.uio.la/Pro7/Modulos/Esenciales/productos-servicios/Productos-Creacion-basica).**
+   - **1. Producto:** Ingresa el nombre del producto en la **Descripción**. Si necesitas crear uno nuevo, selecciona el botón **+Nuevo** y sigue los pasos en este **[artículo](../../esenciales/productos-servicios/03-productos-creacion-basica.md).**
    - **2. Cantidad:** Ingresa la cantidad del producto.
 
 2. Una vez completado, selecciona el botón **Agregar** y luego **Generar**.

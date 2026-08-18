@@ -1,7 +1,7 @@
 {
   "index_name": "Facturador",
-  "start_urls": ["https://manual.pro8.uio.la/"],
-  "sitemap_urls": ["https://manual.pro8.uio.la/sitemap.xml"],
+  "start_urls": ["https://manual-facturador.nube-tec.com/"],
+  "sitemap_urls": ["https://manual-facturador.nube-tec.com/sitemap.xml"],
   "sitemap_alternate_links": true,
   "stop_urls": [],
   "selectors": {

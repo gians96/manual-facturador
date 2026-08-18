@@ -19,13 +19,13 @@ info:
 
   version: 1.0.11
 servers:
-  - url: https://empresa1.demo3pro6.ibu.pe
+  - url: https://tu-dominio.com
 tags:
   - name: api
     description: Generar Cotización
     externalDocs:
       description: Más
-      url: https://demo.pro5.fastura.app
+      url: https://tu-dominio.com
 paths:
   /api/document/search-items:
     get:
@@ -35,7 +35,7 @@ paths:
       description: |  
         ***Ejemplo:***  
         - **Método:** GET  
-        - **URL:** https://empresa1.demo3pro6.ibu.pe/api/document/search-items 
+        - **URL:** https://tu-dominio.com/api/document/search-items 
         - **TOKEN:** HOHYgwd4atPalTxqi2IIspythpLAU7eP239oByfjk9VuveiOpfUTm4Yg0Szt
       operationId: listarProductos
       responses:
@@ -55,7 +55,7 @@ paths:
         '400':
           description: Invalid status value
       security:
-        - fastura_auth:
+        - facturador_auth:
             - write:pets
             - read:pets
           
@@ -211,7 +211,7 @@ components:
                     example: -12
                   image:
                     type: string
-                    example: "https://demo.fastura.app/logo/imagen-no-disponible.jpg"
+                    example: "https://tu-dominio.com/logo/imagen-no-disponible.jpg"
                   warehouses:
                     type: array
                     items:
@@ -246,11 +246,11 @@ components:
             items:
               $ref: '#/components/schemas/Response'
   securitySchemes:
-    fastura_auth:
+    facturador_auth:
       type: oauth2
       flows:
         implicit:
-          authorizationUrl: https://empresa1.demo3pro6.ibu.pe
+          authorizationUrl: https://tu-dominio.com
           scopes:
             write: Modificar...
             read: Leer..

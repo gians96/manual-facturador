@@ -54,12 +54,12 @@ Este listado lo pueden ubicar en el módulo **Configuración** en la sección Su
 :::danger IMPORTANTE:
 - Solo los campos mencionados son obligatorios.
 
-- Si en el archivo desea ingresar sus **[categorías](https://manual.uio.la/Pro7/modulos/Esenciales/productos-servicios/Gestionar-mis-categorias)** y **[marcas](https://manual.uio.la/Pro7/modulos/Esenciales/productos-servicios/Gestionar-mis-marcas)** debe tener en cuenta que en el sistema tiene que estar previamente agregadas.
+- Si en el archivo desea ingresar sus **[categorías](./10-Gestionar-mis-categorias.md)** y **[marcas](./11-Gestionar-mis-marcas.md)** debe tener en cuenta que en el sistema tiene que estar previamente agregadas.
 :::
 
 Una vez rellenado el archivo excel, deberá seleccionar en que **almacén** desea importar los productos, después selecciona el botón **Selecciona un archivo (xlsx)**,para subir el archivo pdf correspondiente.
 
-Finalmente selecciona el botón Procesar, se observará el **[Listado de productos](https://manual.uio.la/Pro7/modulos/Esenciales/productos-servicios/Lista-de-productos)**, donde podrá visualizar su producto agregado.
+Finalmente selecciona el botón Procesar, se observará el **[Listado de productos](./01-Lista-de-productos.md)**, donde podrá visualizar su producto agregado.
 
 :::danger IMPORTANTE:
 Si va realizar la importación dos o más veces, aumentará el stock de los productos que se encuentran en sistema.

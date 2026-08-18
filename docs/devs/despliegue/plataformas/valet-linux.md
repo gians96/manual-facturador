@@ -166,7 +166,7 @@ valet park
 Una vez ubicado en `/code` y con acceso al repositorio:
 
 ```bash
-git clone https://git.buho.la/facturaloperu/facturador/pro8.it
+git clone https://gitlab.com/gians96/pro-8.git
 cd pro8
 ```
 

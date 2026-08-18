@@ -9,12 +9,12 @@ info:
   version: 1.0.0
   contact:
     name: Soporte API
-    url: https://fact01.uio.la
+    url: https://tu-dominio.com
 
 servers:
-  - url: https://fact01.uio.la/api
+  - url: https://tu-dominio.com/api
     description: Servidor de producción
-  - url: https://empresa1.demo3pro6.ibu.pe/api
+  - url: https://tu-dominio.com/api
     description: Servidor de demo
 
 security:
@@ -101,7 +101,7 @@ paths:
         - lang: javascript
           label: Fetch
           source: |
-            const url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            const url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             const data = {
@@ -125,7 +125,7 @@ paths:
         - lang: javascript
           label: jQuery
           source: |
-            const url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            const url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $.ajax({
@@ -152,7 +152,7 @@ paths:
           label: XHR
           source: |
             const xhr = new XMLHttpRequest();
-            const url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            const url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             xhr.open('POST', url, true);
@@ -180,7 +180,7 @@ paths:
           source: |
             const axios = require('axios');
             
-            const url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            const url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             const data = {
@@ -214,7 +214,7 @@ paths:
             });
             
             const options = {
-              hostname: 'fact01.uio.la',
+              hostname: 'tu-dominio.com',
               port: 443,
               path: '/api/reseller/lockedTenant',
               method: 'POST',
@@ -251,7 +251,7 @@ paths:
           source: |
             const request = require('request');
             
-            const url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            const url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             const options = {
@@ -282,7 +282,7 @@ paths:
           source: |
             const unirest = require('unirest');
             
-            const url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            const url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             unirest.post(url)
@@ -304,7 +304,7 @@ paths:
           label: cURL
           source: |
             <?php
-            $url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            $url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             $token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $data = [
@@ -339,7 +339,7 @@ paths:
             use GuzzleHttp\Client;
             
             $client = new Client();
-            $url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            $url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             $token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             try {
@@ -368,7 +368,7 @@ paths:
             <?php
             require_once 'HTTP/Request2.php';
             
-            $url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            $url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             $token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $request = new HTTP_Request2($url, HTTP_Request2::METHOD_POST);
@@ -398,7 +398,7 @@ paths:
           label: pecl_http
           source: |
             <?php
-            $url = 'https://fact01.uio.la/api/reseller/lockedTenant';
+            $url = 'https://tu-dominio.com/api/reseller/lockedTenant';
             $token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $data = [
@@ -429,7 +429,7 @@ paths:
             import http.client
             import json
             
-            conn = http.client.HTTPSConnection("fact01.uio.la")
+            conn = http.client.HTTPSConnection("tu-dominio.com")
             
             token = "JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE"
             
@@ -459,7 +459,7 @@ paths:
           source: |
             import requests
             
-            url = "https://fact01.uio.la/api/reseller/lockedTenant"
+            url = "https://tu-dominio.com/api/reseller/lockedTenant"
             token = "JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE"
             
             headers = {
@@ -481,7 +481,7 @@ paths:
         - lang: shell
           label: cURL
           source: |
-            curl -X POST https://fact01.uio.la/api/reseller/lockedTenant \
+            curl -X POST https://tu-dominio.com/api/reseller/lockedTenant \
               -H "Authorization: Bearer JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \

@@ -31,4 +31,4 @@ Una vez que hayas subido tu certificado digital, deberás verificar que esté co
 
 ## Subir certificado al sistema de facturación
 
-Siga los pasos del siguiente link: **[https://buho.la/ayuda/productos/factura-facil/modulo-configuracion/empresa](https://buho.la/ayuda/productos/factura-facil/modulo-configuracion/empresa)**
+Siga los pasos del siguiente artículo: **[Configuraciones Globales - Empresa](../../modulos/configuracion-y-mas/configuracion-globales/Empresa/empresa.md)**

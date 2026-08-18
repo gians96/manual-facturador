@@ -160,7 +160,7 @@ Debes tener activada la **verificación en dos pasos** en tu cuenta de Google pa
 4. Copia la contraseña generada y pégala en el campo correspondiente
 
 :::tip Documentación Detallada
-Para más información sobre configuración SMTP segura, consulta el [manual de configuración SMTP](https://manual.uio.la/ProX/Guias-Adicionales/configuracion-smtp-segura#1-configuraci%C3%B3n-del-protocolo-de-seguridad)
+Para más información sobre configuración SMTP segura, consulta la [Configuración Segura de SMTP](../../guias-adicionales/Configuracion/configuracion-smtp-segura.md)
 :::
 
 ---

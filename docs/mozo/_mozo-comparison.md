@@ -55,7 +55,7 @@ href="#mozo-compilado-versión-instalable"
 | **Tipo de Usuario** | ❌ No puede usar el tipo de usuario "Mozo"           | ✅ Puede usar mozos como usuarios                       |
 | **Personalización** | ❌ No es personalizable                              | ✅ Totalmente personalizable (imágenes, logos, colores) |
 | **Limitaciones**    | ⚠️ Funcionalidad limitada                            | ✅ Sin limitaciones de funcionalidad                    |
-| **Documentación**   | 📚 [Manual Mozo.pe](https://manual.uio.la/Pro7/mozo) | 📚 [Manual Mozo.pe](https://manual.uio.la/Pro7/mozo)    |
+| **Documentación**   | 📚 [Manual Mozo](./introduccion.md)                   | 📚 [Manual Mozo](./introduccion.md)                     |
 
 ---
 

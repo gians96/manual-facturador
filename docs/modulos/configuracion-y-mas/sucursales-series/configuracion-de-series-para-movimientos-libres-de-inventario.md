@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Series para Movimientos de Inventario
 
-Debido a nuevas actualizaciones, se deben configurar estas series adicionales en los establecimientos creados partir de diciembre 2022, para que se permita **[los movimientos libres de inventario:](https://manual.uio.la/Pro7/modulos/Esenciales/inventario/Movimientos-libres-de-inventario)**
+Debido a nuevas actualizaciones, se deben configurar estas series adicionales en los establecimientos creados partir de diciembre 2022, para que se permita **[los movimientos libres de inventario:](../../esenciales/inventario/01-Movimientos-libres-de-inventario.md)**
 
 ![alt text](img/sucursales_series_2.png)
 

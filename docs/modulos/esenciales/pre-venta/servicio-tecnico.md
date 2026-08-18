@@ -23,7 +23,7 @@ En esta sección podrá empezar con la creación de la ficha de soporte técnico
 
 Se encontrará el formulario del tipo de comprobante y se completarán los siguientes datos:
 
-**1. Cliente:** Deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/clientes/Clientes-creacion-individual)**.
+**1. Cliente:** Deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](../clientes/01-clientes-creacion-individual.md)**.
 
 **2. Celular:** Ingrese el número de teléfono del cliente.
 

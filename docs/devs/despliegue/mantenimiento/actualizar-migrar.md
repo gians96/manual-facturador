@@ -98,7 +98,7 @@ git remote -v
 Si la URL no es correcta, actualízala:
 
 ```bash
-git remote set-url origin https://git.buho.la/facturaloperu/facturador/pro8.git
+git remote set-url origin https://gitlab.com/gians96/pro-8.git
 ```
 
 ---
@@ -163,7 +163,7 @@ Este manual incluye:
 ### 4.1 Cambiar repositorio remoto
 
 ```bash
-git remote set-url origin https://git.buho.la/facturaloperu/facturador/pro8.git
+git remote set-url origin https://gitlab.com/gians96/pro-8.git
 ```
 
 ### 4.2 Verificar configuración

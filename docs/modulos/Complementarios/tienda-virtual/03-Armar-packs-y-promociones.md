@@ -31,7 +31,7 @@ Posteriormente selecciona el botón **Agregar producto** y se mostrará el sigui
 
 Se procederá a ingresar los siguientes datos:
 
-- **Producto:** Selecciona todos los productos creados previamente, que conformarán el paquete promocional,si los productos no estan creados,podrá realizarlo paso a paso,en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/productos-servicios/Productos-Creacion-basica)**.
+- **Producto:** Selecciona todos los productos creados previamente, que conformarán el paquete promocional,si los productos no estan creados,podrá realizarlo paso a paso,en este **[artículo](../../esenciales/productos-servicios/03-productos-creacion-basica.md)**.
 - **Cantidad:** Ingresa la cantidad de los productos.
 
 **3. Campos adicionales:**

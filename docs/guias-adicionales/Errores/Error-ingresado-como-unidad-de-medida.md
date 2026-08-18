@@ -6,6 +6,6 @@ En este artículo explayaremos acerca del siguiente error:
 
 ![Alt text](../img/Preguntafrecuente30.jpg)
 
-El error indica que la unidad ingresada al comprobante no es válido para **SUNAT**, puede observar todas las unidades admitidas a SUNAT en el siguiente **[artículo](https://fastura.github.io/documentacion/configuracion/Sunat-listado-de-unidades)**.
+El error indica que la unidad ingresada al comprobante no es válido para **SUNAT**, puede observar todas las unidades admitidas a SUNAT en el siguiente **[artículo](../../modulos/configuracion-y-mas/configuracion-globales/Sunat/listado-de-unidades.md)**.
 
-Si observa que la unidad de medida se encuentra en SUNAT, pero no en el sistema de facturación puede agregarla siguiendo el siguiente artículo: **[https://buho.la/ayuda/productos/factura-facil/modulo-configuracion/sunat-listado-de-unidades](https://buho.la/ayuda/productos/factura-facil/modulo-configuracion/sunat-listado-de-unidades)**
+Si observa que la unidad de medida se encuentra en SUNAT, pero no en el sistema de facturación, puede agregarla ingresando a **Configuración y más**, luego **Configuraciones Globales** y, a continuación, **Listado de tipos de unidades**.

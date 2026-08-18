@@ -14,11 +14,5 @@ Para probar la demo del sistema, puedes acceder a través del siguiente enlace:
 
 ![Iniciar Sesion](img/iniciar-secion.png)
 
-https://jugueria.pro7.uio.la
-
-**Correo:** jugueria@gmail.com  
-
-**Contraseña:** 123456
-
 Es importante mencionar que VendeYa.pe está diseñado para operaciones rápidas. Esta plataforma es ideal para tiendas de conveniencia, cafeterías, kioscos y pequeños comercios con productos de rotación rápida.
 

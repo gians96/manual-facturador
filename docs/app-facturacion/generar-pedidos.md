@@ -14,7 +14,7 @@ En este artículo te ayudaremos a generar pedidos de venta desde la **App Factú
 
 ![Alt text](img/pedido1.jpg)
 
-- **Cliente:** Selecciona **CLIENTE** y aparecerá una lista de todos sus clientes ya registrados, elija al que le realizará la factura. En caso desee crear un nuevo cliente, en la parte superior derecha selecciona el **"+" Nuevo** ,y sigue los pasos en este **[artículo](https://fastura.github.io/documentacion/clientes/Clientes-creacion-individual)**.
+- **Cliente:** Selecciona **CLIENTE** y aparecerá una lista de todos sus clientes ya registrados, elija al que le realizará la factura. En caso desee crear un nuevo cliente, en la parte superior derecha selecciona el **"+" Nuevo** ,y sigue los pasos en este **[artículo](./clientes.md)**.
 
 - **Fecha de Vencimiento:** Selecciona la Fecha de Vencimiento haciendo clic en el campo correspondiente. Aparecerá un calendario para elegir la fecha límite en la que el cliente deberá realizar el pago. Si necesitas modificar la fecha más adelante, asegúrate de que se coordine con el cliente y el área administrativa.
 

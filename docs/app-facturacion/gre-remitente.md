@@ -57,7 +57,7 @@ Haz clic en **+ Documento Relacionado** para vincular documentos adicionales, co
 
 ## 6. Cliente y Punto de Llegada
 
-- **Cliente:** Selecciona el cliente desde la lista desplegable. Si deseas crear un nuevo cliente, selecciona el **"+"** en la parte superior, mas informacion de la creacion de un cliente en el siguiente **[articulo](https://fastura.github.io/documentacion/app-para-facturacion/Como-crear-cliente)**.
+- **Cliente:** Selecciona el cliente desde la lista desplegable. Si deseas crear un nuevo cliente, selecciona el **"+"** en la parte superior, mas informacion de la creacion de un cliente en el siguiente **[articulo](./clientes.md)**.
 - **Punto de Llegada:** Elige el destino final del traslado.
 
 :::danger IMPORTANTE:

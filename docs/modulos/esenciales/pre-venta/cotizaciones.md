@@ -17,7 +17,7 @@ Ingresa al **módulo de Pre Venta** y luego selecciona la subcategoría Cotizaci
 
 ![Alt text](img/coti2.jpg)
 
-**1. Cliente:** Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/clientes/Clientes-creacion-individual)**.
+**1. Cliente:** Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](../clientes/01-clientes-creacion-individual.md)**.
 
 **2. Fec. Emisión:** La fecha en la que se realiza la cotización.
 
@@ -29,7 +29,7 @@ Ingresa al **módulo de Pre Venta** y luego selecciona la subcategoría Cotizaci
 
 **6. Tipo de cambio:** El tipo de cambio varía según la SUNAT.
 
-**7. Agregar productos:** Luego deberá escoger el producto para la creación de la cotización, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/productos-servicios/Productos-Creacion-basica)**.
+**7. Agregar productos:** Luego deberá escoger el producto para la creación de la cotización, si no está creado, podrá realizarlo paso a paso en este **[artículo](../productos-servicios/03-productos-creacion-basica.md)**.
 
 Después selecciona el botón Generar y aparecerá una ventana,indicando que la cotización ha sido aceptada.
 
@@ -120,5 +120,5 @@ Se encontrará una sección de botones, con las siguientes funciones
 
 - **Guía:** Genera una guía.
 
-- **Generar contrato:** Podrá generar contrato de la cotización, podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/Preventa/Contratos).**
-- **Generar Pedido:** Podrá generar pedido,podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/Preventa/Pedidos)**.
+- **Generar contrato:** Podrá generar contrato de la cotización, podrá realizarlo paso a paso en este **[artículo](./contratos.md).**
+- **Generar Pedido:** Podrá generar pedido,podrá realizarlo paso a paso en este **[artículo](./pedidos.md)**.

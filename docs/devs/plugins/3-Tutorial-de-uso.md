@@ -110,7 +110,7 @@ Al **confirmar** el pedido, WooCommerce registra la venta con los datos proporci
 Después de realizar el pedido, se muestra la página de **“Pedido recibido”**:  
 - Indica que la compra ha sido procesada.  
 - Muestra el detalle del producto adquirido, total pagado y dirección de facturación.  
-- Este comprobante (Boleta/Factura) quedará registrado en el sistema FacturaloPeru según la configuración previa.
+- Este comprobante (Boleta/Factura) quedará registrado en el sistema de facturación según la configuración previa.
 
 ---
 

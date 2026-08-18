@@ -80,7 +80,7 @@ Bienvenido(a) al sistema de facturación. Esta guía te llevará paso a paso par
 **Datos importantes:** Nombre, precio, tipo de IGV, código, stock (si aplica)
 
 :::note
-Para más información acerca de la gestión de productos, puede revisar la sección correspondiente del _[manual](https://manual.uio.la/Pro7/productos-servicios)_.
+Para más información acerca de la gestión de productos, puede revisar la sección de _[Lista de productos](../../modulos/esenciales/productos-servicios/01-Lista-de-productos.md)_.
 :::
 
 ## 👥 Paso 6: Registrar tus Clientes
@@ -95,7 +95,7 @@ Para más información acerca de la gestión de productos, puede revisar la secc
 **Datos importantes:** RUC/DNI, razón social, dirección, correo electrónico
 
 :::note
-Para más información acerca de la gestión de clientes, puede revisar la sección correspondiente del _[manual](https://manual.uio.la/Pro7/clientes)_.
+Para más información acerca de la gestión de clientes, puede revisar la sección de _[Creación individual de clientes](../../modulos/esenciales/clientes/01-clientes-creacion-individual.md)_.
 :::
 
 ## 🏢 Paso 7: Configurar Establecimientos y Series
@@ -108,7 +108,7 @@ Para más información acerca de la gestión de clientes, puede revisar la secci
 2. Agrega las series correspondientes a cada establecimiento
 
 :::note
-Para más información acerca de la gestión de establecimientos (sucursales), puede revisar la sección correspondiente del _[manual](https://manual.uio.la/Pro7/usuarios-locales-series)_.
+Para más información acerca de la gestión de establecimientos (sucursales), puede revisar la sección de _[Sucursales & series](../../modulos/configuracion-y-mas/sucursales-series/crear-sucursales-y-gestionar-series.md)_.
 :::
 
 **🔄 Migración desde otro proveedor:**

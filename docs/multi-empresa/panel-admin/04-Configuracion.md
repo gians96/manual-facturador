@@ -32,8 +32,6 @@ Al ser un cliente nuestro, esta sección ya está configurada y no necesita real
 
 El cliente final tiene la opción de usar la aplicación móvil que por el momento solo está disponible para la versión de Android; es un archivo APK, que se descarga y se instala en el teléfono.
 
-Descárgala con este enlace: **[https://buho.la/fastura.apk](https://buho.la/fastura.apk)**
-
 :::info IMPORTANTE
 
 Esta opción le da la ventaja de poder poner cualquier URL, para que su cliente solo haga click y pueda descargarlo.

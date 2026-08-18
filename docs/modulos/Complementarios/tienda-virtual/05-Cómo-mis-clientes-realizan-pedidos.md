@@ -66,4 +66,4 @@ En esta sección se visualizará el total de la compra y posteriormente,  para r
 
 ![Alt text](img/9_realizarpedidos.jpg)
 
-Para aprender a gestionar las verificaciones de pago en los pedidos realizados por el cliente, te invitamos a leer nuestro artículo **[Gestionar pedido](https://fastura.github.io/documentacion/tienda-virtual/Gestionar-Pedidos)**.
+Para aprender a gestionar las verificaciones de pago en los pedidos realizados por el cliente, te invitamos a leer nuestro artículo **[Gestionar pedido](./01-Gestionar-Pedidos.md)**.

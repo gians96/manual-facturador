@@ -9,7 +9,7 @@ info:
 servers:
   - url: https://tu-dominio.com
     description: Servidor de Producción
-  - url: https://empresa.pro8.uio.la
+  - url: https://tu-dominio.com
     description: Servidor de Demostración
 paths:
   /api/inventory/transaction:
@@ -2730,7 +2730,7 @@ paths:
                       brand: CIELO
                       category: CIELO
                       stock: -145
-                      image: https://demo.facturalo.pro/logo/imagen-no-disponible.jpg
+                      image: https://tu-dominio.com/logo/imagen-no-disponible.jpg
                       warehouses:
                         - warehouse_description: Almacén Oficina Principal
                           stock: '-145.0000'

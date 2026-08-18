@@ -5,14 +5,6 @@ sidebar_position: 9
 
 # 🚀 Instalación de VendeYA en cPanel
 
-> ⚠️ **IMPORTANTE - Migración de Servidor GitLab**
-> 
-> **Hemos migrado nuestro servidor de GitLab.** Si aún no has cambiado la URL del sistema (del git para descargar los cambios, etc.), te sugerimos verificar primero.
->
-> **Nueva URL:** `git.buho.la`
->
-> Para más información sobre cómo actualizar la URL del repositorio, consulta nuestra **[guía de actualización y migración](https://manual.uio.la/Pro7/devs/instalacion/Actualizar-Migrar)**.
-
 ## Requisitos Previos
 
 - ✅ **[Compilado VendeYa](https://git.buho.la/vendeya/compilado)** disponible
@@ -38,16 +30,15 @@ sidebar_position: 9
 ### 2. Descarga de VendeYA Compilado
 
 #### 2.1 Acceso al Repositorio
-1. **Ingresar** a su perfil en **https://git.buho.la/**
-2. **Localizar** el proyecto `VendeYA/Compilado`
-3. **Descargar** el código compilado:
+1. **Ingresar** al repositorio **https://git.buho.la/vendeya/compilado**
+2. **Descargar** el código compilado:
    - Hacer clic en el botón azul **"Code"**
    - Seleccionar **"Download source code"**
    - Elegir el formato **.zip** para la descarga
 
 ![Descargar VendeYA](img/descargar-vendeya.png)
 
-4. **Guardar** el archivo descargado en una carpeta de fácil acceso en su computadora
+3. **Guardar** el archivo descargado en una carpeta de fácil acceso en su computadora
 
 ### 3. Subida de Archivos al Servidor
 

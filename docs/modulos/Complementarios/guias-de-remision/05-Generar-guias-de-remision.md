@@ -1,7 +1,7 @@
 # Generar Guías de Remisión
 
 :::danger IMPORTANTE:
-Por disposición de SUNAT con respecto a las guías de remisión, es necesario agregar tokens de conexión adicionales. Tenemos una guía preparada en este **[artículo](https://manual.uio.la/Pro7/Modulos/Complementarios/guias-de-remision/Configuracion-previa-guia-remision)**.
+Por disposición de SUNAT con respecto a las guías de remisión, es necesario agregar tokens de conexión adicionales. Tenemos una guía preparada en este **[artículo](./01-Configuracion-previa-guia-remision.md)**.
 :::
 
 En este artículo te enseñaremos cómo generar tus guías de remisión. Sigue estos pasos para realizarlo:
@@ -21,7 +21,7 @@ Tendrás que rellenar los siguientes campos necesarios:
 - **2. Serie:** Selecciona la serie correspondiente.
 - **3. Fecha de emisión:** Ingresa la fecha de emisión.
 - **4. Fecha de traslado:** Ingresa la fecha de traslado.
-- **5. Cliente:** Selecciona el cliente, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/Modulos/Esenciales/clientes/Clientes-creacion-individual)** artículo, también puede crear un nuevo cliente seleccionando el botón **+Nuevo.**
+- **5. Cliente:** Selecciona el cliente, si no está creado, podrá realizarlo paso a paso en este **[artículo](../../esenciales/clientes/01-clientes-creacion-individual.md)**, también puede crear un nuevo cliente seleccionando el botón **+Nuevo.**
 - **6. Modo de traslado:** Selecciona si el modo es **transporte privado o público**.
 - **7. Motivo de traslado:** Selecciona el motivo más adecuado, entre opciones como:
   - Venta
@@ -84,7 +84,7 @@ Si el punto de llegada no carga correctamente, usa el botón **+Nuevo** y selecc
 
 ![Alt text](img/remision_agregar_produc_1.jpg)
 
-   - **1. Producto:** Ingresa el nombre del producto en la **Descripción**. Si necesitas crear uno nuevo, selecciona el botón **+Nuevo** y sigue los pasos en este **[artículo](https://manual.uio.la/Pro7/Modulos/Esenciales/productos-servicios/Productos-Creacion-basica).**
+   - **1. Producto:** Ingresa el nombre del producto en la **Descripción**. Si necesitas crear uno nuevo, selecciona el botón **+Nuevo** y sigue los pasos en este **[artículo](../../esenciales/productos-servicios/03-productos-creacion-basica.md).**
    - **2. Cantidad:** Ingresa la cantidad del producto.
 
 2. Una vez completado, selecciona el botón **Agregar** y luego **Generar**.

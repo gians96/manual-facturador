@@ -25,11 +25,11 @@ A continuación, describimos el proceso para ambos casos.
 
 #### Campos principales:
 
-- **Cliente**: Selecciona **CLIENTE** y se desplegará una lista con todos tus clientes previamente registrados. Elige al cliente para el que emitirás la factura. Si necesitas agregar un nuevo cliente, selecciona el botón **"+" Nuevo** en la esquina superior derecha y sigue los pasos indicados en este [artículo](https://fastura.github.io/documentacion/app-para-facturacion/Como-crear-cliente).
+- **Cliente**: Selecciona **CLIENTE** y se desplegará una lista con todos tus clientes previamente registrados. Elige al cliente para el que emitirás la factura. Si necesitas agregar un nuevo cliente, selecciona el botón **"+" Nuevo** en la esquina superior derecha y sigue los pasos indicados en este [artículo](./clientes.md).
 
   ![Selección de Cliente](img/app4.jpeg)
 
-- **Añadir producto**: Haz clic en **Añadir producto** y se abrirá el **Listado de Productos**. Selecciona el producto que deseas facturar y ajusta las cantidades. Luego, en la parte inferior derecha, selecciona el botón con el ícono del carrito de compras para añadirlo. Si necesitas agregar un nuevo producto, selecciona el botón **"+"** en la esquina superior derecha y sigue los pasos en este [artículo](https://fastura.github.io/documentacion/app-para-facturacion/Como-crear-un-producto).
+- **Añadir producto**: Haz clic en **Añadir producto** y se abrirá el **Listado de Productos**. Selecciona el producto que deseas facturar y ajusta las cantidades. Luego, en la parte inferior derecha, selecciona el botón con el ícono del carrito de compras para añadirlo. Si necesitas agregar un nuevo producto, selecciona el botón **"+"** en la esquina superior derecha y sigue los pasos en este [artículo](./productos.md).
 
   ![Selección de Producto](img/app6.jpeg)
 

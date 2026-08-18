@@ -26,7 +26,7 @@ info:
 servers:
   - url: https://tu-dominio.com
     description: "Producción: reemplazar por el dominio de tu empresa"
-  - url: https://empresa.pro8.uio.la
+  - url: https://tu-dominio.com
     description: Demostración
 tags:
   - name: api

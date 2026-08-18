@@ -5,8 +5,6 @@ function getCurrentVersion(path) {
     if (path.includes('Pro6')) return 'Pro6';
     if (path.includes('Pro7')) return 'Pro7';
     if (path.includes('ProX')) return 'ProX';
-    if (path.includes('ChatBuho')) return 'ChatBuho';
-    if (path.includes('QrBuho')) return 'QrBuho';
     return 'Sistema';
   }
   

@@ -30,7 +30,7 @@ async function convert() {
           description: 'Servidor de Producción'
         },
         {
-          url: 'https://empresa.pro8.uio.la',
+          url: 'https://empresa01.tudominio.pe',
           description: 'Servidor de Demostración'
         }
       ],

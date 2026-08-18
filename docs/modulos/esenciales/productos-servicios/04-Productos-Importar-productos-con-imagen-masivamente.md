@@ -10,7 +10,7 @@ Seguido aparecerá la siguiente ventana emergente:
 
 ![img2](img/Productos_Importar-productos-con-imagen-masivamente_02.jpg)
 
-Selecciona **Descargar** formato de ejemplo para importar, seguido se descargará un archivo excel para completar los datos del producto, lo puede ver más detallado en el siguiente **[artículo.](https://fastura.github.io/documentacion/productos-servicios/Productos-Listas-de-Precio-Importar-Masivamente)**
+Selecciona **Descargar** formato de ejemplo para importar, seguido se descargará un archivo excel para completar los datos del producto, lo puede ver más detallado en el siguiente **[artículo.](./04-Productos-Listas-de-Precio-Importar-Masivamente.md)**
 
 Para agregar una imagen a cada producto, deberá realizar lo siguiente:
 

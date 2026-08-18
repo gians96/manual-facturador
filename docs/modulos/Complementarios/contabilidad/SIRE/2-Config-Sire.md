@@ -30,7 +30,7 @@ Para registrar la aplicación, tendrá que completar:
 ![Alt text](img/sire_4.jpg)
 
 * **Nombre de su aplicación:** Ingresa el nombre de su aplicación. Por ejemplo: Factura fácil.
-* **URL de su aplicación:** Ingresa la URL de su aplicación. Por ejemplo: [buho.fastura.app](https://buho.fastura.app)
+* **URL de su aplicación:** Ingresa la URL de su aplicación. Por ejemplo: https://tudominio.pe
 * **Casillas de selección:** Selecciona la casilla GREE Emision de Comprobantes/v1/contribuyente/gem.
 * **Alcance:** Selecciona la casilla Desktop.
 Después selecciona el botón **Guardar**, se generará un token en los campos **ID** y **CLAVE**.

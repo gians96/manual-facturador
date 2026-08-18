@@ -12,7 +12,7 @@ En esta área te explicaremos la función de cada sección enumerada.
 ![Alt text](img/Nota-de-venta2.jpg)
 
 **1. Cliente**
-Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://fastura.github.io/documentacion/ventas/Emitir-comprobantes-Facturas-y-Boletas).**
+Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](../clientes/01-clientes-creacion-individual.md).**
 
 **2. Fecha de emisión**
 Colocar la fecha de emisión
@@ -21,7 +21,7 @@ Colocar la fecha de emisión
 Colocar fecha de vencimiento.
 
 **4. Agregar Producto**
-Luego deberá escoger el producto para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/productos-servicios/Productos-Creacion-basica)**.
+Luego deberá escoger el producto para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](../productos-servicios/03-productos-creacion-basica.md)**.
 
 
 **5. Informacion Adicional**

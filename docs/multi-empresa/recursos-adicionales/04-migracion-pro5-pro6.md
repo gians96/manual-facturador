@@ -24,8 +24,8 @@ Se presentará los pasos para poder migrar su sistema del Pro5 a la nueva versi�
 
   ```bash
   git remote -v 
-  # origin https://gitlab.buho.la/buho/facturador/facturador5.git (fetch) 
-  # origin https://gitlab.buho.la/buho/facturador/facturador5.git (push) 
+  # origin [url_del_repositorio_del_pro5] (fetch) 
+  # origin [url_del_repositorio_del_pro5] (push) 
   ```
   :::note Tenga en cuenta
    Lo que se muestra arriba es un ejemplo de lo que se podrá ver dentro de su consola. 
@@ -34,21 +34,25 @@ Se presentará los pasos para poder migrar su sistema del Pro5 a la nueva versi�
 4. Ahora se tiene que establecer el nuevo remoto para que se actualice, coloque el siguiente
 
   ```bash
-  git remote set-url origin https://gitlab.buho.la/pro6/pro6.git
+  git remote set-url origin [url_del_repositorio_del_pro6]
   ```
-  
+
+  :::note Tenga en cuenta
+   El Pro5 y el Pro6 son versiones legadas, por lo que la URL del repositorio del Pro6 debe solicitarla a quien le proveyó ese sistema.
+  :::
+
   Alguna veces podria presentar que el **origin** tenga otro nombre ya que es un alias, por ejemplo
 
   ```bash
   git remote -v 
-  # buho https://gitlab.buho.la/buho/facturador/facturador5.git (fetch) 
-  # buho https://gitlab.buho.la/buho/facturador/facturador5.git (push) 
+  # facturador [url_del_repositorio_del_pro5] (fetch) 
+  # facturador [url_del_repositorio_del_pro5] (push) 
   ```
 
   En estos casos solo tendrías que hacer un cambio
   
   ```bash
-  git remote set-url buho https://gitlab.buho.la/pro6/pro6.git
+  git remote set-url facturador [url_del_repositorio_del_pro6]
   ```
 
 5. Con todo ya hecho, bajamos los cambios del repositorio
@@ -60,7 +64,7 @@ Se presentará los pasos para poder migrar su sistema del Pro5 a la nueva versi�
   Y sí se eligió otro alías entonces sería 
 
   ```bash
-  git pull buho master
+  git pull facturador master
   ```
 
 6. Luego, tenemos que actualizar las dependencias, sigue los siguientes comandos

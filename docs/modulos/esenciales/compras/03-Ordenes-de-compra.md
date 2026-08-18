@@ -60,4 +60,4 @@ Contaremos con las siguientes opciones o botones de acción:
 - **Anular:** Permite anular la orden de compra.
 - **Opciones:** Permite descargar en formato A4.
 - **Generar Compra:** Cuando la orden de compra se confirma, se procederá a generar la compra, asimismo se creará un comprobante de pago.
-Para aprender a crear una nueva compra, te invitamos a leer el siguiente **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/compras/nueva-compra)**.
+Para aprender a crear una nueva compra, te invitamos a leer el siguiente **[artículo](./01-nueva-compra.md)**.

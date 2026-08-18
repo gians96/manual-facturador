@@ -69,7 +69,7 @@ En esta sección escogerá el cliente para la creación del comprobante, caso co
 
 Posteriormente aparecerá el formulario de **Nuevo cliente**.
 
-Para crear un nuevo cliente siga los pasos del siguiente **[articulo](https://manual.uio.la/Pro7/Modulos/Esenciales/clientes/Clientes-creacion-individual)**
+Para crear un nuevo cliente siga los pasos del siguiente **[articulo](../../modulos/esenciales/clientes/01-clientes-creacion-individual.md)**
 
 :::danger
 
@@ -85,7 +85,7 @@ Selecciona el botón **Agregar producto.**
 Posteriormente se encontrará el formulario de **Agregar Producto o Servicio**.
 
 
-Para crear un nuevo producto siga los pasos del siguiente **[articulo](https://manual.uio.la/Pro7/Modulos/Esenciales/productos-servicios/Productos-Creacion-basica)**
+Para crear un nuevo producto siga los pasos del siguiente **[articulo](../../modulos/esenciales/productos-servicios/03-productos-creacion-basica.md)**
 
 Después selecciona el botón **Cerrar**, donde visualizará la descripción del producto.
 

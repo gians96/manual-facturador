@@ -39,9 +39,9 @@ Ingresa al módulo de **Ventas** y luego selecciona la subcategoría **Comproban
 
 5. **Tipo de cambio:** Podrá seleccionar el tipo de cambio correspondiente si el pago es en dólares.
 
-6. **Cliente:** Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://fastura.github.io/documentacion/ventas/Emitir-comprobantes-Facturas-y-Boletas)**.
+6. **Cliente:** Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](../../esenciales/ventas/01-nuevo-comprobante.md)**.
 
-7. **Agregar producto:** Luego deberá escoger el producto para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://fastura.github.io/documentacion/ventas/Emitir-comprobantes-Facturas-y-Boletas)**.
+7. **Agregar producto:** Luego deberá escoger el producto para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](../../esenciales/ventas/01-nuevo-comprobante.md)**.
 
 8. **Activar comprobante de contingencia:** En la parte derecha superior podrá activar un menu despegable con el nombre de **Informacion Adicional**, tendra que activar la opcion de  **comprobante de contingencia**, y automáticamente el sistema activará la serie correspondiente, previamente creada.
 

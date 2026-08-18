@@ -11,7 +11,7 @@ Completa los siguientes campos:
 ![Alt text](img/Tdocumentos12.jpg)
 
 - **1. Cliente:** Selecciona el cliente, si aún no lo creo, sigue todos los pasos en este artículo.
-- **2. Tipos de tramite:** Selecciona el tipo de trámite creado anteriormente, si aún no lo creo, sigue todos los pasos en este **[artículo](https://fastura.github.io/documentacion/tramite-documentario/Tipos-de-tr%C3%A1mites)** .
+- **2. Tipos de tramite:** Selecciona el tipo de trámite creado anteriormente, si aún no lo creo, sigue todos los pasos en este **[artículo](./04-Tipos-de-tramites.md)** .
 - **3. Código de expediente (Interno):** Inserta el código de expediente.
 - **4. Fecha de registro:** Selecciona la fecha de registro.
 - **5. Hora de registro:** Selecciona la hora de registro.
@@ -25,7 +25,7 @@ Completa los siguientes campos:
 - **Etapa:** Selecciona una etapa, creado previamente si aún no lo creo, selecciona +Nuevo, sigue todos los pasos en este artículo.
 - **Fecha cuando se toma la etapa:** Se autocompleta, pero se puede seleccionar otra fecha si lo requiere.
 - **Días que toma el etapa:** Inserta los días que toma la etapa.
-- **Estado de etapa:**  Selecciona el estado de la etapa, creado previamente si aún no lo creo, selecciona +Nuevo, sigue todos los pasos en este **[artículo](https://manual.uio.la/Pro7/modulos/Rubros/tramite-documentario/Listado-de-Etapas)**.
+- **Estado de etapa:**  Selecciona el estado de la etapa, creado previamente si aún no lo creo, selecciona +Nuevo, sigue todos los pasos en este **[artículo](./01-Listado-de-Etapas.md)**.
 - **Responsable:** Selecciona el responsable.
 - **Observaciones:** Inserta alguna observación si lo requiere.
 - **Check box- Calculo por días Hábiles:** Te permite elegir si quieres calcular los días por días hábiles o fecha calendario.

@@ -23,8 +23,8 @@ Todos los endpoints del API viven bajo el **dominio de tu empresa** (tenant), co
 https://<dominio-de-tu-empresa>/api/...
 ```
 
-Por ejemplo, si tu empresa está en `empresa.pro8.uio.la`, la emisión de comprobantes es
-`POST https://empresa.pro8.uio.la/api/documents`.
+Por ejemplo, si tu empresa está en `empresa01.tudominio.pe`, la emisión de comprobantes es
+`POST https://empresa01.tudominio.pe/api/documents`.
 
 ## Características principales
 

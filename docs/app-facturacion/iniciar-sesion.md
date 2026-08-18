@@ -8,10 +8,7 @@ En este artículo te guiaremos para ingresar a tu cuenta desde la App **Factural
 
 ## 1. Descargar la App
 
-La aplicación está disponible para dispositivos **Android** y **iOS**.
-
-- Para **Android**, descárgala utilizando el siguiente enlace: [https://buho.la/download](https://buho.la/download).
-- Para **iOS**, búscala en la App Store bajo el nombre **FacturaloPeruPremium**.
+La aplicación está disponible para dispositivos **Android** y **iOS**. Si aún no la tienes instalada, solicita el enlace de descarga y el nombre de la app a tu proveedor del sistema.
 
 ## 2. Iniciar Sesión
 

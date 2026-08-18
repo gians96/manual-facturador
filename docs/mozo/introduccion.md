@@ -40,7 +40,7 @@ href="mesas"
 
 <DocsCard
 header="Facturación"
-href="introduccion#integración-con-pro-8"
+href="introduccion#integración-con-facturador"
 
 >
 

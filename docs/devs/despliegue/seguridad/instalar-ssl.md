@@ -26,16 +26,6 @@ automatizarla: ver [SSL Automático](./ssl-cloudflare.md).
 | Dominio administrado en Cloudflare (con API token) | `certbot-dns-cloudflare` | [SSL Automático](./ssl-cloudflare.md) |
 | Servidor LAMP (Apache, sin Docker) | `certbot` | [Actualizar SSL en instalación LAMP](./ssl-instalacion-lamp.md) |
 
-:::danger LOS ENLACES ANTIGUOS DE `git.buho.la` YA NO SE USAN
-Versiones anteriores de esta guía descargaban `newSSL.sh` y `updateSSL.sh` desde snippets de
-`git.buho.la`. Esos scripts quedaron **obsoletos**: copian `cert.pem` (sin la cadena intermedia,
-lo que rompe la validación en varios clientes), escriben en `/root/certs` y reinician un contenedor
-con nombre fijo (`proxy_proxy_1`).
-
-Usa los scripts publicados en **este manual**
-(`https://manual-facturador.nube-tec.com/install-scripts/…`): detectan el contenedor del proxy y su
-volumen real de certificados, copian `fullchain.pem` y validan el resultado.
-:::
 
 ---
 

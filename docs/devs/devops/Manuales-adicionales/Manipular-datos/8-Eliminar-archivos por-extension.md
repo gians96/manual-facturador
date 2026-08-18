@@ -16,7 +16,6 @@ En las instalaciones que realizamos para AWS o Google Cloud, hacemos entrega del
     - Recuerde que el nombre del facturador corresponde al nombre del repositorio, por ejemplo:
       - `facturadorpro3`
       - `multifacturalonew`
-      - `facturaloperu_api`
       - Entre otros
 3. Ingresar a la carpeta del facturador:
     ```bash

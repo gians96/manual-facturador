@@ -218,5 +218,5 @@ Esta configuración previa es fundamental para el correcto funcionamiento de Moz
 
 ---
 
-> **📞 Soporte:** Para dudas adicionales, contacta al área de soporte BUHO  
+> **📞 Soporte:** Para dudas adicionales, contacta al área de soporte  
 > **🔄 Actualizaciones:** Mantén tu sistema actualizado para acceder a nuevas funcionalidades

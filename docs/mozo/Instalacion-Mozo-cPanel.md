@@ -10,12 +10,6 @@ import DocsCards from '/src/components/global/DocsCards';
 
 ## 🔴 Avisos Importantes
 
-::::danger ⚠️ IMPORTANTE - Migración de Servidor GitLab
-**Hemos migrado nuestro servidor de GitLab.** Si aún no has cambiado la URL del sistema (del git para descargar los cambios, etc.), te sugerimos verificar primero.
-
-**Nueva URL:** **`git.buho.la`**
-::::
-
 ::::danger ⚠️ IMPORTANTE - Descargar FileZilla
 Para el **Método Recomendado** va a necesitar descargar **FileZilla Client** desde:
 
@@ -63,15 +57,11 @@ Es fundamental desmarcar la casilla y agregar `/public_html/` para que la instal
 
 #### 2.1 Acceso al Repositorio
 
-1. **Ingreso al portal**
+1. **Ingreso al repositorio**
 
-   - 🔗 Navegar a: **https://git.buho.la/**
+   - 🔗 Navegar a: **https://git.buho.la/mozo/compilado**
 
-2. **Localización del proyecto**
-
-   - 🔍 Buscar: `Mozo/Compilado`
-
-3. **Descarga del código**
+2. **Descarga del código**
 
    - 🔵 Hacer clic en el botón **"Code"**
    - 📦 Seleccionar **"Download source code"**
@@ -79,7 +69,7 @@ Es fundamental desmarcar la casilla y agregar `/public_html/` para que la instal
 
    ![Descarga del código compilado](../devs/despliegue/plataformas/img/mozo_descargar_codigo_compilado.png)
 
-4. **Almacenamiento local**
+3. **Almacenamiento local**
    - 💾 Guardar en carpeta de fácil acceso
 
 ---

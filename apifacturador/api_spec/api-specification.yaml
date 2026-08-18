@@ -14,10 +14,10 @@ info:
   version: 1.0.0
   contact:
     name: Soporte Técnico
-    url: https://fact01.uio.la
+    url: https://tu-dominio.com
 
 servers:
-  - url: https://fact01.uio.la
+  - url: https://tu-dominio.com
     description: Servidor de Producción
 
 tags:
@@ -74,7 +74,7 @@ paths:
                   value:
                     data:
                       - id: 2
-                        hostname: empresa01.fact01.uio.la
+                        hostname: empresa01.tu-dominio.com
                         name: empresa01
                         email: empresa01@gmail.com
                         token: MpfPPOPmzSK1bNQjpf7MEIm1SOoXPgNNkyivVz6gFoCbbsHHKi
@@ -102,7 +102,7 @@ paths:
         - lang: javascript
           label: Fetch
           source: |
-            const url = 'https://fact01.uio.la/api/reseller/detail';
+            const url = 'https://tu-dominio.com/api/reseller/detail';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             fetch(url, {
@@ -126,7 +126,7 @@ paths:
         - lang: javascript
           label: jQuery
           source: |
-            const url = 'https://fact01.uio.la/api/reseller/detail';
+            const url = 'https://tu-dominio.com/api/reseller/detail';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $.ajax({
@@ -152,7 +152,7 @@ paths:
         - lang: javascript
           label: XMLHttpRequest
           source: |
-            const url = 'https://fact01.uio.la/api/reseller/detail';
+            const url = 'https://tu-dominio.com/api/reseller/detail';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             const xhr = new XMLHttpRequest();
@@ -179,7 +179,7 @@ paths:
           source: |
             const axios = require('axios');
             
-            const url = 'https://fact01.uio.la/api/reseller/detail';
+            const url = 'https://tu-dominio.com/api/reseller/detail';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             axios.post(url, {}, {
@@ -213,7 +213,7 @@ paths:
             const data = JSON.stringify({});
             
             const options = {
-              hostname: 'fact01.uio.la',
+              hostname: 'tu-dominio.com',
               path: '/api/reseller/detail',
               method: 'POST',
               headers: {
@@ -250,7 +250,7 @@ paths:
           source: |
             const request = require('request');
             
-            const url = 'https://fact01.uio.la/api/reseller/detail';
+            const url = 'https://tu-dominio.com/api/reseller/detail';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             const options = {
@@ -279,7 +279,7 @@ paths:
           source: |
             const unirest = require('unirest');
             
-            const url = 'https://fact01.uio.la/api/reseller/detail';
+            const url = 'https://tu-dominio.com/api/reseller/detail';
             const token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             unirest('POST', url)
@@ -303,7 +303,7 @@ paths:
           label: cURL
           source: |
             <?php
-            $url = 'https://fact01.uio.la/api/reseller/detail';
+            $url = 'https://tu-dominio.com/api/reseller/detail';
             $token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $ch = curl_init($url);
@@ -340,7 +340,7 @@ paths:
             
             use GuzzleHttp\Client;
             
-            $url = 'https://fact01.uio.la/api/reseller/detail';
+            $url = 'https://tu-dominio.com/api/reseller/detail';
             $token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $client = new Client();
@@ -378,7 +378,7 @@ paths:
             <?php
             require_once 'HTTP/Request2.php';
             
-            $url = 'https://fact01.uio.la/api/reseller/detail';
+            $url = 'https://tu-dominio.com/api/reseller/detail';
             $token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $request = new HTTP_Request2($url, HTTP_Request2::METHOD_POST);
@@ -406,7 +406,7 @@ paths:
           label: PECL HTTP
           source: |
             <?php
-            $url = 'https://fact01.uio.la/api/reseller/detail';
+            $url = 'https://tu-dominio.com/api/reseller/detail';
             $token = 'JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE';
             
             $request = new HttpRequest($url, HttpRequest::METH_POST);
@@ -440,7 +440,7 @@ paths:
             import http.client
             import json
             
-            conn = http.client.HTTPSConnection("fact01.uio.la")
+            conn = http.client.HTTPSConnection("tu-dominio.com")
             
             token = "JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE"
             
@@ -473,7 +473,7 @@ paths:
             import requests
             import json
             
-            url = "https://fact01.uio.la/api/reseller/detail"
+            url = "https://tu-dominio.com/api/reseller/detail"
             token = "JQcPuJSzMx61DjMBeTJBXH813auyvK22rVJh8aEDP580f2UV33QOLMaHX2yE"
             
             headers = {
@@ -538,7 +538,7 @@ components:
         hostname:
           type: string
           description: Subdominio asignado al tenant
-          example: empresa01.fact01.uio.la
+          example: empresa01.tu-dominio.com
         name:
           type: string
           description: Nombre del tenant

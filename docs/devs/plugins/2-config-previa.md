@@ -32,7 +32,7 @@ a. Ubique la opción País/Provincia y seleccione Perú y su respectiva provinci
 
 ## Configuración de Cities Shipping Zones
 
-Esta opción aparecerá una vez que tenga instalado el Plugin en su **WordPress**. Si aún no lo ha realizado, puede hacerlo siguiendo los pasos del siguiente [artículo](https://manual.uio.la/Pro7/Devs/Plugins/intro).
+Esta opción aparecerá una vez que tenga instalado el Plugin en su **WordPress**. Si aún no lo ha realizado, puede hacerlo siguiendo los pasos del siguiente [artículo](./1-intro.md).
 
 1. Dentro de esta sección, verifique la casilla **País / Región** de **Región(es) de la zona Selección por lotes**, donde posiblemente no aparezca **Perú**.
 
@@ -72,7 +72,7 @@ Para obtener estos datos, acceda al sistema de facturación.
 Para este **API** debe copiar y pegar la **URL** del sistema, añadiendo **/api/** al final. Por ejemplo:
 
 ```
-https://empresa1.pro7.uio.la/api/
+https://empresa01.tudominio.pe/api/
 ```
 
 Para Factura y Boleta, configure las opciones por defecto como **F001** y **B001** respectivamente.

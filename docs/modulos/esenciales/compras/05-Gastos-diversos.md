@@ -22,7 +22,7 @@ Visualizará el siguiente formulario, proceda a completar los siguientes campos.
 
 **5. Tipo de cambio:** Este campo viene rellenado por defecto según los datos de la SUNAT.
 
-**6. Proveedor:** Selecciona el proveedor para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://manual.uio.la/Pro7/modulos/Esenciales/compras/Proveedores-creacion-individual)**.
+**6. Proveedor:** Selecciona el proveedor para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](./06-Proveedores-creacion-individual.md)**.
 
 **7. Motivo:** Selecciona el motivo del nuevo gasto.
 

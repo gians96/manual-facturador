@@ -68,16 +68,6 @@ Para probar la demo del sistema, puedes acceder a través del siguiente enlace:
 
 ![Pantalla de inicio de sesión Mozo.pe](img/mozo1.jpg)
 
-### 📝 Credenciales de Acceso Demo
-
-Utiliza las siguientes credenciales para acceder a la demo:
-
-```
-URL: https://cevicheria.pro7.uio.la/login
-Correo: cevicheria@gmail.com
-Contraseña: 123456
-```
-
 :::tip Consejo
 Guarda la URL de tu sistema en un lugar seguro. La necesitarás cada vez que inicies sesión desde la versión web.
 :::
@@ -103,7 +93,7 @@ La URL debe incluir el protocolo completo (https://) y la ruta completa hasta /l
 
 A diferencia de la versión web en Mozo.pe, el inicio de sesión de la **versión compilada** NO requiere configurar la URL manualmente. Esto se debe a que el sistema Mozo se instaló directamente en el servidor de tu cliente.
 
-Durante el [paso final de la instalación en cPanel](https://manual.uio.la/Pro7/Mozo.pe/Instalacion-Mozo-cPanel#paso-5-configuración-del-sistema), la URL de la API ya fue configurada automáticamente, por lo que solo necesitas las credenciales de acceso.
+Durante el [paso final de la instalación en cPanel](./Instalacion-Mozo-cPanel.md#paso-5-configuración-del-sistema), la URL de la API ya fue configurada automáticamente, por lo que solo necesitas las credenciales de acceso.
 
 ### 🔑 Métodos de Acceso
 

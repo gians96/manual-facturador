@@ -32,7 +32,7 @@ Descripción de los parámetros utilizados por el sistema
 | PASSWORD_CHANGE | permitir cambiar la clave del administrador | true |
 | PREFIX_DATABASE | prefijo de las bases de datos de los clientes | |
 | SIGNATURE_NOTE_OSE | valor agregado a los XML | FACTURALO |
-| SIGNATURE_URI_OSE | valor agregado a los XML | signatureFACTURALOPERU |
+| SIGNATURE_URI_OSE | valor agregado a los XML | |
 | FORCE_HTTPS | si es una instalación con SSL este valor cambia a true | false |
 | DOCUMENT_TYPE_03_FILTER | filtrar documentos tipo DNI en documentos tipo factura | false |
 | RECREATE_DOCUMENT | recrear documentos | false |

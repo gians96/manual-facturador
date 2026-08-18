@@ -6,4 +6,4 @@ En este artículo te enseñaremos a saber que pasos realizar si el sistema de SU
 
 ![Alt text](../img/guicontingenc1.jpg)
 
-2. Seguido puede esperar a que llegue el sistema de SUNAT para enviarlo, o puede crear un comprobante de contingencia y después insertar el documento de contingencia siguiendo este **[artículo](https://fastura.github.io/documentacion/ventas/Comprobantes-de-Contingencia)**.
+2. Seguido puede esperar a que llegue el sistema de SUNAT para enviarlo, o puede crear un comprobante de contingencia y después insertar el documento de contingencia siguiendo este **[artículo](../../modulos/Complementarios/comprobantes-avanzados/12-Comprobantes-de-Contingencia.md)**.

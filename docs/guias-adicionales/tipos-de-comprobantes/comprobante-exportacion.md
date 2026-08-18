@@ -9,7 +9,7 @@ Un comprobante de exportación es un documento que registra la salida de mercanc
 
 :::info IMPORTANTE
 
-Es importante leer antes este **[artículo](https://fastura.github.io/documentacion/ventas/Emitir-comprobantes-Facturas-y-Boletas)**.
+Es importante leer antes este **[artículo](../../modulos/esenciales/ventas/01-nuevo-comprobante.md)**.
 
 :::
 

@@ -11,7 +11,7 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [  
   {  
     title: 'Sistema de Facturacion Electronica Pro 6',  
-    Svg: require('@site/static/img/fastura.svg').default,  
+    Svg: require('@site/static/img/logo.svg').default,  
     description: (  
       <>   
         <h3>Lista de Categorías</h3>  
@@ -47,7 +47,7 @@ const FeatureList: FeatureItem[] = [
   },  
   {  
     title: 'Sistema de Facturacion Electronica Pro X',  
-    Svg: require('@site/static/img/fastura.svg').default,  
+    Svg: require('@site/static/img/logo.svg').default,  
     description: (  
       <>  
         <h3>Lista de Categorías</h3>  
@@ -81,7 +81,7 @@ const FeatureList: FeatureItem[] = [
   }, 
   {  
     title: 'Sistema de Facturacion Electronica Pro 7',  
-    Svg: require('@site/static/img/fastura.svg').default,  
+    Svg: require('@site/static/img/logo.svg').default,  
     description: (  
       <>  
         <h3>Lista de Categorías</h3>  

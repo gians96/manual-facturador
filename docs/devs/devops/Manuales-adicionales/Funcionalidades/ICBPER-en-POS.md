@@ -3,7 +3,6 @@
 ## Ventas | POS
 
 ### 2021
-facturaloperu.com
 
 ## Manejo del ICBPER
 

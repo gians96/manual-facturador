@@ -80,7 +80,7 @@ Desde el panel de administración de Wordpress, ir al menú **Plugins -> Añadir
 
 Para habilitar el plugin, haz clic en el botón **"Activar Plugin"**.
 
-Para completar el pedido, siga los pasos del siguiente **[articulo](https://fastura.github.io/admin/API-rest-documentaci%C3%B3n/Completar-pedido)**.
+Para completar el pedido, siga los pasos del siguiente **[articulo](../../plugins/4-pedidos.md)**.
 
 ### Impuesto
 

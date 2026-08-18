@@ -13,7 +13,7 @@ En esta sección te explicaremos la función de cada botón enumerado.
 ![Alt text](img/2_bot_accion_1.jpg)
 
 **1. Nuevo:**
-Al seleccionar el botón **Nuevo**, aparecerá el formulario para crear un nuevo comprobante de pago.Te invitamos a leer nuestro artículo **[Emitir comprobantes: Facturas y Boletas](https://fastura.github.io/documentacion/ventas/Emitir-comprobantes-Facturas-y-Boletas)**, donde te explicaremos paso a paso,como realizarlo.
+Al seleccionar el botón **Nuevo**, aparecerá el formulario para crear un nuevo comprobante de pago.Te invitamos a leer nuestro artículo **[Nuevo Comprobante](./01-nuevo-comprobante.md)**, donde te explicaremos paso a paso,como realizarlo.
 
 **2. Reporte de Pago:**
 Al seleccionar el botón desplegable, podrás generar el reporte de los pagos que se hayan realizado,y también descargarlos.

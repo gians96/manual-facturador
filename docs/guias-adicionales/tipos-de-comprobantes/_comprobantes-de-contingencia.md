@@ -36,9 +36,9 @@ Ingresa al módulo de **Ventas** y luego selecciona la subcategoría **Comproban
 
 4. **Moneda:** Podrá seleccionar si desea el pago sea en dólares o soles.
 
-5. **Cliente:** Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://fastura.github.io/documentacion/ventas/Emitir-comprobantes-Facturas-y-Boletas)**.
+5. **Cliente:** Luego deberá escoger el cliente para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](../../modulos/esenciales/ventas/01-nuevo-comprobante.md)**.
 
-6. **Agregar producto:** Luego deberá escoger el producto para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](https://fastura.github.io/documentacion/ventas/Emitir-comprobantes-Facturas-y-Boletas)**.
+6. **Agregar producto:** Luego deberá escoger el producto para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](../../modulos/esenciales/ventas/01-nuevo-comprobante.md)**.
 
 Después selecciona el botón **GENERAR**, donde se visualizará una ventana indicando que el comprobante ha sido aceptada.
 

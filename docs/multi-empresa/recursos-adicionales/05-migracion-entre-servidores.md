@@ -32,7 +32,7 @@ Se tiene que cambiar los nombre de la carepta respecto a lo que se ha elegido pr
 ```bash
 #Se esta usando nombres de ejemplos
 # |nombre de carpeta actual | nombre de carpeta modificada |    
-mv pro6.buho.xyz_mysqldata1   pro6.buho.xyz_mysqldata2
+mv tudominio.pe_mysqldata1   tudominio.pe_mysqldata2
 ```
 
 ## Configurar archivos 
@@ -41,7 +41,7 @@ Antes de levantar el proyecto, se tiene que configurar algunos archivos.
 
 ### Editar el archivo de docker-compose
 
-En este ejemplo se tomará como ejemplo que la carpeta tenga el nombre de **pro6.buho.xyz**.
+En este ejemplo se tomará como ejemplo que la carpeta tenga el nombre de **tudominio.pe**.
 
 ```yaml title="docker-compose.yml"
 version: '3'
@@ -49,17 +49,17 @@ version: '3'
 services:
     nginx{numero nuevo}:
         image: rash07/nginx
-        container_name: nginx_pro6_buho_xyz
+        container_name: nginx_tudominio_pe
         working_dir: /var/www/html
         environment:
-            VIRTUAL_HOST: pro6.buho.xyz, *.pro6.buho.xyz
+            VIRTUAL_HOST: tudominio.pe, *.tudominio.pe
         volumes:
             - ./:/var/www/html
-            - /root/proxy/fpms/pro6.buho.xyz:/etc/nginx/sites-available
+            - /root/proxy/fpms/tudominio.pe:/etc/nginx/sites-available
         restart: always
     fpm{numero nuevo}:
         image: rash07/php-fpm:2.0
-        container_name: fpm_pro6_buho_xyz
+        container_name: fpm_tudominio_pe
         working_dir: /var/www/html
         volumes:
             - ./ssh:/root/.ssh
@@ -68,7 +68,7 @@ services:
         restart: always
     mariadb{numero nuevo}:
         image: mariadb:10.5.6
-        container_name: mariadb_pro6_buho_xyz
+        container_name: mariadb_tudominio_pe
         environment:
             - MYSQL_USER=\${MYSQL_USER}
             - MYSQL_PASSWORD=\${MYSQL_PASSWORD}
@@ -82,20 +82,20 @@ services:
         restart: always
     redis{numero nuevo}:
         image: redis:alpine
-        container_name: redis_pro6_buho_xyz
+        container_name: redis_tudominio_pe
         volumes:
             - redisdata{numero nuevo}:/data
         restart: always
     scheduling{numero nuevo}:
         image: rash07/scheduling
-        container_name: scheduling_pro6_buho_xyz
+        container_name: scheduling_tudominio_pe
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
         restart: always
     supervisor{numero nuevo}:
         image: rash07/php7.4-supervisor
-        container_name: supervisor_pro6_buho_xyz
+        container_name: supervisor_tudominio_pe
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html

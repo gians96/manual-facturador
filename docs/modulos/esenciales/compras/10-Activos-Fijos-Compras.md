@@ -24,7 +24,7 @@ Visualizará el siguiente formulario, proceda a completar los siguientes campos.
 
 5. **Fec. Vencimiento:** Ingresa la fecha de vencimiento del comprobante.
 
-6. **Proveedor:** Selecciona el proveedor para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este [artículo].
+6. **Proveedor:** Selecciona el proveedor para la creación del comprobante, si no está creado, podrá realizarlo paso a paso en este **[artículo](./06-Proveedores-creacion-individual.md)**.
 
 7. **Moneda:** Selecciona el tipo de moneda en la que se realizo la compra.
 
