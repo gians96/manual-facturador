@@ -1,8 +1,8 @@
 # Facturador — Entorno local de desarrollo (Windows + WSL2 Ubuntu 24.04)
 
 Guía **de cero a andando** para un equipo de desarrollo con Windows 10/11: preparar
-WSL2, instalar Ubuntu 24.04, verificar las dependencias de desarrollo y ejecutar el
-script de instalación inicial del proyecto (`scripts/local-setup.sh`).
+WSL2, instalar Ubuntu 24.04 y ejecutar el script de instalación inicial del proyecto
+(`scripts/local-setup.sh`), que se encarga del resto de dependencias.
 
 > **Esto no es producción.** Sin proxy reverso, sin SSL, sin dominio: la app queda en
 > `http://localhost:8080` y MySQL en `localhost:3308`.
@@ -15,7 +15,7 @@ script de instalación inicial del proyecto (`scripts/local-setup.sh`).
 
 1. [Requisitos de la máquina](#1-requisitos-de-la-máquina)
 2. [Fase 0 — Preparar WSL2 en Windows](#2-fase-0--preparar-wsl2-en-windows)
-3. [Fase 1 — Dependencias dentro de Ubuntu](#3-fase-1--dependencias-dentro-de-ubuntu)
+3. [Fase 1 — Lo único que hace falta antes del script](#3-fase-1--lo-único-que-hace-falta-antes-del-script)
 4. [Fase 2 — Instalación del proyecto](#4-fase-2--instalación-del-proyecto)
 5. [Qué hace local-setup.sh](#5-qué-hace-local-setupsh)
 6. [Verificación post-instalación](#6-verificación-post-instalación)
@@ -100,15 +100,26 @@ wsl --set-default Ubuntu-24.04
 
 ---
 
-## 3. Fase 1 — Dependencias dentro de Ubuntu
+## 3. Fase 1 — Lo único que hace falta antes del script
+
+`scripts/local-setup.sh` instala casi todas las dependencias de desarrollo por su
+cuenta. Solo hay **dos** que tienes que tener tú, porque el script no puede ponerlas:
+
+| Pieza | Quién la instala |
+|-------|------------------|
+| **git** | **Tú** — hace falta para clonar el repo, antes de que el script exista en disco |
+| **Docker** | **Tú** (o `01-setup-wsl.ps1` en la [ruta automática](#opción-a--scripts-de-instalación-automático)). `local-setup.sh` solo comprueba con `docker info` y un `docker run` de prueba, y **aborta** si no responde |
+| Bun | El script, vía `scripts/ensure-bun.sh`: lo instala y persiste el `PATH` en `~/.bashrc` y `~/.profile` |
+| `curl`, `unzip`, `ca-certificates` | El script, si faltan (mismo `ensure-bun.sh`) |
+| PHP, Composer, Node/npm, MySQL, Redis, nginx | Nadie en el host: **viven dentro de los contenedores**. Instalarlos en Ubuntu no aporta nada y confunde — `php artisan` desde el host falla por permisos de `storage/logs` (ver [Uso diario](#8-uso-diario)) |
 
 Entrar a la distro (`wsl -d Ubuntu-24.04`) y trabajar **siempre desde `$HOME`**.
 
-### 3.1 Base del sistema
+### 3.1 git
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y git curl unzip ca-certificates
+sudo apt-get install -y git
 ```
 
 ### 3.2 Docker
@@ -123,41 +134,33 @@ Dos opciones válidas; elegir **una**:
 Tras `usermod -aG docker $USER` hay que **cerrar y volver a abrir la sesión de WSL**
 (o ejecutar `newgrp docker`) para que el grupo aplique.
 
+> ⚠️ **Si usas Docker Desktop, la integración con WSL no viene activada.** Instalarlo en
+> Windows no basta: dentro de Ubuntu el comando `docker` no existe o falla, y
+> `local-setup.sh` aborta. Hay que activarla a mano:
+>
+> **Docker Desktop → ⚙️ Settings → Resources → WSL Integration →** activar
+> *Enable integration with my default WSL distro* y el interruptor de **`Ubuntu-24.04`**
+> → **Apply & Restart**.
+>
+> Después, **dentro de WSL**, comprobar con `docker info`. Si responde
+> `Failed to initialize: protocol not available`, el CLI heredó el contexto
+> `desktop-linux` de Windows: `docker context use default`.
+
 > **No mezclar las dos.** Docker Desktop y Docker Engine nativo compiten por el mismo
 > socket; si conviven, desinstalar Docker Desktop o desactivar su integración con WSL.
 
-### 3.3 Bun
-
-Bun es el runtime/bundler JS del proyecto (compila los assets con Vite). **No hace falta
-instalarlo a mano**: `scripts/local-setup.sh` y `scripts/local-update.sh` cargan
-`scripts/ensure-bun.sh`, que lo instala si falta y persiste el `PATH` en `~/.bashrc` y
-`~/.profile`. Para adelantarlo:
-
-```bash
-curl -fsSL https://bun.sh/install | bash
-source ~/.bashrc
-```
-
-### 3.4 Lo que **no** se instala en el host
-
-PHP, Composer, Node/npm y MySQL **viven dentro de los contenedores**. Instalarlos en
-Ubuntu no aporta nada y suele confundir: `php artisan` desde el host falla por permisos
-de `storage/logs`. Siempre vía contenedor (ver [Uso diario](#8-uso-diario)).
-
-### 3.5 Checklist de verificación
+### 3.3 Comprobación antes de continuar
 
 ```bash
 git --version           # 2.x
-docker --version        # 27.x o superior
 docker info             # sin "Cannot connect to the Docker daemon"
 docker compose version  # v2.x (plugin, no docker-compose v1)
-bun --version           # 1.x (o se instalará solo durante el setup)
-free -h                 # RAM disponible para la VM de WSL
 pwd                     # debe empezar en /home/... nunca en /mnt/c
 ```
 
 Si `docker info` falla: `sudo service docker start` (Engine nativo) o revisar la
-integración WSL de Docker Desktop.
+integración WSL de Docker Desktop. Con esas dos comprobaciones en verde, el resto lo
+resuelve el script.
 
 ---
 
@@ -354,6 +357,7 @@ docker exec fpm_pro8_local sh -c "CACHE_DRIVER=file php artisan config:clear"
 | `wsl --install` falla o WSL no arranca | Virtualización deshabilitada | Habilitar VT-x / AMD-V / SVM en BIOS |
 | Distro en `VERSION 1` | WSL1 por defecto | `wsl --set-version Ubuntu-24.04 2` |
 | Olvidaste la contraseña de Ubuntu | — | En PowerShell: `wsl -d Ubuntu-24.04 -u root` y dentro `passwd TU_USUARIO` |
+| `docker: command not found` dentro de WSL, con Docker Desktop instalado en Windows | La **WSL Integration** no está activada | Docker Desktop → *Settings → Resources → WSL Integration* → activar `Ubuntu-24.04` → *Apply & Restart* |
 | `Cannot connect to the Docker daemon` | Servicio parado | `sudo service docker start` |
 | `Failed to initialize: protocol not available` | El CLI heredó el contexto `desktop-linux` | `docker context use default` |
 | `permission denied` en `/var/run/docker.sock` | Falta el grupo `docker` | `sudo usermod -aG docker $USER` y reabrir WSL |
