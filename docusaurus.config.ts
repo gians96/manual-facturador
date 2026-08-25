@@ -14,6 +14,29 @@ const config: Config = {
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
+
+    // Docusaurus Faster: reemplaza webpack por Rspack y Babel/Terser por SWC +
+    // Lightning CSS. Es lo que baja el `RUN bun run build` del Dockerfile de
+    // ~5,5 min a ~1,5-2 min (medido: 153-164 s -> 35-37 s en oven/bun:1.2.19).
+    //
+    // OJO — dos cosas que rompen el deploy si se tocan:
+    //  1. En 3.9.2 la clave es `experimental_faster`. Se renombró a `faster` en
+    //     3.10, así que el snippet de la doc actual NO vale aquí.
+    //  2. NO usar la forma corta `experimental_faster: true`: enciende
+    //     ssgWorkerThreads, que usa worker_threads con `resourceLimits`, no
+    //     implementado en Bun. El build renderiza todo y luego NUNCA sale (sin
+    //     [SUCCESS], sin postBuild, sin search-index.json) → deploy colgado.
+    //     Además, ni en Node compensa: apagarlo baja de 56 s a 31 s.
+    experimental_faster: {
+      rspackBundler: true,
+      rspackPersistentCache: true,
+      swcJsLoader: true,
+      swcJsMinimizer: true,
+      swcHtmlMinimizer: true,
+      lightningCssMinimizer: true,
+      mdxCrossCompilerCache: true,
+      ssgWorkerThreads: false,
+    },
   },
 
   // Set the production url of your site here
