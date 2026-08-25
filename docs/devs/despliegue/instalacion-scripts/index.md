@@ -75,6 +75,27 @@ sudo ./02-install-prod.sh
 
 ---
 
+## Entorno local de desarrollo (Windows + WSL2)
+
+Para una **máquina de desarrollo** (no un servidor): preparar WSL2, instalar Ubuntu 24.04
+con su usuario y contraseña, verificar las dependencias de desarrollo (git, Docker, Bun) y
+correr el instalador inicial del proyecto.
+
+Ver la [guía de entorno local de desarrollo](local-dev/).
+
+Resumen rápido:
+
+```bash
+# Dentro de WSL (Ubuntu 24.04), con Docker ya funcionando
+git clone -b gians96 https://gitlab.com/gians96/pro-8.git ~/proyectos/pro-8
+cd ~/proyectos/pro-8
+bash scripts/local-setup.sh
+```
+
+Resultado: `http://localhost:8080` (panel) y MySQL en `localhost:3308`.
+
+---
+
 ## Actualización del proyecto
 
 1) Agregar llave ssh al gitlab, que se crea al momento de instalar el sistema en el sevidor, buscar en el archivo `[proyecto].txt`
