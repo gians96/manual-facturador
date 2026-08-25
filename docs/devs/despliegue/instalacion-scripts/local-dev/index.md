@@ -9,13 +9,32 @@ WSL2, instalar Ubuntu 24.04 y ejecutar el script de instalación inicial del pro
 > Para servidores ver [Linux (VPS / dedicado)](../linux/), [On-premise](../onpremise/)
 > o [Windows Server](../windows-server/).
 
+## Dónde se ejecuta cada cosa
+
+**WSL es una característica de Windows, no de Linux.** Se instala **desde Windows**, y
+solo cuando Ubuntu 24.04 ya vive dentro se instalan los prerrequisitos y el proyecto,
+**todo dentro de WSL**. Confundir los dos lados es el error más común: los comandos de
+la Fase 0 no funcionan dentro de Ubuntu, y los de la Fase 1 en adelante no funcionan en
+PowerShell.
+
+| Fase | Dónde se ejecuta | Qué se hace |
+|------|------------------|-------------|
+| **Fase 0** | **Windows** — PowerShell como Administrador | Activar/actualizar WSL2, instalar Ubuntu 24.04, crear el usuario y su contraseña |
+| **Fase 1** | **Dentro de WSL** (`wsl -d Ubuntu-24.04`) | Prerrequisitos en Ubuntu: git y Docker |
+| **Fase 2** | **Dentro de WSL** | Clonar el repo y correr `scripts/local-setup.sh` |
+| Uso diario | **Dentro de WSL** | Contenedores, artisan, actualizaciones |
+
+La única excepción es Docker Desktop: la app se instala **en Windows**, pero después hay
+que activar su *WSL Integration* para que `docker` exista **dentro** de Ubuntu
+(ver [Fase 1](#fase-1-wsl)).
+
 ---
 
 ## Índice
 
 1. [Requisitos de la máquina](#1-requisitos-de-la-máquina)
-2. [Fase 0 — Preparar WSL2 en Windows](#2-fase-0--preparar-wsl2-en-windows)
-3. [Fase 1 — Lo único que hace falta antes del script](#3-fase-1--lo-único-que-hace-falta-antes-del-script)
+2. [Fase 0 — En Windows: instalar WSL2 y Ubuntu](#fase-0-windows)
+3. [Fase 1 — Dentro de WSL: prerrequisitos en Ubuntu](#fase-1-wsl)
 4. [Fase 2 — Instalación del proyecto](#4-fase-2--instalación-del-proyecto)
 5. [Qué hace local-setup.sh](#5-qué-hace-local-setupsh)
 6. [Verificación post-instalación](#6-verificación-post-instalación)
@@ -44,9 +63,10 @@ Si la virtualización está deshabilitada, WSL2 no arranca: reiniciar → BIOS (
 
 ---
 
-## 2. Fase 0 — Preparar WSL2 en Windows
+## 2. Fase 0 — En Windows: instalar WSL2 y Ubuntu {#fase-0-windows}
 
-Todo este bloque va en **PowerShell como Administrador**.
+Todo este bloque va **en Windows**, en **PowerShell como Administrador** — todavía no
+existe ningún Ubuntu donde ejecutarlo.
 
 ### 2.1 Actualizar WSL y fijar la versión 2
 
@@ -100,10 +120,18 @@ wsl --set-default Ubuntu-24.04
 
 ---
 
-## 3. Fase 1 — Lo único que hace falta antes del script
+## 3. Fase 1 — Dentro de WSL: prerrequisitos en Ubuntu {#fase-1-wsl}
+
+A partir de aquí **todo se ejecuta dentro de WSL**, no en PowerShell. Entrar a la distro
+y trabajar **siempre desde `$HOME`**:
+
+```bash
+wsl -d Ubuntu-24.04
+cd ~
+```
 
 `scripts/local-setup.sh` instala casi todas las dependencias de desarrollo por su
-cuenta. Solo hay **dos** que tienes que tener tú, porque el script no puede ponerlas:
+cuenta. Solo hay **dos** que tienes que poner tú en Ubuntu, porque el script no puede:
 
 | Pieza | Quién la instala |
 |-------|------------------|
@@ -112,8 +140,6 @@ cuenta. Solo hay **dos** que tienes que tener tú, porque el script no puede pon
 | Bun | El script, vía `scripts/ensure-bun.sh`: lo instala y persiste el `PATH` en `~/.bashrc` y `~/.profile` |
 | `curl`, `unzip`, `ca-certificates` | El script, si faltan (mismo `ensure-bun.sh`) |
 | PHP, Composer, Node/npm, MySQL, Redis, nginx | Nadie en el host: **viven dentro de los contenedores**. Instalarlos en Ubuntu no aporta nada y confunde — `php artisan` desde el host falla por permisos de `storage/logs` (ver [Uso diario](#8-uso-diario)) |
-
-Entrar a la distro (`wsl -d Ubuntu-24.04`) y trabajar **siempre desde `$HOME`**.
 
 ### 3.1 git
 
@@ -124,7 +150,9 @@ sudo apt-get install -y git
 
 ### 3.2 Docker
 
-Dos opciones válidas; elegir **una**:
+Dos opciones válidas; elegir **una**. Fíjate en dónde se instala cada una: la primera va
+**dentro de Ubuntu**; la segunda es una app **de Windows** que después hay que conectar a
+WSL a mano.
 
 | Opción | Cómo | Notas |
 |--------|------|-------|
