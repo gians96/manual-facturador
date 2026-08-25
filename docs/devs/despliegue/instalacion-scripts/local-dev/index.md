@@ -212,7 +212,7 @@ powershell -ExecutionPolicy Bypass -File 01-setup-wsl.ps1
 wsl -d Ubuntu-24.04
 curl -O https://manual-facturador.nube-tec.com/install-scripts/windows-server/02-install-dev.sh
 chmod +x 02-install-dev.sh
-./02-install-dev.sh        # SIN sudo
+./02-install-dev.sh        # sin sudo (si lo corres con sudo, se reejecuta solo)
 ```
 
 `02-install-dev.sh` verifica Docker, instala Bun, pregunta la rama (default `gians96`),
@@ -230,6 +230,18 @@ git clone -b gians96 https://gitlab.com/gians96/pro-8.git ~/proyectos/pro-8
 cd ~/proyectos/pro-8
 bash scripts/local-setup.sh        # SIN sudo; pide sudo solo para el autoarranque
 ```
+
+:::warning Clon recién hecho
+`git` no versiona directorios vacíos, así que un clon nuevo llega sin
+`storage/framework/views`. `composer install` aborta con
+`Please provide a valid cache path.` antes de terminar. Créala primero:
+
+```bash
+mkdir -p ~/proyectos/pro-8/storage/framework/views
+```
+
+Los instaladores `02-install-dev.sh` e `install-local.sh` ya lo hacen solos.
+:::
 
 > **Equivalente en Linux nativo** (sin Windows): el instalador `install-local.sh` de
 > [Linux (VPS / dedicado)](../linux/) hace lo mismo y termina en este mismo
@@ -393,6 +405,62 @@ docker exec fpm_pro8_local sh -c "CACHE_DRIVER=file php artisan config:clear"
 | Composer no encuentra `composer.json` en `/var/www/html` | Docker levantó antes de que WSL montara `$HOME` | `pro8up` o `bash scripts/local-update.sh` (nunca `down -v`) |
 | `Access denied for user 'tenancy_demo'` en `TENANT.localhost` | `APP_KEY` cambió y la password derivada por Hyn quedó desincronizada | `docker exec fpm_pro8_local sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan tenancy:key:update"` y después `config:cache` |
 | Puerto 8080 / 3308 ocupado | Otro servicio en Windows | Editar `APP_PORT` / `MYSQL_PORT_HOST` en `scripts/local-setup.sh`, luego `local-clean.sh` + `local-setup.sh` |
+| El proyecto quedó en `/root/proyectos/pro-8` y VS Code no lo abre | Se ejecutó el instalador con `sudo`, y `$HOME` pasó a ser `/root` | Versiones actuales del script se reejecutan solas como tu usuario. Para mover una instalación ya hecha, ver [Mover una instalación que quedó en /root](#mover-una-instalación-que-quedó-en-root) |
+| `Please provide a valid cache path.` al correr `composer install` | Falta `storage/framework/views`; `config/view.php` la resuelve con `realpath()` y sin la carpeta devuelve `false` | `docker exec fpm_pro8_local sh -c "cd /var/www/html && mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions && rm -f bootstrap/cache/config.php && chown -R www-data:www-data storage bootstrap/cache"` y repetir `composer install` |
 | `Unable to create directory` en tenancy | Permisos de `storage/` | `docker exec -u root fpm_pro8_local sh -c "mkdir -p /var/www/html/storage/app/tenancy/tenants && chown -R www-data:www-data /var/www/html/storage && chmod -R ug+rwX /var/www/html/storage"` |
 | El stack no vuelve tras reiniciar Windows | `pro8-autostart` recién instalado | Una vez en PowerShell: `wsl --shutdown`. Diagnóstico: `tail -f /var/log/pro8-autostart.log` |
 | Pantalla sin estilos | Assets no compilados | `bun install --ignore-scripts && bun run build` |
+
+### Mover una instalación que quedó en /root
+
+Si el instalador se ejecutó con `sudo` en una versión anterior del script, el
+proyecto quedó en `/root/proyectos/pro-8`. La extensión WSL de VS Code se conecta
+como tu usuario normal y no puede abrir esa ruta.
+
+La base de datos vive **dentro** del proyecto (`./docker/data/mysql`), así que
+mover la carpeta se lleva los datos con ella: no se pierde nada.
+
+Baja el stack primero, sin `-v`:
+
+```bash
+sudo docker compose -f /root/proyectos/pro-8/docker-compose.local.yml --project-directory /root/proyectos/pro-8 down
+```
+
+Mueve el proyecto y el archivo de credenciales (reemplaza `TUUSUARIO`):
+
+```bash
+sudo mkdir -p /home/TUUSUARIO/proyectos && sudo mv /root/proyectos/pro-8 /root/proyectos/pro-8-dev.txt /home/TUUSUARIO/proyectos/
+```
+
+:::danger No uses `chown -R` a secas
+`docker/data/mysql` pertenece al uid **999** (el usuario `mysql` de dentro del
+contenedor). Un `chown -R` plano sobre todo el proyecto rompe los permisos del
+datadir y MariaDB no vuelve a arrancar. Este comando excluye ese subárbol:
+:::
+
+```bash
+sudo find /home/TUUSUARIO/proyectos/pro-8 -path /home/TUUSUARIO/proyectos/pro-8/docker/data -prune -o -exec chown TUUSUARIO:TUUSUARIO {} +
+```
+
+```bash
+sudo chown TUUSUARIO:TUUSUARIO /home/TUUSUARIO/proyectos /home/TUUSUARIO/proyectos/pro-8-dev.txt
+```
+
+Añádete al grupo `docker` para no volver a necesitar `sudo`, cierra WSL y ejecuta
+`wsl --shutdown` en PowerShell:
+
+```bash
+sudo usermod -aG docker TUUSUARIO
+```
+
+Al volver, regenera la configuración desde la ruta nueva:
+
+```bash
+cd ~/proyectos/pro-8 && bash scripts/local-setup.sh
+```
+
+Este último paso no es opcional: `local-setup.sh` deduce `PROJECT_DIR` de su propia
+ubicación y reescribe `docker-compose.local.yml`, `supervisor.conf` y
+`/usr/local/bin/pro8-autostart.sh` con la ruta nueva. Si lo saltas,
+`pro8-autostart` sigue apuntando a `/root` y recrea el stack mal en cada reinicio
+de Windows.

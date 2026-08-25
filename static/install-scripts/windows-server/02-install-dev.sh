@@ -16,6 +16,40 @@
 
 set -e
 
+# ─── Instalar siempre en el HOME del usuario real ───────────
+# PROJECT_DEST cuelga de $HOME. Bajo sudo, $HOME es /root y el proyecto
+# termina en /root/proyectos/pro-8: la extension WSL de VS Code se conecta
+# como tu usuario normal y no puede abrir esa ruta, y el bind mount queda
+# con owner root. En vez de abortar, se reejecuta como el usuario real.
+if [ "$(id -u)" -eq 0 ]; then
+    TARGET_USER="${SUDO_USER:-}"
+    # Sesion root directa (ej: 'wsl -u root'): no hay SUDO_USER, asi que se
+    # usa el primer usuario real de la distro (uid 1000, el default de WSL).
+    if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
+        TARGET_USER="$(getent passwd 1000 2>/dev/null | cut -d: -f1)"
+    fi
+    if [ -z "$TARGET_USER" ]; then
+        echo "ERROR: corriendo como root y no hay usuario normal al que cambiar."
+        echo "  Crea uno:  adduser tuusuario && usermod -aG sudo tuusuario"
+        exit 1
+    fi
+
+    # Si el script se descargo con sudo vive en /root y TARGET_USER no puede
+    # leerlo. Se copia a /tmp antes de bajar de privilegios.
+    SELF_TMP="$(mktemp /tmp/02-install-dev.XXXXXX)"
+    cat "$(cd "$(dirname "$0")" && pwd)/$(basename "$0")" > "$SELF_TMP"
+    chmod 0755 "$SELF_TMP"
+
+    echo "Detectado root: el proyecto debe vivir en el HOME de tu usuario."
+    echo "Reejecutando como '$TARGET_USER' ..."
+    echo ""
+    if command -v sudo >/dev/null 2>&1; then
+        exec sudo -u "$TARGET_USER" -H bash "$SELF_TMP" "$@"
+    else
+        exec su - "$TARGET_USER" -c "bash '$SELF_TMP' $*"
+    fi
+fi
+
 REPO_URL="https://gitlab.com/gians96/pro-8.git"
 BRANCH="gians96"
 PROJECT_DEST="$HOME/proyectos/pro-8"
@@ -78,7 +112,27 @@ echo ""
 # 'desktop-linux' (endpoint npipe de Windows), que rompe dentro de Linux
 # con: "Failed to initialize: protocol not available" o panic del CLI.
 # Fix: forzar contexto 'default' que apunta a unix:///var/run/docker.sock.
-if ! docker info >/dev/null 2>&1; then
+# Nota: se captura stderr SOLO si el comando falla. 'docker info' escribe
+# warnings en stderr incluso cuando funciona, asi que no sirve basarse en
+# "hay texto en stderr" para decidir si hubo error.
+if ! DOCKER_ERR="$(docker info 2>&1 >/dev/null)"; then
+    # Caso 1: el socket existe pero tu usuario no esta en el grupo 'docker'.
+    # Este es el error que empuja a reintentar con sudo, y con sudo el
+    # proyecto termina en /root. Se corrige anadiendo el grupo y
+    # reejecutando con 'sg docker', que lo aplica en esta misma sesion sin
+    # tener que cerrar WSL.
+    if echo "$DOCKER_ERR" | grep -qi "permission denied"; then
+        if ! id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
+            echo "Tu usuario no pertenece al grupo 'docker'. Anadiendo..."
+            sudo usermod -aG docker "$USER"
+        else
+            echo "Usuario en grupo 'docker' pero la sesion actual no lo tiene activo."
+        fi
+        echo "Reejecutando con 'sg docker' ..."
+        exec sg docker -c "bash '$0' $*"
+    fi
+
+    # Caso 2: contexto heredado de Docker Desktop.
     echo "Docker no responde. Probando arreglo de contexto WSL..."
     docker context use default >/dev/null 2>&1 || true
     sleep 1
@@ -92,6 +146,9 @@ if ! docker info >/dev/null 2>&1; then
             echo "    (Settings > Resources > WSL Integration) y reinicia Docker Desktop."
             echo "  - Si usas Docker Engine nativo: sudo service docker start"
             echo "  - Luego en WSL: docker context use default"
+            echo "  - Si el error es 'permission denied' en docker.sock:"
+            echo "      sudo usermod -aG docker \$USER   (y reabrir WSL)"
+            echo "    NO uses sudo con este script: instalaria en /root."
             exit 1
         fi
     fi
@@ -125,6 +182,33 @@ else
     echo "Proyecto clonado en $PROJECT_DEST"
 fi
 
+# ─── Preparar directorios de storage (ANTES de local-setup) ──
+# local-setup.sh ejecuta 'composer install' dentro de FPM, y su hook
+# post-autoload-dump lanza 'artisan package:discover'. config/view.php
+# resuelve la ruta con realpath(storage_path('framework/views')): si esa
+# carpeta no existe, realpath() devuelve false, el cache path queda vacio y
+# artisan aborta con "Please provide a valid cache path.", tumbando toda la
+# instalacion por el 'set -e' de arriba.
+# git no versiona directorios vacios, asi que en un clon nuevo esa carpeta
+# NO viene en el repo: hay que crearla en el host antes de que Docker monte
+# el proyecto en /var/www/html.
+echo ""
+echo "Preparando directorios de storage..."
+mkdir -p "$PROJECT_DEST/storage/framework/views" \
+         "$PROJECT_DEST/storage/framework/cache/data" \
+         "$PROJECT_DEST/storage/framework/sessions" \
+         "$PROJECT_DEST/storage/framework/testing" \
+         "$PROJECT_DEST/storage/framework/laravel-excel" \
+         "$PROJECT_DEST/storage/app/public" \
+         "$PROJECT_DEST/storage/app/tenancy/tenants" \
+         "$PROJECT_DEST/storage/logs" \
+         "$PROJECT_DEST/storage/debugbar" \
+         "$PROJECT_DEST/bootstrap/cache"
+# Si un intento previo alcanzo a cachear la config con la ruta invalida
+# horneada dentro, Laravel lee ese archivo entero en vez de config/view.php
+# y seguiria fallando aunque la carpeta ya exista. Se regenera solo despues.
+rm -f "$PROJECT_DEST/bootstrap/cache/config.php"
+
 # ─── Ejecutar local-setup.sh ─────────────────────────────────
 echo ""
 echo "Ejecutando local-setup.sh (levanta 7 containers)..."
@@ -145,8 +229,9 @@ echo "Compilando assets (vite build)..."
 bun run build || echo "ADVERTENCIA: falló el build de assets; revisa errores arriba"
 
 # ─── Corregir permisos de storage y bootstrap/cache ──────────
-# El repo ya trae la estructura de carpetas (storage/app, storage/framework/*,
-# storage/logs, storage/app/tenancy/tenants, etc.) con sus .gitignore.
+# El repo NO trae toda la estructura: git no versiona directorios vacios y
+# storage/framework/views llega sin .gitignore, por eso se crea mas arriba
+# antes de local-setup.sh. Aqui solo se corrige el owner.
 # El problema es que al ejecutar comandos artisan dentro del contenedor como
 # root, Laravel puede crear subdirectorios (ej: storage/framework/cache/data)
 # con owner root y permisos 700, pero el worker php-fpm corre como www-data

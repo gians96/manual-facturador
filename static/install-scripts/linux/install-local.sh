@@ -35,14 +35,38 @@ echo "  (Linux nativo)"
 echo "============================================"
 echo ""
 
-# --- No correr como root -------------------------------------
-# El proyecto se clona en $HOME del usuario actual. Si corres como root,
-# queda en /root y luego docker no puede montar los volumes del usuario.
+# --- Instalar siempre en el HOME del usuario real ------------
+# PROJECT_DEST cuelga de $HOME. Bajo sudo, $HOME es /root y el proyecto
+# termina en /root/proyectos/pro-8: la extension WSL de VS Code se conecta
+# como tu usuario normal y no puede abrir esa ruta, y el bind mount queda
+# con owner root. En vez de abortar, se reejecuta como el usuario real.
 if [ "$(id -u)" -eq 0 ]; then
-    echo "ERROR: No ejecutes este script como root / sudo."
-    echo "  El script pedira sudo solo para los comandos que lo requieran"
-    echo "  (instalar paquetes, docker, anadir tu usuario al grupo docker)."
-    exit 1
+    TARGET_USER="${SUDO_USER:-}"
+    # Sesion root directa (ej: 'wsl -u root'): no hay SUDO_USER, asi que se
+    # usa el primer usuario real de la distro (uid 1000, el default de WSL).
+    if [ -z "$TARGET_USER" ] || [ "$TARGET_USER" = "root" ]; then
+        TARGET_USER="$(getent passwd 1000 2>/dev/null | cut -d: -f1)"
+    fi
+    if [ -z "$TARGET_USER" ]; then
+        echo "ERROR: corriendo como root y no hay usuario normal al que cambiar."
+        echo "  Crea uno:  adduser tuusuario && usermod -aG sudo tuusuario"
+        exit 1
+    fi
+
+    # Si el script se descargo con sudo vive en /root y TARGET_USER no puede
+    # leerlo. Se copia a /tmp antes de bajar de privilegios.
+    SELF_TMP="$(mktemp /tmp/install-local.XXXXXX)"
+    cat "$(cd "$(dirname "$0")" && pwd)/$(basename "$0")" > "$SELF_TMP"
+    chmod 0755 "$SELF_TMP"
+
+    echo "Detectado root: el proyecto debe vivir en el HOME de tu usuario."
+    echo "Reejecutando como '$TARGET_USER' ..."
+    echo ""
+    if command -v sudo >/dev/null 2>&1; then
+        exec sudo -u "$TARGET_USER" -H bash "$SELF_TMP" "$@"
+    else
+        exec su - "$TARGET_USER" -c "bash '$SELF_TMP' $*"
+    fi
 fi
 
 # --- Detectar gestor de paquetes -----------------------------
@@ -166,6 +190,33 @@ else
     git clone -b "$BRANCH" "$REPO_URL" "$PROJECT_DEST"
     echo "Proyecto clonado en $PROJECT_DEST"
 fi
+
+# --- Preparar directorios de storage (ANTES de local-setup) --
+# local-setup.sh ejecuta 'composer install' dentro de FPM, y su hook
+# post-autoload-dump lanza 'artisan package:discover'. config/view.php
+# resuelve la ruta con realpath(storage_path('framework/views')): si esa
+# carpeta no existe, realpath() devuelve false, el cache path queda vacio y
+# artisan aborta con "Please provide a valid cache path.", tumbando toda la
+# instalacion por el 'set -e' de arriba.
+# git no versiona directorios vacios, asi que en un clon nuevo esa carpeta
+# NO viene en el repo: hay que crearla en el host antes de que Docker monte
+# el proyecto en /var/www/html.
+echo ""
+echo "Preparando directorios de storage..."
+mkdir -p "$PROJECT_DEST/storage/framework/views" \
+         "$PROJECT_DEST/storage/framework/cache/data" \
+         "$PROJECT_DEST/storage/framework/sessions" \
+         "$PROJECT_DEST/storage/framework/testing" \
+         "$PROJECT_DEST/storage/framework/laravel-excel" \
+         "$PROJECT_DEST/storage/app/public" \
+         "$PROJECT_DEST/storage/app/tenancy/tenants" \
+         "$PROJECT_DEST/storage/logs" \
+         "$PROJECT_DEST/storage/debugbar" \
+         "$PROJECT_DEST/bootstrap/cache"
+# Si un intento previo alcanzo a cachear la config con la ruta invalida
+# horneada dentro, Laravel lee ese archivo entero en vez de config/view.php
+# y seguiria fallando aunque la carpeta ya exista. Se regenera solo despues.
+rm -f "$PROJECT_DEST/bootstrap/cache/config.php"
 
 # --- Ejecutar local-setup.sh ---------------------------------
 echo ""
