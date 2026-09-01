@@ -127,7 +127,7 @@ Puedes ejecutar los comandos individualmente:
 
 ```bash
 php artisan migrate
-php artisan tenancy:migrate
+php artisan tenancy:migrate --path=database/migrations/tenant --force
 php artisan config:cache
 php artisan cache:clear
 php artisan optimize:clear
@@ -136,7 +136,7 @@ php artisan optimize:clear
 O ejecutarlos en una sola línea:
 
 ```bash
-php artisan migrate && php artisan tenancy:migrate && php artisan config:cache && php artisan cache:clear && php artisan optimize:clear
+php artisan migrate --force && php artisan tenancy:migrate --path=database/migrations/tenant --force && php artisan config:cache && php artisan cache:clear && php artisan optimize:clear
 ```
 
 ---
@@ -206,10 +206,20 @@ Ingresar usuario y token cuando se solicite.
 
 ### 5.2 Limpiar dependencias
 
-Ejecutar:
+:::danger No borres `composer.lock` en producción
+El lock es lo que fija **qué versión exacta** de cada dependencia está probada. Borrarlo
+convierte la actualización en una resolución nueva y sin probar de todo el árbol: el
+despliegue puede traer una versión distinta de un paquete y romper la emisión sin que nadie
+lo haya decidido. Los scripts de actualización se esfuerzan precisamente en **no** moverlo.
+
+Bórralo solo en un entorno de pruebas y a conciencia.
+:::
+
+Si necesitas rehacer las dependencias, basta con:
 
 ```bash
-rm -rf vendor node_modules composer.lock package-lock.json
+rm -rf vendor node_modules
+composer install    # o `composer update` si el proyecto no versiona composer.lock
 ```
 
 ### 5.3 Instalar dependencias
@@ -266,7 +276,7 @@ docker exec -it [nombre_contenedor_fpm] /bin/bash
 ```bash
 
 php artisan migrate
-php artisan tenancy:migrate
+php artisan tenancy:migrate --path=database/migrations/tenant --force
 php artisan config:cache
 php artisan cache:clear
 php artisan optimize:clear

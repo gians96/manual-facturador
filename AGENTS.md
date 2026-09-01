@@ -2,9 +2,10 @@
 
 > **Este archivo es para agentes de IA.** Léelo completo antes de generar, editar o refactorizar.
 >
-> **🌐 Ecosistema Nube Tecnológica** — repo dentro de un workspace multi-repo (6 repos · 2 hosts GitHub/GitLab · WSL+Windows). Contexto compartido, flujo del negocio y qué NO tocar: `pro-8/.workspace/ecosistema.md`.
-> **Antes de empezar**, verifica que todos los repos estén en su último commit: `bash ~/proyectos/pro-8/.workspace/check-repos.sh` (WSL/Git Bash) o `check-repos.ps1` (Windows). En Claude Code corre solo (hook `SessionStart`).
-> **Este repo:** **GitHub** · rama `main`. Credenciales vía GCM (`pro-8/.workspace/setup-git-credentials.sh`).
+> **🌐 Ecosistema Nube Tecnológica** — repo dentro de un workspace multi-repo (6 repos · 2 hosts GitHub/GitLab · WSL+Windows). Contexto compartido, flujo del negocio y qué NO tocar: `nubetec/.workspace/ecosistema.md`.
+> **PASO 0 OBLIGATORIO — `nubetec/.workspace/arranque.md`:** antes de leer o editar nada, trae la rama principal de los 6 repos con `bash /mnt/c/Users/USER/Desktop/dev/nubetec/.workspace/sync-repos.sh` (en Claude Code corre solo vía hook `SessionStart`; en Codex córrelo tú). Solo informe: `check-repos.sh` / `check-repos.ps1`.
+> **Verifica siempre** la carpeta de integración con NubeTec (`C:\Users\USER\Desktop\dev\nubetec`) cuando documentes licencias, planes, provisioning o la API: la fuente de verdad de esos contratos está en `saas-facturacion-backend`, no aquí.
+> **Este repo:** **GitHub** · rama `main`. Credenciales vía GCM (`nubetec/.workspace/setup-git-credentials.sh`).
 
 ---
 
@@ -49,7 +50,8 @@ bun run docusaurus clean-api-docs facturador
 - **Marca del producto = "Facturador".** El nombre de producto se escribe **"Facturador"** (no "Pro 8"). PERO:
   - **Conservar** etiquetas de **versión/edición**: "Pro 7", "Pro 8.1/8.2", "ProX", migraciones "Pro5→Pro6".
   - **No tocar** dominios/URLs/hostnames/`package name`/nombres de assets (`manual.pro8.uio.la`, `pro8-logo.svg`, `soporte@pro8.pe`, `projectName: pro8`) salvo decisión explícita — cambiarlos afecta el deploy.
-- Documentación de instalación/operación/API-offline migrada desde el retirado `codeplant/facturador-pro/` vive en `docs/devs/{despliegue/instalacion-scripts, operacion, api/offline}`.
+- Documentación de instalación/operación/API-offline migrada desde el retirado `codeplant/facturador-pro/` vive en `docs/devs/{despliegue/instalacion-scripts, devops, operacion, api/offline}`.
+- **Servicios en producción:** todo servicio que se dé por culminado y funcional (comando programado, timer de systemd, demonio) se registra en [`docs/devs/operacion/servicios-operativos.md`](docs/devs/operacion/servicios-operativos.md) **con su comando de verificación**, antes de dar el trabajo por cerrado. Una tarea programada que deja de funcionar no avisa: sin una forma de comprobarla, nadie se entera hasta que hace falta.
 
 ## 5. Qué NO tocar sin autorización
 

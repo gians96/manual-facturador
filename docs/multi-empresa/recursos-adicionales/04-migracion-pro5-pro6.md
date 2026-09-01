@@ -79,7 +79,7 @@ Se presentar√° los pasos para poder migrar su sistema del Pro5 a la nueva versi√
 
 7. Ejecutar migraciones
   ```bash
-  php artisan migrate; php artisan tenancy:migrate
+  php artisan migrate --force; php artisan tenancy:migrate --path=database/migrations/tenant --force
   ```
 
 8. Limpiar cache

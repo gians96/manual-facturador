@@ -573,10 +573,10 @@ sudo ./update.sh --domain fe.dominio.org --skip-backup   # no recomendado en pro
 3. `composer install --no-dev`
 4. `composer dump-autoload -o`
 5. `php artisan migrate --force`
-6. `php artisan tenancy:migrate --force`
+6. `php artisan tenancy:migrate --path=database/migrations/tenant --force` (el `--path` es obligatorio: sin él hyn no migra ningún tenant)
 7. Limpia caches + `config:cache`
 8. Purga OPcache (`kill -USR2 1`)
-9. Reinicia workers de supervisor
+9. Reinicia fpm, supervisor, scheduling y nginx (OPcache) y ajusta permisos de `storage`
 
 > **Nunca** uses `docker compose down -v` en produccion.
 

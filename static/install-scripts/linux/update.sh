@@ -446,11 +446,47 @@ if [ "$MODE" = "prod" ]; then
     docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan config:cache" || true
 fi
 
-echo "-> purgar OPcache (sin reiniciar fpm)"
-docker compose exec -T $FPM sh -c "kill -USR2 1" || true
+echo "-> permisos de storage y bootstrap/cache"
+# composer y artisan corren como root dentro del contenedor y dejan archivos que
+# www-data ya no puede escribir: el sintoma tipico es un 500 al generar PDF.
+docker compose exec -T -u root $FPM sh -c "chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache" || true
 
-echo "-> reiniciar colas"
-docker compose exec -T $SUPERVISOR supervisorctl restart all 2>/dev/null || true
+echo "-> reiniciar contenedores PHP y nginx"
+# CRITICO. `kill -USR2 1` solo purga el OPcache de fpm, y aqui hay TRES procesos
+# PHP con su propio OPcache: fpm, supervisor y scheduling. Con
+# opcache.validate_timestamps=0 (lo fija install.sh) cada uno sirve para siempre
+# el bytecode que cargo al arrancar.
+#
+# El que mas duele es `scheduling`: nunca se reiniciaba, asi que las tareas
+# programadas (envio diferido a SUNAT, resumenes, crons de cobro) seguian
+# corriendo con el codigo ANTERIOR de forma indefinida.
+#
+# nginx tambien: resuelve `fastcgi_pass` por nombre UNA vez al arrancar; si fpm
+# se recreo con otra IP, seguiria mandando trafico a la IP vieja — que puede
+# pertenecer a otro contenedor con codigo viejo en RAM. Es la causa raiz del
+# incidente ceos-facturacion.com del 2026-07-20.
+SERVICE_NUMBER="${FPM#fpm_}"
+SCHEDULING="scheduling_${SERVICE_NUMBER}"
+NGINX="nginx_${SERVICE_NUMBER}"
+
+docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan queue:restart" 2>/dev/null || true
+docker compose restart $FPM $SUPERVISOR 2>/dev/null || true
+docker compose restart $SCHEDULING 2>/dev/null || echo "   (sin servicio ${SCHEDULING}; se omite)"
+docker compose restart $NGINX 2>/dev/null || echo "   (sin servicio ${NGINX}; se omite)"
+
+# Segunda purga DESPUES del reinicio. No es redundante: el `cache:clear` de
+# arriba corre mientras los procesos viejos siguen atendiendo peticiones, y
+# cualquiera de ellas repuebla la cache con el CODIGO VIEJO. Se reintenta porque
+# fpm tarda un momento en aceptar exec.
+echo "-> purga final de cache (post-restart)"
+for _i in 1 2 3 4 5 6 7 8 9 10; do
+    if docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan cache:clear" >/dev/null 2>&1; then
+        echo "   OK cache:clear posterior al reinicio"
+        break
+    fi
+    sleep 2
+    [ "${_i}" = "10" ] && echo "   ADVERTENCIA: no se pudo correr el cache:clear final; hazlo a mano"
+done
 
 echo ""
 echo "OK Actualizacion completada."

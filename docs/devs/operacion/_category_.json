@@ -1,0 +1,9 @@
+{
+  "label": "Operación",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "slug": "devs/operacion",
+    "description": "Qué está corriendo en un servidor en producción, cómo se comprueba y cómo se mantiene."
+  }
+}

@@ -136,7 +136,7 @@ chmod +x 03-update.sh
 ./03-update.sh prod --skip-backup   # solo si ya hiciste backup manual
 ```
 
-El script ejecuta en orden: verifica Soketi y cancela si el compose es antiguo, crea backup previo en `storage/app/backups/pre-update/`, normaliza Broadcasting, levanta solo Soketi, `git pull --ff-only`, `composer install`, **`composer dump-autoload -o`** (clave para detectar controllers/modulos nuevos), `module:discover`, `migrate` + `tenancy:migrate`, limpieza de caches, `config:cache`, purga OPcache (`kill -USR2 1`) y reinicia colas.
+El script ejecuta en orden: verifica Soketi y cancela si el compose es antiguo, crea backup previo en `storage/app/backups/pre-update/`, normaliza Broadcasting, levanta solo Soketi, `git pull --ff-only`, `composer install`, **`composer dump-autoload -o`** (clave para detectar controllers/modulos nuevos), `module:discover`, `migrate` + `tenancy:migrate`, limpieza de caches, `config:cache`, reinicia los tres contenedores PHP (`fpm`, `supervisor`, `scheduling`) más `nginx` por OPcache, y purga la caché después del reinicio.
 
 Tambien normaliza Laravel Broadcasting: si el `.env` antiguo tenia `PUSHER_HOST=127.0.0.1`, lo cambia al contenedor `soketi_DOMINIO`. En instalaciones nuevas mantiene `PUSHER_CLIENT_HOST=DOMINIO`; si el compose antiguo se recupera con Soketi publicado por nginx-proxy, usa `PUSHER_CLIENT_HOST=ws.DOMINIO`.
 
@@ -153,7 +153,7 @@ docker compose exec -T fpm_1 sh -c "cd /var/www/html && CACHE_DRIVER=file compos
 docker compose exec -T fpm_1 sh -c "cd /var/www/html && composer dump-autoload -o"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan module:discover"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan migrate --force"
-docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan tenancy:migrate --force"
+docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan tenancy:migrate --path=database/migrations/tenant --force"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan route:clear"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan config:cache"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan cache:clear"

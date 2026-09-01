@@ -98,6 +98,23 @@ Resultado: `http://localhost:8080` (panel) y MySQL en `localhost:3308`.
 
 ## Actualización del proyecto
 
+:::tip Lo recomendado es el script, no los comandos a mano
+Usa `update.sh` (o `scripts/prod-update.sh` en el repo). Hace el **backup previo**, aplica el
+`--path` de las migraciones de tenant y —lo más importante— **reinicia los contenedores**, que
+es lo que hace que el código nuevo entre de verdad. Los comandos de abajo son para
+diagnosticar o para casos en los que el script no aplique.
+:::
+
+:::danger Sin reiniciar, el código nuevo NO se aplica
+Los contenedores PHP corren con `opcache.validate_timestamps=0`: cada proceso sirve **para
+siempre** el bytecode que cargó al arrancar, aunque el archivo cambie en disco. Y hay **tres**
+procesos PHP con su propia caché (`fpm`, `supervisor`, `scheduling`), no uno.
+
+Un `git pull` seguido de `cache:clear` deja el sitio **exactamente igual que antes**. Hay que
+reiniciar los tres, más `nginx` (que resuelve `fastcgi_pass` una sola vez al arrancar y puede
+quedarse apuntando a la IP vieja de `fpm`). Ver el paso 5.
+:::
+
 1) Agregar llave ssh al gitlab, que se crea al momento de instalar el sistema en el sevidor, buscar en el archivo `[proyecto].txt`
 
 2) Ingresamos al terminal del docker que ejecuta el fpm para el servicio web.
@@ -116,11 +133,34 @@ git pull origin [rama]
 
 ```sh
 composer install
-php artisan migrate
-php artisan tenancy:migrate
+php artisan migrate --force
+php artisan tenancy:migrate --path=database/migrations/tenant --force
+composer dump-autoload -o
+php artisan view:clear
+php artisan route:clear
+php artisan config:clear
 php artisan cache:clear
 php artisan config:cache
 chmod -R 777 vendor/mpdf/mpdf
+```
+
+5) **Reiniciar los contenedores** (fuera del contenedor, en el host). Sin este paso el código
+nuevo no se aplica:
+
+```sh
+docker restart fpm_<dominio> supervisor_<dominio> scheduling_<dominio>
+docker restart nginx_<dominio>
+
+# Y limpiar la caché OTRA VEZ, ya con los procesos nuevos: la limpieza anterior
+# corrió mientras los viejos seguían atendiendo, y cualquier petición de esa
+# ventana la repobló con el código anterior.
+docker exec fpm_<dominio> sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan cache:clear"
+```
+
+6) Comprobar que el código nuevo está activo (no basta con un 200):
+
+```sh
+curl -sk https://<dominio>/login | grep -c "<algo-que-cambio>"
 ```
 
 ## Migración de tenants - clientes (backup)
@@ -150,7 +190,7 @@ mysql -h [host] -u [user] -p [database_name] < [filename].sql
 ```sh
 docker exec [identificadordeldocker] composer install
 docker exec [identificadordeldocker] php artisan migrate
-docker exec [identificadordeldocker] php artisan tenancy:migrate
+docker exec [identificadordeldocker] php artisan tenancy:migrate --path=database/migrations/tenant --force --path=database/migrations/tenant --force
 docker exec [identificadordeldocker] php artisan cache:clear
 docker exec [identificadordeldocker] php artisan config:cache
 docker exec [identificadordeldocker] chmod -R 777 vendor/mpdf/mpdf
@@ -184,5 +224,8 @@ sudo chown -R www-data:www-data [proyecto]/storage/app/tenancy/tenants/[inquilin
 ```
 Comando para dar permiso necesario
 ```sh
-chmod -R 777 /var/nt-suite/storage
+# Dar el propietario correcto, no 777: `chmod 777` deja storage escribible por
+# cualquier proceso del servidor, y no arregla la causa (el propietario).
+chown -R www-data:www-data /var/nt-suite.pro/storage /var/nt-suite.pro/bootstrap/cache
+chmod -R ug+rwX /var/nt-suite.pro/storage /var/nt-suite.pro/bootstrap/cache
 ```

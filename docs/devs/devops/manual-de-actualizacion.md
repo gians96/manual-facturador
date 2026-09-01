@@ -30,10 +30,10 @@ De esta manera se conectará al contenedor y observará un cambio en el inicio d
 
 Si ha accedido a **fpm**, entonces se debe encontrar en la ruta `/var/www/html/` donde podrá ejecutar comandos de la siguiente lista (cada comando se ejecuta para situaciones distintas, mayormente no se necesitan ejecutar más de dos comandos en una actualización):
 
-- `git pull origin master` (usar siempre)
+- `git pull origin <rama>` (usar siempre; en Pro 8 la rama es `gians96`, no `master`)
 - `git log -5`
 - `php artisan migrate` (usar siempre)
-- `php artisan tenancy:migrate` (usar siempre)
+- `php artisan tenancy:migrate --path=database/migrations/tenant --force` (usar siempre)
 - `php artisan storage:link`
 - `php artisan config:cache` (usar siempre)
 - `php artisan config:clear`
@@ -44,7 +44,7 @@ Si ha accedido a **fpm**, entonces se debe encontrar en la ruta `/var/www/html/`
 
 Si ha utilizado `git pull origin master`, debe ingresar las credenciales de GitLab, su correo y contraseña de acceso (la contraseña no se muestra en pantalla al ingresarla).
 
-Debe hacer uso de los comandos según sea el caso. Por ejemplo, posterior a un `git pull origin master` que le muestre cambios en migraciones, deberá ejecutar `php artisan migrate` y `php artisan tenancy:migrate`. De esta manera actualizará los campos de las bases de datos. Básicamente, cada comando cumple una función específica y no todos son usados cada vez que se realiza una actualización.
+Debe hacer uso de los comandos según sea el caso. Por ejemplo, posterior a un `git pull origin master` que le muestre cambios en migraciones, deberá ejecutar `php artisan migrate --force` y `php artisan tenancy:migrate --path=database/migrations/tenant --force`. De esta manera actualizará los campos de las bases de datos. Básicamente, cada comando cumple una función específica y no todos son usados cada vez que se realiza una actualización.
 
 ## MariaDB
 

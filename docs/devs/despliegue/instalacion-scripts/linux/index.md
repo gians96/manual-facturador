@@ -367,7 +367,7 @@ El script hace, en orden:
 5. `composer install` (con `--no-dev --optimize-autoloader` en prod).
 6. **`composer dump-autoload -o`** clave para clases nuevas.
 7. `php artisan module:discover`.
-8. `migrate` + `tenancy:migrate`.
+8. `migrate --force` + `tenancy:migrate --path=database/migrations/tenant --force`.
 9. `route:clear` / `config:clear` / `cache:clear` / `view:clear`.
 10. `config:cache` (solo en prod).
 11. `kill -USR2 1` sobre `fpm_1` o el servicio FPM detectado.
@@ -396,7 +396,7 @@ docker compose exec -T fpm_1 sh -c "cd /var/www/html && CACHE_DRIVER=file compos
 docker compose exec -T fpm_1 sh -c "cd /var/www/html && composer dump-autoload -o"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan module:discover"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan migrate --force"
-docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan tenancy:migrate --force"
+docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan tenancy:migrate --path=database/migrations/tenant --force"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan route:clear"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan config:cache"
 docker compose exec -T fpm_1 sh -c "CACHE_DRIVER=file php artisan cache:clear"

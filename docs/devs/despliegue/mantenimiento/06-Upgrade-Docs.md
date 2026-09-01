@@ -322,7 +322,7 @@ chmod -R 777 vendor/mpdf
 Y por ultimo ejecutar:
 
 ```bash
-php artisan migrate && php artisan tenancy:migrate && php artisan config:cache && php artisan cache:clear && php artisan optimize:clear
+php artisan migrate --force && php artisan tenancy:migrate --path=database/migrations/tenant --force && php artisan config:cache && php artisan cache:clear && php artisan optimize:clear
 ```
 
 Finalmente el sistema está actualizado.

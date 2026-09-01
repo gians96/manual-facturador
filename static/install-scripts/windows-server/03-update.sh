@@ -12,8 +12,8 @@
 #   4. php artisan module:discover        re-escanea modules/<Modulo>/module.json
 #   5. migrate + tenancy:migrate
 #   6. route:clear / config:clear / cache:clear / view:clear
-#   7. docker compose exec fpm_1 kill -USR2 1  (purga OPcache sin restart)
-#   8. supervisorctl restart all  (si el contenedor existe)
+#   7. docker compose restart fpm + supervisor + scheduling + nginx (OPcache)
+#   8. cache:clear posterior al reinicio
 # =========================================================================
 
 set -euo pipefail
@@ -427,12 +427,38 @@ if [ "$MODE" = "prod" ]; then
     docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan config:cache" || true
 fi
 
-echo "-> 7/8 purgar OPcache (sin reiniciar fpm)"
-docker compose exec -T $FPM sh -c "kill -USR2 1" || true
+echo "-> 7/8 reiniciar contenedores PHP y nginx"
+# CRITICO. `kill -USR2 1` solo purgaba el OPcache de fpm, y aqui hay TRES
+# procesos PHP con su propio OPcache: fpm, supervisor y scheduling. Con
+# opcache.validate_timestamps=0 (lo fija 02-install-prod.sh) cada uno sirve para
+# siempre el bytecode que cargo al arrancar.
+#
+# `scheduling` era el peor caso: nunca se reiniciaba, asi que las tareas
+# programadas seguian corriendo con el codigo ANTERIOR indefinidamente. Y nginx
+# resuelve `fastcgi_pass` por nombre una sola vez al arrancar.
+SERVICE_NUMBER="${FPM#fpm_}"
+SCHEDULING="scheduling_${SERVICE_NUMBER}"
+NGINX="nginx_${SERVICE_NUMBER}"
 
-echo "-> 8/8 reiniciar colas"
-docker compose exec -T $SUPERVISOR supervisorctl restart all 2>/dev/null || \
-    echo "  (supervisor no esta activo  OK en dev)"
+docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan queue:restart" 2>/dev/null || true
+docker compose restart $FPM $SUPERVISOR 2>/dev/null || \
+    echo "  (fpm/supervisor no estan activos  OK en dev)"
+docker compose restart $SCHEDULING 2>/dev/null || echo "  (sin servicio ${SCHEDULING}; se omite)"
+docker compose restart $NGINX 2>/dev/null || echo "  (sin servicio ${NGINX}; se omite)"
+
+echo "-> 8/8 purga final de cache (post-restart)"
+# El cache:clear anterior corrio mientras los procesos viejos seguian
+# atendiendo, y cualquier peticion de esa ventana repuebla la cache con el
+# codigo viejo. Limpiar DESPUES del reinicio garantiza que lo que quede lo
+# escribio el codigo nuevo.
+for _i in 1 2 3 4 5 6 7 8 9 10; do
+    if docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan cache:clear" >/dev/null 2>&1; then
+        echo "  OK cache:clear posterior al reinicio"
+        break
+    fi
+    sleep 2
+    [ "${_i}" = "10" ] && echo "  ADVERTENCIA: no se pudo correr el cache:clear final; hazlo a mano"
+done
 
 # Auto-start (WSL2 only): lo instala el script de instalacion.
 if grep -qi microsoft /proc/version 2>/dev/null && [ ! -f /etc/systemd/system/pro8-autostart.service ]; then
