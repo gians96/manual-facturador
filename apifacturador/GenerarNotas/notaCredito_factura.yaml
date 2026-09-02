@@ -50,7 +50,7 @@ paths:
         ***Ejemplo:***
          - **Método:** POST
          - **URL:** `https://tu-dominio.com/api/documents`
-         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>`, `Accept: application/json` y `Content-Type: application/json`
 
         **Notas importantes:**
         - `numero_documento: "#"` deja que el sistema asigne el correlativo automáticamente (recomendado).
@@ -90,14 +90,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorLicencia'
+        '400':
+          description: >-
+            El cuerpo de la petición no se pudo interpretar. El campo `error_code`
+            distingue el motivo: `MISSING_CONTENT_TYPE` (falta la cabecera
+            `Content-Type: application/json`, la causa más frecuente),
+            `INVALID_JSON` (sintaxis rota), `EMPTY_BODY` (cuerpo vacío o
+            truncado) o `BODY_IS_LIST` (se envió un arreglo en vez del objeto).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
         '422':
-          description: Error de validación de campos
+          description: >-
+            Error de validación. `error_code`: `MISSING_FIELDS` (faltan campos
+            obligatorios; se listan todos de una vez, con el número de ítem, pago
+            o cuota), `INVALID_UNIT_TYPE` (unidad de medida fuera del catálogo 03
+            de SUNAT, con la sugerencia del código correcto) o `TOTALS_MISMATCH`
+            (el total declarado no cuadra con la suma de los ítems). Aquí salen
+            también las reglas de negocio —serie incorrecta, ubigeo, fecha fuera
+            de plazo—, que **antes devolvían 500**.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorValidacion'
         '500':
-          description: Error de negocio (serie incorrecta, documento afectado no encontrado, etc.)
+          description: >-
+            Fallo real del servidor. Un dato mal enviado ya no devuelve 500:
+            revisa los códigos 400 y 422.
           content:
             application/json:
               schema:

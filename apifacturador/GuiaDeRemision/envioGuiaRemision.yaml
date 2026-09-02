@@ -52,7 +52,7 @@ paths:
         ***Ejemplo:***
          - **Método:** POST
          - **URL:** `https://tu-dominio.com/api/dispatches/send`
-         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>`, `Accept: application/json` y `Content-Type: application/json`
 
         **Errores de negocio** (respuesta con `success: false`):
         - `"El external id es incorrecto"` — el `external_id` no corresponde a ninguna guía.

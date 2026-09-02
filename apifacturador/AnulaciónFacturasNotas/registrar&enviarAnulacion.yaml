@@ -59,7 +59,7 @@ paths:
         ***Ejemplo:***
          - **Método:** POST
          - **URL:** `https://tu-dominio.com/api/voided`
-         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>`, `Accept: application/json` y `Content-Type: application/json`
       operationId: registrar&enviarAnulacion
       requestBody:
         description: JSON a enviar
