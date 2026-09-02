@@ -75,7 +75,9 @@ Accept: application/json
         "direct_print": false,
         "has_igv_31556": false,
         "igv_31556_percentage": "0.105",
-        "direct_send_documents_whatsapp": false
+        "direct_send_documents_whatsapp": false,
+        "restrict_receipt_date": true,
+        "shipping_time_days": 4
     },
     "permission_edit_item_prices": true,
     "sellerId": 1
@@ -94,6 +96,8 @@ Accept: application/json
 | `restaurant_role_id` | int | Rol del usuario (1=Cajero, 2=Mesero, 3=Admin) |
 | `restaurant_role_code` | string | Código del rol: `CAJ`, `MSR`, `ADM` |
 | `app_configuration` | object | Configuración visual y de comportamiento de la app |
+| `app_configuration.restrict_receipt_date` | bool | **Guardar.** Si es `false`, no se valida la fecha de emisión |
+| `app_configuration.shipping_time_days` | int | **Guardar.** Margen de días para la fecha de emisión (default `4`) |
 | `seriedefault` | string\|null | Serie por defecto del usuario (puede ser null si tiene múltiples) |
 
 ---
@@ -116,3 +120,8 @@ Accept: application/json
 - El `establishment_id` determina qué items, series y warehouse descargará la app.
 - El `sellerId` se envía en cada comprobante como `codigo_vendedor` (documentos) o `seller_id` (notas de venta).
 - Si `seriedefault` es `null`, se debe consultar `GET /api/offline/series-numbering` para obtener las series asignadas al usuario.
+- **`restrict_receipt_date` y `shipping_time_days` se usan para validar la fecha de emisión
+  antes de encolar una venta.** Sin ellos, un comprobante fuera de plazo se acepta en el
+  dispositivo y solo se descubre rechazado al sincronizar. Disponibles en `app_configuration`
+  desde 2026-09-02; si el backend es anterior no vendrán, así que asume el default
+  (`true` / `4`). Regla completa en [35 — Plazo de la Fecha de Emisión](35-plazo-fecha-emision.md).

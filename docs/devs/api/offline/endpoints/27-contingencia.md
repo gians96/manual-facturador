@@ -100,6 +100,38 @@ El payload es **idéntico** al de una factura normal (ver [09-boleta-factura.md]
 
 ---
 
+## ⚠️ El plazo de SUNAT (7 días) NO es el plazo del backend
+
+:::danger Contradicción operativa: 7 días de SUNAT vs 3 días del sistema
+Las series de contingencia usan `doc_type` `01`/`03`, así que **caen de lleno** en la validación de `fecha_de_emision` del backend. Con la configuración por defecto (`shipping_time_days = 4`), el sistema rechaza el comprobante a partir del **cuarto día** de antigüedad — mucho antes de que venza el plazo de 7 días que concede SUNAT.
+
+Un lote de contingencia sincronizado al quinto día devuelve:
+
+```json
+{ "success": false, "message": "La fecha de emisión no puede ser menor a 4 día(s)." }
+```
+
+…tanto por `POST /api/documents` como por `POST /api/offline/sync-batch`. **No hay endpoint que lo esquive.**
+:::
+
+### Qué hacer antes de necesitarlo
+
+| Ventana de desconexión prevista | `shipping_time_days` recomendado |
+|---|---|
+| Hasta 3 días | `4` (default, alcanza) |
+| Hasta 7 días (plazo completo SUNAT) | `8` |
+| Contingencias más largas | Ajustar al escenario, o desactivar `restrict_receipt_date` |
+
+Se configura en **Configuraciones globales → Empresa → Avanzado → Visual**, campo *"Días de plazo de envío"*.
+
+:::warning Ajustarlo después no rescata lo ya rechazado
+Subir `shipping_time_days` no reprocesa nada: los comprobantes rechazados hay que **reenviarlos** una vez cambiada la configuración. Si la contingencia puede durar más de 3 días, sube el valor **antes** de la ventana de desconexión.
+:::
+
+📘 Regla completa, cálculo y matriz por `doc_type`: **[35 — Plazo de la Fecha de Emisión](35-plazo-fecha-emision.md)**.
+
+---
+
 ## Flujo de Contingencia desde Flutter
 
 ### Detección de contingencia

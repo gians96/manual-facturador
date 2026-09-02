@@ -136,7 +136,7 @@ Misma estructura, con diferencias:
 |-------|------|-----------|-------------|
 | `serie_documento` | string | **Sí** | Serie: `"F001"`, `"B001"` |
 | `numero_documento` | string | **Sí** | `"#"` = auto-numerar. Para offline: número concreto `"90"` |
-| `fecha_de_emision` | string | **Sí** | Formato `YYYY-MM-DD` |
+| `fecha_de_emision` | string | **Sí** | Formato `YYYY-MM-DD`. ⚠️ Sujeta a plazo: ver [nota abajo](#plazo-fecha-emision) |
 | `hora_de_emision` | string | **Sí** | Formato `HH:mm:ss` |
 | `codigo_tipo_operacion` | string | **Sí** | `"0101"` = Venta interna. Ver catálogo SUNAT |
 | `codigo_tipo_documento` | string | **Sí** | `"01"` = Factura, `"03"` = Boleta |
@@ -148,6 +148,23 @@ Misma estructura, con diferencias:
 | `codigo_condicion_de_pago` | string | No | `"01"` = Contado (default) |
 | `informacion_adicional` | string\|null | No | Información extra para el PDF |
 | `factor_tipo_de_cambio` | float | No | Tipo de cambio (default 1 para PEN) |
+
+### ⚠️ Plazo de la fecha de emisión {#plazo-fecha-emision}
+
+`fecha_de_emision` no acepta cualquier valor. Con la configuración por defecto del tenant
+(`shipping_time_days = 4`, `restrict_receipt_date = true`), el backend rechaza el comprobante
+si la fecha tiene **4 o más días** de antigüedad — o si está adelantada 4 o más días:
+
+```json
+{ "success": false, "message": "La fecha de emisión no puede ser menor a 4 día(s)." }
+```
+
+Aplica igual a `POST /api/documents` (HTTP 422; **500** en versiones anteriores a los
+*errores accionables* de 2026-09-02) y a `POST /api/offline/sync-batch` (HTTP 200, con el
+error dentro de `results[]`), y a los cuatro tipos `01`/`03`/`07`/`08`. El documento
+**no se guarda**.
+
+📘 Detalle completo: **[35 — Plazo de la Fecha de Emisión](35-plazo-fecha-emision.md)**.
 
 ### `datos_del_cliente_o_receptor`
 

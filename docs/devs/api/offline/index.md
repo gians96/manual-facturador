@@ -138,6 +138,7 @@ Este documento describe el contrato de API para la aplicación offline del Factu
 | 32 | [POS Farmacia Flutter](endpoints/32-pos-farmacia-flutter.md) | Diseño funcional, flujos, arquitectura offline-first |
 | 33 | [Validación Contrato Offline](endpoints/33-validacion-contrato-offline.md) | 4 invariantes: series-por-usuario, items-por-establecimiento, idempotencia, stock/lotes-por-warehouse |
 | 34 | [Lista de Precios por Item](endpoints/34-lista-de-precios-items.md) | `item_unit_types[]` + flag `select_available_price_list` |
+| 35 | [Plazo de la Fecha de Emisión](endpoints/35-plazo-fecha-emision.md) | `shipping_time_days` + `restrict_receipt_date`: cuándo el backend rechaza `fecha_de_emision` |
 
 ---
 
@@ -176,6 +177,8 @@ El token se obtiene en el login y no expira mientras la sesión esté activa.
 | `modules/Offline/Http/Controllers/SeriesNumberingController.php` | Series + numeración |
 | `app/CoreFacturalo/Requests/Api/Transform/DocumentTransform.php` | Transformación payload documentos |
 | `app/CoreFacturalo/Requests/Api/Transform/DispatchTransform.php` | Transformación payload guías |
+| `app/CoreFacturalo/Requests/Api/Validation/DocumentValidation.php` | Validación de documentos — **compartida** por `/api/documents` y `sync-batch` |
+| `app/CoreFacturalo/Requests/Api/Validation/Functions.php` | Reglas de validación (series, cliente, `validateDateOfIssue`) |
 | `app/Http/Controllers/Tenant/Api/DocumentController.php` | Creación de documentos (01/03/07/08) |
 | `app/Http/Controllers/Tenant/Api/SaleNoteController.php` | Creación de notas de venta (80) |
 | `app/Http/Controllers/Tenant/Api/DispatchController.php` | Creación de guías remitente (09) |

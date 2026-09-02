@@ -296,6 +296,8 @@ syncBatch(Request $request)
 │   │   │
 │   │   ├── "01","03","07","08" → processDocument($sale['data'])
 │   │   │          → DocumentTransform → Validation → Input
+│   │   │            └─ Validation incluye validateDateOfIssue()
+│   │   │               ⚠ rechaza si la fecha excede shipping_time_days
 │   │   │          → Facturalo::save()
 │   │   │          → Guardar offline_id en documents.offline_id
 │   │   │
@@ -334,6 +336,32 @@ La tabla `sale_notes` **NO tiene constraint unique** en filename. Por eso la ver
 ### Error de validación
 
 Si los datos no pasan la validación (serie incorrecta, cliente no encontrado, etc.), se retorna `success: false` con el mensaje de error. Los demás comprobantes continúan procesándose.
+
+### Fecha de emisión fuera de plazo
+
+:::warning `sync-batch` aplica la MISMA validación de fecha que `/api/documents`
+Para `doc_type` `01`/`03`/`07`/`08`, `processDocument()` invoca la **misma clase** `Api\DocumentValidation` que usa `POST /api/documents`, la cual llama a `Functions::validateDateOfIssue()`. **Sincronizar por la vía offline no evita el control de plazo.**
+:::
+
+Con la configuración por defecto (`shipping_time_days = 4`, `restrict_receipt_date = true`), un comprobante con más de **3 días** de antigüedad se rechaza:
+
+```json
+{
+  "index": 1,
+  "offline_id": "c3d4-e5f6-...",
+  "success": false,
+  "doc_type": "01",
+  "message": "La fecha de emisión no puede ser menor a 4 día(s)."
+}
+```
+
+A diferencia de `/api/documents` (que responde con un status de error — **422**, o **500** en versiones anteriores a 2026-09-02), aquí el HTTP es **200** y el fallo viaja dentro de `results[]`: el resto del lote se sincroniza sin problema. `sync-batch` atrapa la excepción en su `try/catch` por venta, así que el cambio de status del endpoint directo **no le afecta**.
+
+**Es un error permanente**, no transitorio: reintentar mañana empeora la diferencia de días. Márcalo como `ERROR_PERMANENTE` y sácalo de la cola de reintentos automáticos.
+
+Los `doc_type` `80` (nota de venta), `09`/`31` (guías) y `20` (retención) **no** pasan por esta validación.
+
+📘 Regla completa, cálculo, asimetrías web/API y configuración: **[35 — Plazo de la Fecha de Emisión](35-plazo-fecha-emision.md)**.
 
 ---
 
