@@ -63,6 +63,10 @@ paths:
           queda **Registrado** (estado `01`) y se envía después con `POST /api/documents/send`.
         - `offline_id` (opcional) hace la emisión **idempotente**: si ya existe un documento con ese
           `offline_id`, se devuelve el existente con `was_duplicate: true` en lugar de emitir de nuevo.
+          Útil con timeouts cortos: si la respuesta se pierde por red, reintentar con el mismo
+          `offline_id` no duplica el comprobante. **Corregido el 2026-09-02**: hasta esa fecha esta
+          promesa no se cumplía y cada reintento creaba un comprobante nuevo, así que si construiste
+          un rodeo para evitarlo, ya puedes retirarlo.
       operationId: facturaGravada
       requestBody:
         description: JSON a enviar
