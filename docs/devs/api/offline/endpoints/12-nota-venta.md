@@ -161,6 +161,17 @@ Authorization: Bearer {token}
 | `purchase_order` | string\|null | No | Orden de compra |
 | `plate_number` | string | No | Placa vehículo |
 | `additional_information` | string\|null | No | Info adicional para PDF |
+| `acciones` | object | No | Impresión y envío por correo. Ver abajo. |
+
+#### `acciones`
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `formato_pdf` | string | No | `a4` (default), `a5`, `ticket`, `ticket_58`, `ticket_50` |
+| `enviar_email` | bool | No | Fuerza el envío de la nota al correo del cliente |
+| `auto_print` | bool | No | Impresión automática en servidor |
+
+📘 Cuándo sale el correo solo, sin mandar `enviar_email`: **[36 — Envío Automático por Correo](36-envio-automatico-por-correo.md)**.
 
 ### `datos_del_cliente_o_receptor`
 

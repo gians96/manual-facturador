@@ -68,6 +68,38 @@ Bienvenido(a) al sistema de facturación. Esta guía te llevará paso a paso par
 
 **💡 Consejo:** Si SUNAT presenta problemas de conexión, desactiva temporalmente el envío automático y reenvía manualmente desde "Comprobantes no enviados".
 
+:::info Ojo: esto es el envío a SUNAT
+Las opciones de **Avanzado → Servicios** remiten el comprobante a **SUNAT**. Que tu cliente reciba el PDF en su correo es una configuración distinta, en el Paso 4.1.
+:::
+
+## 📧 Paso 4.1: Enviar el Comprobante al Correo del Cliente
+
+Con esto, al cerrar una venta el sistema manda el comprobante al correo del cliente por su cuenta, sin que tengas que enviarlo a mano desde el listado.
+
+**1. Configura tu cuenta de correo**
+
+Ve a **Configuración** → **Empresa** → **Avanzado** → pestaña **Correo** y completa los datos de tu servidor SMTP: host, puerto, encriptación, usuario y contraseña. Usa el botón de prueba para confirmar que funciona antes de seguir.
+
+:::tip Puede que no tengas que configurar nada
+Si dejas la pestaña **Correo** vacía, los comprobantes salen igualmente con la cuenta de correo de la plataforma. Configura la tuya solo si quieres que lleguen desde tu propia dirección y dominio.
+:::
+
+Los detalles de puertos, TLS/SSL y contraseñas de aplicación de Gmail están en _[Configuración SMTP segura](configuracion-smtp-segura.md)_.
+
+**2. Activa el envío**
+
+Ve a **Configuración** → **Empresa** → **Avanzado** → pestaña **POS** → tarjeta **PDF e Impresión** y activa **"Enviar PDF automático al correo del cliente"**.
+
+**3. Asegúrate de que tus clientes tengan correo**
+
+El comprobante se manda a la dirección del campo *Correo electrónico* de la ficha del cliente. Si un cliente no tiene correo registrado, la venta se emite igual pero no se envía nada.
+
+:::warning El aviso de "correo enviado" no siempre significa que llegó
+Si el correo rebota o la cuenta SMTP está mal configurada, la venta se emite igualmente: un comprobante aceptado por SUNAT es válido aunque el correo falle. Cuando un cliente te diga que no le llegó, revisa primero la pestaña **Correo** con el botón de prueba.
+:::
+
+Funciona en el POS, en Nuevo CPE, en notas de venta y cotizaciones, y también en las ventas que llegan desde la aplicación móvil o desde otro sistema conectado por la API.
+
 ## 📦 Paso 5: Agregar tus Productos/Servicios
 
 **Ve a:** **Productos/Servicios** → **Productos**

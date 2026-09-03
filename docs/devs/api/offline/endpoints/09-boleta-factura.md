@@ -179,6 +179,8 @@ error dentro de `results[]`), y a los cuatro tipos `01`/`03`/`07`/`08`. El docum
 | `correo_electronico` | string\|null | No | Email (para envío automático) |
 | `telefono` | string\|null | No | Teléfono |
 
+📘 Cuándo se usa ese correo y cómo activarlo: **[36 — Envío Automático por Correo](36-envio-automatico-por-correo.md)**.
+
 ### `items[]`
 
 | Campo | Tipo | Requerido | Descripción |

@@ -19,6 +19,10 @@ Aparecerá las configuraciones posibles por hacer:
 * **Crontab (Tareas Programadas):** Esta configuración es para tareas programas en caso la tenga activadas.
 * **Envío de guía de remisión automático:** Esta configuración es para el envío de comprobantes de manera automática de guías de remisión.
 * **Enviar boletas y notas asociadas (Crédito y Débito) de forma individual:** Esta configuración es para el envío de comprobantes de manera automática de boletas, notas de crédito y débito de boletas.
+
+:::info Estos envíos son a SUNAT, no al correo del cliente
+Las opciones de esta sección controlan la **remisión del comprobante a SUNAT**. El envío del PDF al **correo del cliente** es otra cosa y se activa en la pestaña **POS**, en la tarjeta *PDF e Impresión*.
+:::
   
 ## Visual
 
@@ -217,6 +221,8 @@ Asegúrate de ajustar estas configuraciones según tus necesidades antes de gene
 * **Impresión de PDF automática:**
 * **POS:** Al realizar un pago se envía el documento a la impresora, seguir documentación para un funcionamiento correcto.
 * **Nuevo CPE:** Al finalizar el registro del comprobante se envía a la impresora
+* **Impresora para documentos:** Impresora que recibirá los documentos al usar la impresión automática. Si no se selecciona, se usará la impresora predeterminada registrada.
+* **Enviar PDF automático al correo del cliente:** Envía el comprobante al correo del cliente al finalizar la venta, sin que tengas que mandarlo a mano. Disponible en POS y Nuevo CPE, y también en las ventas que llegan desde la aplicación o desde otro sistema por la API. Requiere que el cliente tenga un correo registrado en su ficha y que la cuenta de correo esté configurada.
 * **Mostrar términos y condiciones:** Añadir texto en el campo de términos y condiciones (ventas) de la pestaña "PDF".
 * **Habilitar restricción para descuento:** Se limitará el porcentaje de descuento que pueden registrar los vendedores por cada venta - Disponible en POS.
 * **Habilitar Agente de ventas:** Se limitará el porcentaje de descuento que pueden registrar los vendedores por cada venta - Disponible en POS.

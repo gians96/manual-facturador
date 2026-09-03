@@ -99,6 +99,14 @@ Para impresión offline (antes de sincronizar), Flutter debe generar el ticket l
 
 ---
 
+## 6. Envío del Comprobante por Correo
+
+El backend puede mandar el comprobante al correo del cliente en la propia emisión, sin que la app haga una segunda llamada. Lo decide el interruptor del tenant (`auto_send_pdf_email`, expuesto en `GET /api/configuration-web` y en la respuesta del login) o el campo `acciones.enviar_email` del payload.
+
+📘 Detalle completo: **[36 — Envío Automático por Correo](36-envio-automatico-por-correo.md)**.
+
+---
+
 ## Resumen de Endpoints por Fase
 
 ### Fase 1: Descarga Inicial (con internet)

@@ -77,7 +77,8 @@ Accept: application/json
         "igv_31556_percentage": "0.105",
         "direct_send_documents_whatsapp": false,
         "restrict_receipt_date": true,
-        "shipping_time_days": 4
+        "shipping_time_days": 4,
+        "auto_send_pdf_email": false
     },
     "permission_edit_item_prices": true,
     "sellerId": 1
@@ -98,6 +99,7 @@ Accept: application/json
 | `app_configuration` | object | Configuración visual y de comportamiento de la app |
 | `app_configuration.restrict_receipt_date` | bool | **Guardar.** Si es `false`, no se valida la fecha de emisión |
 | `app_configuration.shipping_time_days` | int | **Guardar.** Margen de días para la fecha de emisión (default `4`) |
+| `app_configuration.auto_send_pdf_email` | bool | Si el backend envía el comprobante al correo del cliente al emitir |
 | `seriedefault` | string\|null | Serie por defecto del usuario (puede ser null si tiene múltiples) |
 
 ---
@@ -125,3 +127,7 @@ Accept: application/json
   dispositivo y solo se descubre rechazado al sincronizar. Disponibles en `app_configuration`
   desde 2026-09-02; si el backend es anterior no vendrán, así que asume el default
   (`true` / `4`). Regla completa en [35 — Plazo de la Fecha de Emisión](35-plazo-fecha-emision.md).
+- **`auto_send_pdf_email` es informativo.** El envío del comprobante por correo lo hace el
+  backend en la propia emisión; la app no debe lanzar ninguna llamada extra. Sirve para
+  reflejarlo en la interfaz y avisar cuando el cliente elegido no tiene correo registrado.
+  Regla completa en [36 — Envío Automático por Correo](36-envio-automatico-por-correo.md).

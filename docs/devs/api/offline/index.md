@@ -139,6 +139,7 @@ Este documento describe el contrato de API para la aplicación offline del Factu
 | 33 | [Validación Contrato Offline](endpoints/33-validacion-contrato-offline.md) | 4 invariantes: series-por-usuario, items-por-establecimiento, idempotencia, stock/lotes-por-warehouse |
 | 34 | [Lista de Precios por Item](endpoints/34-lista-de-precios-items.md) | `item_unit_types[]` + flag `select_available_price_list` |
 | 35 | [Plazo de la Fecha de Emisión](endpoints/35-plazo-fecha-emision.md) | `shipping_time_days` + `restrict_receipt_date`: cuándo el backend rechaza `fecha_de_emision` |
+| 36 | [Envío Automático por Correo](endpoints/36-envio-automatico-por-correo.md) | `acciones.enviar_email` + interruptor `auto_send_pdf_email`: cuándo el backend manda el comprobante al cliente |
 
 ---
 
@@ -180,6 +181,8 @@ El token se obtiene en el login y no expira mientras la sesión esté activa.
 | `app/CoreFacturalo/Requests/Api/Validation/DocumentValidation.php` | Validación de documentos — **compartida** por `/api/documents` y `sync-batch` |
 | `app/CoreFacturalo/Requests/Api/Validation/Functions.php` | Reglas de validación (series, cliente, `validateDateOfIssue`) |
 | `app/Http/Controllers/Tenant/Api/DocumentController.php` | Creación de documentos (01/03/07/08) |
+| `app/CoreFacturalo/Requests/Inputs/Common/ActionInput.php` | Resuelve el objeto `acciones` (incluido `enviar_email`) |
+| `app/CoreFacturalo/Helpers/Mail/AutoDocumentMailer.php` | Envío automático del comprobante por correo |
 | `app/Http/Controllers/Tenant/Api/SaleNoteController.php` | Creación de notas de venta (80) |
 | `app/Http/Controllers/Tenant/Api/DispatchController.php` | Creación de guías remitente (09) |
 | `modules/Dispatch/Http/Controllers/Api/DispatchCarrierController.php` | Creación de guías transportista (31) |
