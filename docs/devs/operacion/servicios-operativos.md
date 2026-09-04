@@ -37,7 +37,7 @@ docker exec fpm_nt-suite_pro sh -c "cd /var/www/html && CACHE_DRIVER=file php ar
 
 | Servicio | Qué hace | Frecuencia | Cómo verificar que está vivo | Log |
 |---|---|---|---|---|
-| `tenancy:run tenant:run` | Tareas por tenant: consultas a SUNAT y envíos automáticos | cada minuto | `docker exec fpm_… php artisan schedule:list \| grep tenant:run` | — |
+| `tenancy:run tenant:run` | Tareas por tenant: consultas a SUNAT y envíos automáticos. Ejecuta solo las que estén **activas** en la tabla `tasks` del tenant (interruptor de la pantalla *Tareas programadas*) | cada minuto | `docker exec fpm_… php artisan schedule:list \| grep tenant:run` | — |
 | `status:server` | Muestra de CPU y RAM para las gráficas de `/information` | cada 5 min | Que aparezcan filas nuevas en `history_resources` | — |
 | `storage:scan` | Mide disco, inodes y consumo por tenant para `/information` | cada hora | `stat -c %y storage/app/system/storage-usage.json` (debe ser de hace &lt; 1 h) | `storage_scan.log` |
 | `tenants:clean-pdfs --older-than=90` | Libera disco e inodes borrando PDF regenerables de más de 90 días | domingos 04:30 | `tail storage/logs/clean_tenant_pdfs.log` | `clean_tenant_pdfs.log` |
@@ -48,6 +48,27 @@ docker exec fpm_nt-suite_pro sh -c "cd /var/www/html && CACHE_DRIVER=file php ar
 | `backup:prune-runs --days=180` | Poda el historial de copias | lunes 05:30 | `SELECT COUNT(*) FROM backup_runs` | `backup_prune_runs.log` |
 | `tenancy:run print-orders:prune` | Borra órdenes de impresión ya impresas (`pdf_b64` es pesado) | diaria 04:00 | `tail storage/logs/print_orders_prune.log` | `print_orders_prune.log` |
 | `order:payments` | Procesa pagos pendientes | cada 2 min | `tail storage/logs/order_create.log` | `order_create.log` |
+
+> **Las tareas de cada empresa se ven y se apagan desde el panel del tenant**, en
+> *Tareas programadas* (`/tasks`). Lo que se ofrece ahí es una lista blanca
+> declarada en `app/Support/TaskCatalog.php`, no un escaneo del directorio de
+> comandos: **añadir un comando nuevo al repo ya no lo publica en el panel de
+> todas las empresas**; hay que declararlo en el catálogo.
+>
+> El conjunto recomendado (enviar a SUNAT → resumen diario → bajas → consultar
+> resumen → verificar) se crea solo al dar de alta una empresa. Para las que ya
+> existen, con `--dry-run` primero:
+>
+> ```bash
+> docker exec fpm_… php artisan tenancy:run tasks:seed-stack --option="dry-run=true"
+> docker exec fpm_… php artisan tenancy:run tasks:seed-stack --option="only-empty=true"
+> ```
+>
+> Comprobar que una empresa las tiene y están encendidas:
+> `SELECT class, execution_time, active FROM <bd_tenant>.tasks;`
+>
+> ⚠️ Nada de esto corre si `configurations.cron` está en 0 en ese tenant: los
+> comandos salen en la primera línea de su `handle()`.
 | `demodb:bktemporary` | Restaura los tenants demo a su snapshot | diaria 03:30 | Que un tenant demo aparezca limpio por la mañana | — |
 | `nubetec:refresh-legal` | Versiones legales vigentes de la plataforma | cada hora | `tail storage/logs/nubetec_legal.log` | `nubetec_legal.log` |
 | `nubetec:refresh-announcements` | Anuncios que muestra el navbar | cada hora | `tail storage/logs/nubetec_announcements.log` | `nubetec_announcements.log` |
