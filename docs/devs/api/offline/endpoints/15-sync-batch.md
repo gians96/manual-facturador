@@ -257,8 +257,8 @@ Authorization: Bearer {token}
                 "success": false,
                 "offline_id": "b2c3d4e5-...",
                 "doc_type": "03",
-                "error": "Error en la validación del documento: La serie B001 no corresponde al tipo de documento",
-                "duplicate": false
+                "message": "La serie ingresada B001, es incorrecta.",
+                "error_code": "INVALID_SERIES"
             },
             {
                 "index": 2,
@@ -337,6 +337,71 @@ La tabla `sale_notes` **NO tiene constraint unique** en filename. Por eso la ver
 
 Si los datos no pasan la validación (serie incorrecta, cliente no encontrado, etc.), se retorna `success: false` con el mensaje de error. Los demás comprobantes continúan procesándose.
 
+### Códigos de error — `error_code`
+
+:::info Desde el 2026-09-04
+**Toda** fila fallida de `results[]` trae `error_code`, un código estable para ramificar sin
+tener que leer el texto del `message`. Es un campo **añadido**: si tu integración solo lee
+`success` y `message`, sigue funcionando igual.
+:::
+
+| `error_code` | Significa | ¿Reintentar? |
+|---|---|---|
+| `MISSING_FIELDS` | Falta `doc_type`/`data`, o un campo obligatorio del comprobante | ❌ No, sin corregir |
+| `INVALID_PAYLOAD` | No pasó la validación previa o una regla de negocio | ❌ No, sin corregir |
+| `INVALID_REFERENCE` | Un código enviado no existe en el catálogo destino | ❌ No, sin corregir |
+| `NULL_NOT_ALLOWED` | Se envió `null` en un campo que no lo admite | ❌ No, sin corregir |
+| `INVALID_ENCODING` | El cuerpo no es UTF-8 válido | ❌ No, sin corregir |
+| `VALUE_TOO_LONG` · `VALUE_OUT_OF_RANGE` | Texto o importe fuera del ancho del campo | ❌ No, sin corregir |
+| `CONFLICT_NUMBER` | El correlativo ya lo usó **otra** venta | ⚠️ Renumerar y reemitir |
+| `DATABASE_ERROR` · `PROCESSING_ERROR` | **No es tu payload.** Fallo del servidor | ✅ Sí |
+
+Los códigos de validación llegan por esta vía exactamente igual que por `/api/documents`:
+ver **[Errores de la API](../../errores-de-la-api.md)** para el catálogo completo, los
+mensajes literales y qué corregir en cada caso.
+
+#### Antes: un mensaje que no nombraba nada
+
+Hasta el 2026-09-04, cualquier violación de restricción de la base salía como:
+
+```json
+{
+  "index": 4,
+  "offline_id": "C9C52DCB-D5C4-4476-A8CE-8989F1351DF1",
+  "success": false,
+  "doc_type": "01",
+  "message": "Error de base de datos al procesar el documento. Revise el payload e intente nuevamente."
+}
+```
+
+Un lote entero podía devolver esa frase por **tres causas distintas** sin manera de
+distinguirlas. Ahora cada una nombra su campo:
+
+```json
+{
+  "index": 4,
+  "offline_id": "C9C52DCB-D5C4-4476-A8CE-8989F1351DF1",
+  "success": false,
+  "doc_type": "01",
+  "message": "El valor enviado en 'codigo_condicion_de_pago' no existe. No es un catálogo de SUNAT: son las condiciones de pago del propio tenant, configurables desde el panel. Valores válidos en este tenant: 01, 02.",
+  "error_code": "INVALID_REFERENCE",
+  "errors": {
+    "campo": "codigo_condicion_de_pago",
+    "valores_validos": ["01", "02"]
+  }
+}
+```
+
+:::warning Los tres tropiezos más frecuentes al integrar desde un ERP propio
+
+1. **`codigo_condicion_de_pago: "03"`** — no existe. Son las condiciones de pago **de tu
+   empresa**: `01` Contado y `02` Crédito (el que corresponde si envías `cuotas`).
+2. **`ubigeo: ""`** — la cadena vacía no es «sin dato». Omite la clave o envía `null`.
+3. **`codigo_tipo_documento_identidad: null`** — obligatorio: `6` para RUC, `1` para DNI.
+
+Los tres devolvían el mismo mensaje genérico y hacían fallar el lote completo.
+:::
+
 ### Fecha de emisión fuera de plazo
 
 :::warning `sync-batch` aplica la MISMA validación de fecha que `/api/documents`
@@ -351,13 +416,14 @@ Con la configuración por defecto (`shipping_time_days = 4`, `restrict_receipt_d
   "offline_id": "c3d4-e5f6-...",
   "success": false,
   "doc_type": "01",
-  "message": "La fecha de emisión no puede ser menor a 4 día(s)."
+  "message": "La fecha de emisión no puede ser menor a 4 día(s).",
+  "error_code": "ISSUE_DATE_OUT_OF_RANGE"
 }
 ```
 
 A diferencia de `/api/documents` (que responde con un status de error — **422**, o **500** en versiones anteriores a 2026-09-02), aquí el HTTP es **200** y el fallo viaja dentro de `results[]`: el resto del lote se sincroniza sin problema. `sync-batch` atrapa la excepción en su `try/catch` por venta, así que el cambio de status del endpoint directo **no le afecta**.
 
-**Es un error permanente**, no transitorio: reintentar mañana empeora la diferencia de días. Márcalo como `ERROR_PERMANENTE` y sácalo de la cola de reintentos automáticos.
+**Es un error permanente**, no transitorio: reintentar mañana empeora la diferencia de días. Márcalo como `ERROR_PERMANENTE` y sácalo de la cola de reintentos automáticos — puedes detectarlo por `error_code: "ISSUE_DATE_OUT_OF_RANGE"` sin leer el texto.
 
 Los `doc_type` `80` (nota de venta), `09`/`31` (guías) y `20` (retención) **no** pasan por esta validación.
 
@@ -404,9 +470,24 @@ Ver detalles de implementación en [16-idempotencia.md](16-idempotencia.md).
 ### Retry logic
 
 - Si un comprobante falla con error de red → reintentar todo el batch
-- Si un comprobante falla con error de validación → marcarlo como error local, no reintentar
 - Si un comprobante tiene `was_duplicate: true` → marcarlo como sincronizado exitosamente
 - Exponential backoff: 1s, 2s, 4s, 8s, 16s (máx. 5 intentos)
+
+Para decidir si reintentar, **ramifica por `error_code`, no por el texto del mensaje**: solo
+`DATABASE_ERROR` y `PROCESSING_ERROR` son del servidor y merecen otro intento. Todos los
+demás son del payload y reintentarlos sin corregirlo solo gasta la cola.
+
+```dart
+const reintentables = {'DATABASE_ERROR', 'PROCESSING_ERROR'};
+
+if (r['success'] == true) {
+  marcarSincronizado(r);                       // incluye was_duplicate: true
+} else if (reintentables.contains(r['error_code'])) {
+  encolarReintento(r);
+} else {
+  marcarErrorPermanente(r, r['message']);      // el mensaje ya nombra el campo a corregir
+}
+```
 
 ### Tamaño del batch
 
