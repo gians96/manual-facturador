@@ -185,7 +185,7 @@ Map<String, dynamic> retencion = {
 
 ### Impacto en total pendiente de pago
 
-Cuando hay retención + condición de pago crédito (`02`/`03`):
+Cuando hay retención + condición de pago crédito (`02`):
 
 ```
 total_pending_payment = total_venta - monto_retencion

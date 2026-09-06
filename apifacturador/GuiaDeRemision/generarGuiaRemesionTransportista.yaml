@@ -191,9 +191,13 @@ components:
           description: Opcional.
           example: 1
         numero_de_contenedor:
-          type: string
-          description: Opcional (solo importación/exportación).
-          example: ""
+          type: integer
+          nullable: true
+          description: >-
+            Opcional (solo importación/exportación). La columna es numérica: un
+            código ISO 6346 alfanumérico como "MSKU1234567" se rechaza con
+            INVALID_NUMERIC_VALUE. Si no aplica, envía null — nunca cadena vacía.
+          example: null
         codigo_de_puerto:
           type: string
           description: Opcional (solo importación/exportación).

@@ -3216,7 +3216,7 @@ paths:
                 unidad_peso_total: KGM
                 peso_total: 30
                 numero_de_bultos: 1
-                numero_de_contenedor: ''
+                numero_de_contenedor: null
                 direccion_partida:
                   ubigeo: '150101'
                   direccion: PUNTO A

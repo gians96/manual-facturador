@@ -127,7 +127,7 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
 | `unidad_peso_total` | string | **Sí** | Unidad de peso: `"KGM"` (kilos), `"TNE"` (toneladas) |
 | `peso_total` | float | **Sí** | Peso total de la carga |
 | `numero_de_bultos` | int | No | Cantidad de bultos |
-| `numero_de_contenedor` | string\|null | No | Número de contenedor |
+| `numero_de_contenedor` | int\|null | No | Número de contenedor. **Solo admite dígitos:** un código ISO 6346 alfanumérico (`"MSKU1234567"`) se rechaza con `INVALID_NUMERIC_VALUE`. Si no aplica, envía `null` — no `""` |
 
 ### `direccion_partida` (origen)
 

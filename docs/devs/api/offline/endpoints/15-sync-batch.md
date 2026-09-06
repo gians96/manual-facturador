@@ -383,7 +383,7 @@ distinguirlas. Ahora cada una nombra su campo:
   "offline_id": "C9C52DCB-D5C4-4476-A8CE-8989F1351DF1",
   "success": false,
   "doc_type": "01",
-  "message": "El valor enviado en 'codigo_condicion_de_pago' no existe. No es un catálogo de SUNAT: son las condiciones de pago del propio tenant, configurables desde el panel. Valores válidos en este tenant: 01, 02.",
+  "message": "El valor enviado en 'codigo_condicion_de_pago' no existe. No es un catálogo de SUNAT: son las condiciones de pago del propio tenant. Para crédito con cuotas usa 02; el 03 que ofrece el panel es estado de pantalla y nunca se envía por API. Valores válidos en este tenant: 01, 02.",
   "error_code": "INVALID_REFERENCE",
   "errors": {
     "campo": "codigo_condicion_de_pago",
@@ -394,8 +394,11 @@ distinguirlas. Ahora cada una nombra su campo:
 
 :::warning Los tres tropiezos más frecuentes al integrar desde un ERP propio
 
-1. **`codigo_condicion_de_pago: "03"`** — no existe. Son las condiciones de pago **de tu
-   empresa**: `01` Contado y `02` Crédito (el que corresponde si envías `cuotas`).
+1. **`codigo_condicion_de_pago: "03"`** — por API solo existen `01` Contado y `02` Crédito
+   (este último es el que corresponde si envías `cuotas`). El `03` que ves en el panel es
+   estado de pantalla: se convierte a `02` antes de enviar. Ojo, en un tenant que sí tenga
+   la fila `03` **no falla**, emite sin `FormaPago` y sin cuotas. Ver
+   [Condiciones de Pago](09-boleta-factura.md#condiciones-de-pago-codigo_condicion_de_pago).
 2. **`ubigeo: ""`** — la cadena vacía no es «sin dato». Omite la clave o envía `null`.
 3. **`codigo_tipo_documento_identidad: null`** — obligatorio: `6` para RUC, `1` para DNI.
 

@@ -61,6 +61,10 @@ ya funciona leyendo solo `success` y `message`, sigue funcionando igual.
 
 Un dato mal enviado **nunca** devuelve 500. Si recibes un 500, no es culpa de tu payload.
 
+> **Cambio de comportamiento (2026-09-05).** El comprobante duplicado, que era la última
+> excepción a esa regla, ahora sale con **409** y `error_code: "DUPLICATE_DOCUMENT"`. El
+> `message` no ha cambiado.
+
 > **Cambio de comportamiento (2026-09-02).** Los errores de negocio —serie incorrecta,
 > ubigeo, fecha fuera de plazo— antes salían con **500**. Ahora salen con **422**, que es lo
 > que son. El `message` es el mismo de siempre.
@@ -153,7 +157,7 @@ acepta:
 ```json
 {
   "success": false,
-  "message": "El valor enviado en 'codigo_condicion_de_pago' no existe. No es un catálogo de SUNAT: son las condiciones de pago del propio tenant, configurables desde el panel. Valores válidos en este tenant: 01, 02.",
+  "message": "El valor enviado en 'codigo_condicion_de_pago' no existe. No es un catálogo de SUNAT: son las condiciones de pago del propio tenant. Para crédito con cuotas usa 02; el 03 que ofrece el panel es estado de pantalla y nunca se envía por API. Valores válidos en este tenant: 01, 02.",
   "error_code": "INVALID_REFERENCE",
   "errors": {
     "campo": "codigo_condicion_de_pago",
@@ -172,8 +176,18 @@ y de fábrica hay exactamente dos:
 | `01` | Contado |
 | `02` | Crédito — es el que corresponde cuando envías `cuotas` |
 
-Un `"03"` no existe salvo que alguien lo haya creado en el panel. Si no envías la clave, se
-usa `01`.
+Si no envías la clave, se usa `01`.
+
+**Cuidado con el `"03"`.** El panel muestra una opción "Crédito con cuotas" y algunos tenants
+tienen además una fila `03` en su tabla de condiciones, pero **`03` es estado de pantalla, no
+un código de la API**: el panel lo convierte a `02` antes de enviar. Si lo mandas tú:
+
+- En un tenant **sin** esa fila recibes este error, antes de emitir. Es el caso bueno.
+- En un tenant **con** esa fila **no hay error**: el comprobante se emite sin bloque
+  `FormaPago` y descartando las cuotas en silencio, con el correlativo ya consumido.
+
+Para crédito con calendario de cuotas envía `02` + `cuotas`. Detalle en
+[Boleta y Factura → Condiciones de Pago](offline/endpoints/09-boleta-factura.md#condiciones-de-pago-codigo_condicion_de_pago).
 :::
 
 Otros campos frecuentes de este bloque:
@@ -266,12 +280,58 @@ Desde el 2026-09-04, **toda** fila fallida trae `error_code`:
 Un fallo con `success: true` y `was_duplicate: true` **no es un error**: es la idempotencia
 por `offline_id` devolviendo el comprobante que ya estaba emitido. Márcalo como sincronizado.
 
+## Valores que se aceptaban y no significaban lo enviado
+
+Había una familia de casos que **no daba ningún error**: el comprobante se emitía y el problema
+aparecía después —en SUNAT, en la contabilidad o en un reporte— con el correlativo ya consumido.
+Desde el **2026-09-05** casi todos se corrigen solos o se rechazan antes de emitir.
+
+### Ahora se normalizan solos
+
+| Envías | Qué pasa ahora |
+|---|---|
+| `codigo_tipo_moneda: "usd"` | Se normaliza a `"USD"`. Antes pasaba la validación —la colación no distingue mayúsculas— y el XML salía con `currencyID="usd"` |
+| `serie_documento: "f001"` | Se normaliza a `"F001"`, en el documento y en el nombre del archivo |
+| `documento_afectado.numero_documento: "00000003"` | Se normaliza a `3`. Antes la referencia de la nota salía como `F001-00000003` apuntando a un `F001-3` |
+
+No tienes que cambiar nada si ya enviabas mayúsculas: la normalización no altera esos envíos.
+
+### Ahora se rechazan antes de emitir
+
+| Envías | `error_code` |
+|---|---|
+| `fecha_de_emision: "01/09/2026"` — con barras se interpretaría como **9 de enero** | `INVALID_DATE_FORMAT` |
+| `cuotas[].fecha` o `fecha_de_vencimiento` con barras | `INVALID_DATE_FORMAT` |
+| Comprobante en moneda distinta de PEN **sin** `factor_tipo_de_cambio` | `MISSING_EXCHANGE_RATE` |
+| `factor_tipo_de_cambio: 0` o no numérico | `INVALID_EXCHANGE_RATE` |
+| `codigo_vendedor: "001"` o `pagos[].codigo_destino_pago: "001"` | `INVALID_NUMERIC_ID` |
+| `codigo_condicion_de_pago: "03"` | `INVALID_PAYMENT_CONDITION` |
+| Texto en una columna numérica (`numero_de_contenedor: "MSKU1234567"`) | `INVALID_NUMERIC_VALUE` |
+
+:::tip La regla que los cubre todos
+Manda cada campo **con el tipo y el formato que declara esta documentación**: fechas en
+`YYYY-MM-DD`, códigos de catálogo como texto, e ids numéricos como números, sin ceros a la
+izquierda. Casi todas estas trampas nacían de un `SELECT` que devolvió texto y se envió tal cual.
+:::
+
+### Lo que todavía es silencioso
+
+Estos siguen sin dar error y conviene tenerlos presentes:
+
+| Envías | Lo que ocurre |
+|---|---|
+| `items[]` con un `codigo_interno` que **ya existe** | La `descripcion` del payload se descarta: el XML lleva la descripción guardada en tu catálogo de productos, no la que enviaste |
+| `unidad_de_medida` en un ítem que ya existe | No se revalida contra el catálogo 03: llega tal cual al `unitCode` del XML. Solo se valida al **crear** el ítem |
+| `items[]` **sin** `codigo_interno` | Todas esas líneas se resuelven al mismo producto interno y acaban compartiendo descripción |
+
 ## Cosas que conviene saber
 
 - **Los decimales no se rechazan.** Los importes se almacenan con dos decimales y se redondean
   solos. Enviar `151724.376` no da error.
-- **Un comprobante duplicado sigue devolviendo 500** con el mensaje
-  `El documento: 01 F001-00005242 ya se encuentra registrado.` Está pendiente de cambiarse
-  a 409.
+- **Un comprobante duplicado devuelve 409** (`DUPLICATE_DOCUMENT`) con el mensaje
+  `El documento: 01 F001-00005242 ya se encuentra registrado.` y el detalle de serie y número
+  en `errors`. Por `sync-batch` no se reporta como fallo: si el `offline_id` coincide se
+  devuelve el comprobante existente con `was_duplicate: true`, y si pertenece a otra venta se
+  marca `conflict_number`.
 - **Las guías de remisión no siguen este flujo.** Tienen su propio proceso de tres pasos:
   ver [Guías de remisión: cómo funcionan](./guias-de-remision.md).
