@@ -337,7 +337,8 @@ No tienes que cambiar nada si ya enviabas mayúsculas: la normalización no alte
 | `cuotas[].fecha` o `fecha_de_vencimiento` con barras | `INVALID_DATE_FORMAT` |
 | Comprobante en moneda distinta de PEN **sin** `factor_tipo_de_cambio` | `MISSING_EXCHANGE_RATE` |
 | `factor_tipo_de_cambio: 0` o no numérico | `INVALID_EXCHANGE_RATE` |
-| `codigo_vendedor: "001"` o `pagos[].codigo_destino_pago: "001"` | `INVALID_NUMERIC_ID` |
+| `codigo_vendedor: "001"` | `INVALID_NUMERIC_ID` |
+| `pagos[].codigo_destino_pago` que no sea `"cash"` ni el id de una cuenta — `"001"`, `"CASH"`, `"efectivo"` | `INVALID_PAYMENT_DESTINATION` |
 | `codigo_condicion_de_pago: "03"` | `INVALID_PAYMENT_CONDITION` |
 | Texto en una columna numérica (`numero_de_contenedor: "MSKU1234567"`) | `INVALID_NUMERIC_VALUE` |
 

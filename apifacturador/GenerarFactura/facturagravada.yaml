@@ -438,8 +438,8 @@ components:
                 example: "01"
               codigo_destino_pago:
                 type: string
-                description: Caja o cuenta destino.
-                example: "01"
+                description: "Destino del cobro: 'cash' para la caja, o el id numerico de una cuenta bancaria (5, nunca '005'). Los destinos de tu empresa vienen en payment_destinations de GET /api/company."
+                example: "cash"
               referencia:
                 type: string
                 example: ""

@@ -229,7 +229,7 @@ error dentro de `results[]`), y a los cuatro tipos `01`/`03`/`07`/`08`. El docum
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `codigo_metodo_pago` | string | **Sí** | `"01"` Efectivo, `"02"` Tarjeta crédito, etc. |
-| `codigo_destino_pago` | int\|null | **Sí** | ID destino de pago. La **clave** es obligatoria; si no aplica, envíala como `null` — no la omitas |
+| `codigo_destino_pago` | string\|int\|null | **Sí** | Destino del cobro: `"cash"` para la caja, o el id de una cuenta bancaria (`5`, nunca `"005"`). La **clave** es obligatoria; si no aplica, envíala como `null` — no la omitas. Los destinos de tu empresa vienen en `payment_destinations` de `GET /api/company` |
 | `monto` | float | **Sí** | Monto del pago |
 | `referencia` | string\|null | No | Número de operación, voucher, etc. |
 | `pago_recibido` | float | No | Monto recibido (para calcular vuelto) |
