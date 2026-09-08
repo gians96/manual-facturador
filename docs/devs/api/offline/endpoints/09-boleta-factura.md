@@ -510,14 +510,9 @@ El campo es opcional: si no lo envías se asume `01` (Contado).
 
 En la pantalla de venta aparece una tercera opción, **"Crédito con cuotas"**, y en algunos tenants existe además una fila `03` en la tabla `payment_conditions`. **Ese `03` es estado de pantalla, no un código de la API:** el panel lo usa para decidir si te muestra el calendario de cuotas, y lo convierte a `02` justo antes de enviar el documento. El backend nunca recibe un `03` procedente del panel.
 
-Si lo mandas tú por la API se **rechaza antes de emitir**, con `error_code:
-"INVALID_PAYMENT_CONDITION"`.
+Si lo mandas tú por la API se **rechaza antes de emitir**, con `error_code: "INVALID_PAYMENT_CONDITION"`.
 
-> **Cambio de comportamiento (2026-09-05).** Antes dependía del tenant: si su tabla no tenía la
-> fila `03` fallaba con un error de catálogo, pero si la tenía —que es el caso de los tenants
-> cuyo panel muestra la opción— **se emitía igual y mal**, sin bloque `FormaPago` y descartando
-> las cuotas en silencio. Ahora se rechaza siempre, porque la plantilla XML solo sabe
-> representar `01` y `02`.
+**Cambio de comportamiento (2026-09-05).** Antes dependía del tenant: si su tabla no tenía la fila `03` fallaba con un error de catálogo, pero si la tenía —que es el caso de los tenants cuyo panel muestra la opción— **se emitía igual y mal**, sin bloque `FormaPago` y descartando las cuotas en silencio. Ahora se rechaza siempre, porque la plantilla XML solo sabe representar `01` y `02`.
 
 Para una factura a crédito con calendario de cuotas el código correcto es **`02`** más el arreglo `cuotas[]`. "Con cuotas" no es una condición aparte: son los bloques `CuotaNNN` que el propio `02` añade cuando mandas `cuotas[]`. SUNAT solo conoce `Contado` y `Credito`.
 :::
@@ -528,7 +523,7 @@ Documentado arriba, en la sección `pagos[]`. Son los pagos recibidos al momento
 
 Solo se procesan para **boleta y factura** (`codigo_tipo_documento` `01` y `03`). En el resto de comprobantes el bloque se ignora.
 
-### `cuotas[]` — para crédito (`02`)
+### `cuotas[]` — para crédito (`02`) {#cuotas}
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
@@ -543,6 +538,13 @@ Dentro de `cuotas[]` es **`codigo_metodo_de_pago`** (con "de"); dentro de `pagos
 :::
 
 **Qué se valida y qué no.** De cada cuota se exige que vengan `fecha`, `codigo_tipo_moneda` y `monto`; si falta alguno el comprobante se rechaza antes de emitir, indicando el número de cuota que falla. En cambio **no se comprueba que la suma de las cuotas cuadre con `total_venta`**: si no cuadra, pro-8 emite igual y el problema aparece en SUNAT. Cuádralo tú antes de enviar.
+
+:::info `cuotas[]` no es exclusivo de boleta y factura
+
+A diferencia de `pagos[]`, el bloque `cuotas[]` y el campo `codigo_condicion_de_pago` se leen para **cualquier** `codigo_tipo_documento`, notas incluidas. Solo hay un caso en que la nota los usa: la **nota de crédito tipo `13`** (corrección del monto neto pendiente de pago), que **exige** `codigo_condicion_de_pago: "02"` y al menos una cuota — sin las dos cosas se rechaza con `422`. Ver [10-nota-credito.md](10-nota-credito.md#nota-tipo-13).
+
+En cualquier otra nota de crédito las cuotas se guardan pero **no salen en el XML**. En una nota de débito ni siquiera se guardan. En ninguno de los dos casos las mandes.
+:::
 
 ### Ejemplo — Factura a crédito con cuotas
 
@@ -835,6 +837,13 @@ Agregar el bloque `acciones` al payload:
 ```
 
 El documento se crea con `state_type_id: "01"` (Registrado) en vez de `"03"` (Enviado).
+
+:::info `enviar_xml_firmado` solo puede frenar el envío, nunca forzarlo
+
+Un comprobante puede quedar en `01` sin que tú lo pidas: si el tenant tiene apagado el envío automático a SUNAT, o si es una boleta —o una nota de boleta— y no está activo el envío individual, la emisión no remite nada aunque mandes `enviar_xml_firmado: true`. Las combinaciones están en [37 — Envío automático a SUNAT](37-envio-automatico-a-sunat.md).
+
+Y `POST /api/documents/send` **solo acepta facturas y sus notas**: las boletas y las notas de boleta se declaran en el resumen diario, con `POST /api/summaries`.
+:::
 
 ### Paso 2 — Enviar posteriormente
 

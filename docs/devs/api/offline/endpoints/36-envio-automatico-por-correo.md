@@ -48,7 +48,7 @@ El wrapper va **en español**, igual que el resto del payload de la API offline.
 |---|---|---|---|
 | `enviar_email` | `bool` | No | Fuerza el envío del comprobante al correo del cliente. Omitido, decide el interruptor del tenant. |
 | `formato_pdf` | `string` | No | Formato del PDF que se genera al emitir: `a4` (por defecto), `a5`, `ticket`, `ticket_58`, `ticket_50`. |
-| `enviar_xml_firmado` | `bool` | No | Si el XML firmado se remite a SUNAT en el acto. Por defecto `true`, pero la configuración del tenant lo modula: en boletas del grupo `02` exige además el interruptor de envío automático a SUNAT. |
+| `enviar_xml_firmado` | `bool` | No | Si el XML firmado se remite a SUNAT en el acto. Por defecto `true`, pero solo puede **frenar** el envío, no forzarlo: la configuración del tenant manda. Ver [37 — Envío automático a SUNAT](37-envio-automatico-a-sunat.md). |
 | `auto_print` | `bool` | No | Impresión automática en servidor. Campo en inglés dentro del wrapper español. |
 | `name_printer` | `string\|null` | No | Impresora destino de la impresión automática. |
 | `client_public_ip` | `string\|null` | No | IP pública del cliente. Solo se usa si el tenant tiene configurada impresión local de restaurante. |

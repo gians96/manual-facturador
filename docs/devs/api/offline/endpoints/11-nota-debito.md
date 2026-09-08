@@ -10,15 +10,11 @@
 
 ## Descripción
 
-La nota de débito se emite para **incrementar el valor** de una factura o boleta previamente emitida (intereses, penalidades, gastos adicionales). Usa el **mismo endpoint** que facturas/boletas con `codigo_tipo_documento: "08"`.
+La nota de débito **incrementa** el importe de una factura o boleta ya emitida: intereses por mora, penalidades, gastos adicionales. Mismo endpoint que factura/boleta, con `codigo_tipo_documento: "08"`.
 
-> 📘 **Estructura común:** El payload completo (cliente, items, totales, idempotencia, acciones, respuesta, etc.) es **idéntico** al de factura/boleta. Ver [09-boleta-factura.md](09-boleta-factura.md) como referencia canónica.
+> 📘 **Estructura común:** cliente, items, totales, idempotencia, `acciones` y forma de la respuesta son **idénticos** a los de factura/boleta. Ver [09-boleta-factura.md](09-boleta-factura.md).
 >
-> Este documento sólo describe los **campos específicos** de nota de débito:
-> - `codigo_tipo_documento`: `"08"`
-> - `codigo_tipo_nota`: catálogo 10 SUNAT (01 = intereses por mora, 02 = aumento en el valor, 03 = penalidades, etc.)
-> - `motivo_o_sustento_de_nota`: texto libre
-> - `documento_afectado.external_id`: UUID del documento original
+> 📕 **Estructura de nota:** `documento_afectado`, herencia del grupo de envío, ruta a SUNAT y errores son **idénticos** a los de la nota de crédito. Ver [10-nota-credito.md](10-nota-credito.md). Aquí va solo lo que difiere.
 
 ---
 
@@ -81,18 +77,28 @@ La nota de débito se emite para **incrementar el valor** de una factura o bolet
 }
 ```
 
+Los items y totales son **el importe adicional a cobrar**, no el total del documento original.
+
 ---
 
-## Campos Específicos de Nota de Débito
+## Campos propios de la nota
 
-| Campo | Valor | Descripción |
-|-------|-------|-------------|
-| `codigo_tipo_documento` | `"08"` | Nota de Débito |
-| `codigo_tipo_nota` | string | **Requerido.** Tipo de nota de débito (ver tabla) |
-| `motivo_o_sustento_de_nota` | string | **Requerido.** Motivo |
-| `documento_afectado` | object | **Requerido.** Referencia al documento original |
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `codigo_tipo_documento` | string | **Sí** | `"08"` |
+| `codigo_tipo_nota` | string | **Sí** | Catálogo 10 de SUNAT. Sale en `<cbc:ResponseCode>` |
+| `motivo_o_sustento_de_nota` | string | **Sí** | Texto libre. Sale en `<cbc:Description>` |
+| `documento_afectado` | object | **Sí** | Misma estructura y mismas dos formas que en [nota de crédito](10-nota-credito.md#documento-afectado) |
 
-### Tipos de Nota de Débito (`codigo_tipo_nota`)
+Los tres se comprueban **antes de emitir** y, si falta más de uno, se informan juntos en un solo `MISSING_FIELDS`. Detalle y ejemplo de respuesta en [10-nota-credito.md](10-nota-credito.md#campos-propios-de-la-nota).
+
+:::info Cambio de comportamiento (2026-09-07)
+
+Hasta esa fecha cada uno fallaba distinto y ninguno de forma útil: `MISSING_FIELDS` solo para `documento_afectado`, **HTTP 500** con SQL crudo para el motivo, y **ningún error** para el tipo — la nota se emitía con `<cbc:ResponseCode>` vacío y la rechazaba SUNAT, con el correlativo consumido.
+
+:::
+
+### Tipos de nota de débito (`codigo_tipo_nota`)
 
 | Código | Descripción |
 |--------|-------------|
@@ -102,28 +108,47 @@ La nota de débito se emite para **incrementar el valor** de una factura o bolet
 | `10` | Ajustes de operaciones de exportación |
 | `11` | Ajustes afectos al IVAP |
 
-### `documento_afectado`
+Igual que en la NC, un código inexistente se rechaza con `INVALID_REFERENCE` (HTTP 422) y el mensaje enumera los valores válidos de tu tenant, leídos de su tabla `cat_note_debit_types`. Antes del 2026-09-07 esto salía como HTTP 500 con el SQL crudo.
 
-Misma estructura que Nota de Crédito (ver [10-nota-credito.md](10-nota-credito.md)):
+### Serie
 
-```json
-"documento_afectado": {
-    "external_id": "uuid-del-documento-original"
-}
-```
-
-### Serie según documento afectado
-
-| Documento afectado | Serie ND |
+| Documento afectado | Serie ND habitual |
 |-------------------|----------|
-| Factura (F001) | FD01 |
-| Boleta (B001) | BD01 |
+| Factura (`F001`) | `FD01` |
+| Boleta (`B001`) | `BD01` |
+
+Debe existir para el tipo `08` en el establecimiento del token, o se rechaza con `INVALID_SERIES`.
+
+---
+
+## Diferencias reales con la nota de crédito
+
+Más allá del código de tipo y del catálogo de motivos, son tres:
+
+| | Nota de crédito (`07`) | Nota de débito (`08`) |
+|---|---|---|
+| Efecto | Reduce o anula | Incrementa |
+| `cuotas[]` | Se guardan; se emiten en el XML solo en la [nota tipo `13`](10-nota-credito.md#nota-tipo-13) | **Se descartan al crear el documento**, a propósito: el XML de nota de débito no tiene dónde representar un calendario de pago. No es un error y no va a serlo — mandarlas emite un comprobante válido |
+| `FormaPago` en el XML | Solo en la nota tipo `13` con `codigo_condicion_de_pago: "02"` | Nunca |
+
+Todo lo demás —`pagos[]` descartado, `codigo_tipo_operacion` y `fecha_de_vencimiento` ignorados, herencia del grupo, correo automático, idempotencia por `offline_id`— se comporta exactamente igual.
+
+---
+
+## Cómo llega la nota a SUNAT
+
+Idéntico a la nota de crédito, y conviene no darlo por supuesto: **la ruta la fija el documento afectado, no la serie de la nota**.
+
+| Documento afectado | `group_id` | Ruta |
+|---|---|---|
+| Factura (`01`) | `01` | Individual al emitir, si `send_auto` está activo. Si no, `POST /api/documents/send` |
+| Boleta (`03`) | `02` | Individual solo si además está activo el envío individual de boletas **y** la boleta afectada se envió así. Si no, **resumen diario** vía `POST /api/summaries` |
+
+`POST /api/documents/send` **rechaza** las notas de boleta: solo acepta el grupo `01`. El desarrollo completo, con los interruptores y sus combinaciones, está en [10-nota-credito.md § Cómo llega la nota a SUNAT](10-nota-credito.md#como-llega-a-sunat) y en [37-envio-automatico-a-sunat.md](37-envio-automatico-a-sunat.md).
 
 ---
 
 ## Response (200 OK)
-
-Misma estructura que los demás documentos:
 
 ```json
 {
@@ -132,22 +157,29 @@ Misma estructura que los demás documentos:
         "number": "FD01-1",
         "filename": "20123456789-08-FD01-1",
         "external_id": "uuid-nd",
-        "state_type_id": "01",
+        "state_type_id": "05",
+        "state_type_description": "Aceptado",
         "id": 789,
-        "print_ticket": "https://..."
+        "print_ticket": "https://demo.nt-suite.pro/print/document/uuid-nd/ticket"
     },
     "links": {
-        "xml": "https://...",
-        "pdf": "https://...",
-        "cdr": "https://..."
+        "xml": "https://…",
+        "pdf": "https://…",
+        "cdr": "https://…"
+    },
+    "response": {
+        "code": "0",
+        "description": "La Nota de Débito numero FD01-1, ha sido aceptada"
     }
 }
 ```
 
+Si la nota no se remitió en el acto, `state_type_id` llega como `"01"` (Registrado), `links.cdr` vacío y `response` como `[]` (arreglo vacío, no objeto). Es una emisión correcta pendiente de envío, no un error.
+
 ---
 
-## Notas para Offline
+## Notas para offline
 
-- Misma restricción que NC: **requiere que el documento afectado esté sincronizado** para obtener su `external_id`.
-- Las notas de débito no son comunes en operaciones de alta rotación, pero se documentan para completitud.
-- Items y totales representan los **montos adicionales** a cobrar (intereses, penalidades), no el monto total del documento original.
+- Misma restricción que la NC: **el documento afectado tiene que estar sincronizado** para disponer de su `external_id`.
+- Las notas de débito son poco frecuentes en alta rotación, pero comparten pipeline: no necesitan tratamiento especial en el cliente offline más allá de encolarlas detrás de su documento original.
+- No mandes `cuotas[]` en una ND aunque el original fuera a crédito: se descartan sin aviso. Para corregir un calendario de pagos, el instrumento es la [nota de crédito tipo `13`](10-nota-credito.md#nota-tipo-13).

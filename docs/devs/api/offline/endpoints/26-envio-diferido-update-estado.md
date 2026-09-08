@@ -80,6 +80,23 @@ Content-Type: application/json
 
 > **Nota:** Si el documento ya fue enviado (estado `03` o superior), el endpoint retorna error. No es idempotente.
 
+### Rechazos con `error_code` — todos `422`
+
+| `error_code` | Cuándo | Qué hacer |
+|---|---|---|
+| `MISSING_FIELDS` | No mandaste `external_id` | Añadirlo. Es el UUID que devolvió la emisión |
+| `DOCUMENT_NOT_FOUND` | Ese `external_id` no existe en el tenant | Revisar el UUID; puede ser de otro tenant |
+| `DOCUMENT_NOT_SENDABLE` | El documento es del grupo `02` | **No reintentar.** Usar `POST /api/summaries` |
+
+:::danger Este endpoint **solo** envía facturas y sus notas
+
+Acepta únicamente documentos del grupo `01`. Con una boleta, o con una nota de crédito o débito asociada a una boleta, responde `DOCUMENT_NOT_SENDABLE`. Esos comprobantes se declaran en el **resumen diario** (`POST /api/summaries`), no de uno en uno — es lo que SUNAT espera, y no hay forma de forzarlo por aquí.
+
+Recuerda que el grupo de una nota lo hereda su documento afectado, no su serie: una `FC01` contra una boleta es grupo `02`. Ver [10-nota-credito.md](10-nota-credito.md#como-llega-a-sunat).
+
+**Cambio de comportamiento (2026-09-07).** Los tres rechazos salían como **`500`** sin `error_code`, y el de `external_id` ausente ni siquiera eso: devolvía `200` con cuerpo vacío. Un cliente con reintento sobre 5xx los repetía indefinidamente.
+:::
+
 ---
 
 ## 2. Actualizar Estado de Documento

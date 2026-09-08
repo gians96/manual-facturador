@@ -148,6 +148,39 @@ texto. **Los mensajes no han cambiado**: si tu integración los compara, sigue f
 | `No se encontró el documento con código externo {X}.` | `AFFECTED_DOCUMENT_NOT_FOUND` |
 | `No se enviaron documentos para la anulación.` | `NO_DOCUMENTS` |
 
+### `POST /api/documents/send` — desde 2026-09-07
+
+| Mensaje | `error_code` |
+|---|---|
+| `El documento con código externo {X}, no se encuentra registrado.` | `DOCUMENT_NOT_FOUND` |
+| `El tipo de documento {NN} es inválido, no es posible enviar.` | `DOCUMENT_NOT_SENDABLE` |
+| `Falta 'external_id': es el UUID que devolvió la emisión del documento.` | `MISSING_FIELDS` |
+
+Fíjate en que `DOCUMENT_NOT_FOUND` **no es** `AFFECTED_DOCUMENT_NOT_FOUND`, aunque los mensajes
+se parezcan: aquel es el documento *afectado* por una nota; este es el que quieres enviar.
+
+`DOCUMENT_NOT_SENDABLE` significa que el documento existe pero es del grupo `02`, y ese endpoint
+solo envía facturas y sus notas. Las boletas y las notas de boleta van por
+`POST /api/summaries`. **No lo reintentes**: no va a cambiar.
+
+Los tres salían antes como `500` sin `error_code` —y el último devolvía `200` con cuerpo vacío—.
+
+### Notas de crédito y débito — desde 2026-09-07
+
+| Situación | `error_code` |
+|---|---|
+| Falta `codigo_tipo_nota`, `motivo_o_sustento_de_nota` o `documento_afectado` (o sus sub-claves `serie_documento`/`numero_documento`/`codigo_tipo_documento` cuando no mandas `external_id`) | `MISSING_FIELDS` |
+| `codigo_tipo_nota` no existe en el catálogo del tenant | `INVALID_REFERENCE` |
+| Nota de crédito tipo `13` sin `codigo_condicion_de_pago: "02"` | `INVALID_PAYMENT_CONDITION` |
+| Nota de crédito tipo `13` con `02` pero sin `cuotas` | `MISSING_FIELDS` |
+
+Si faltan varios, se informan **todos en la misma respuesta** dentro de `errors.faltantes`. Una
+cadena vacía cuenta como ausente, incluido un `documento_afectado.external_id` en `""`.
+
+Antes de esa fecha: el tipo de nota ausente **no daba ningún error** —se emitía un comprobante
+que SUNAT rechazaba, con el correlativo ya consumido—; el motivo ausente y el tipo fuera de
+catálogo daban `500` con el SQL crudo; y el tipo `13` mal formado se emitía mudo.
+
 ### Catálogos que no existen — `INVALID_REFERENCE`
 
 Cuando un código que envías no existe en el catálogo destino, el error **nombra el campo de
