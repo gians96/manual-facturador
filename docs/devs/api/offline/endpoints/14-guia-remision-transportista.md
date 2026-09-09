@@ -96,19 +96,9 @@ La guía de remisión del transportista la emite la **empresa de transporte** qu
     "items": [
         {
             "codigo_interno": "ASD",
-            "descripcion": "Precio",
+            "descripcion": "Mercadería trasladada",
             "unidad_de_medida": "NIU",
-            "cantidad": 10,
-            "valor_unitario": 3.13,
-            "precio_unitario": 3.69,
-            "codigo_tipo_precio": "01",
-            "codigo_tipo_afectacion_igv": "10",
-            "total_base_igv": 31.3,
-            "porcentaje_igv": 18,
-            "total_igv": 5.63,
-            "total_impuestos": 5.63,
-            "total_valor_item": 31.3,
-            "total_item": 36.93
+            "cantidad": 10
         }
     ]
 }
@@ -123,9 +113,32 @@ La guía de remisión del transportista la emite la **empresa de transporte** qu
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `codigo_tipo_documento_identidad` | string | **Sí** | `"6"` RUC, `"1"` DNI |
-| `descripcion_tipo_documento_identidad` | string | No | `"RUC"`, `"DNI"` |
+| `descripcion_tipo_documento_identidad` | string | No | `"RUC"`, `"DNI"`. Opcional **de verdad desde el 2026-09-09**: antes, omitirlo devolvía un 500 aunque aquí figurase como opcional |
 | `numero_documento` | string | **Sí** | Número de documento |
 | `apellidos_y_nombres_o_razon_social` | string | **Sí** | Razón social |
+
+El bloque entero es **obligatorio** en el `31`, igual que `datos_destinatario` y `chofer`. Sin
+ellos la guía se emitía igual y SUNAT la rechazaba, con el correlativo ya consumido; desde el
+2026-09-09 se rechaza antes de emitir, nombrando el bloque que falta.
+
+### `items[]`
+
+:::tip Una guía de remisión NO lleva precios
+`dispatch_items` no tiene columna de importe y el XML `DespatchAdvice` solo emite cantidad,
+descripción y código de producto. Mismo criterio que la guía remitente: ver
+[13 — `items[]`](13-guia-remision-remitente.md#items).
+:::
+
+| Campo | Requerido |
+|---|---|
+| `codigo_interno` | **Sí**. Sin él todas las líneas se agrupan en un mismo producto |
+| `cantidad` | **Sí**, mayor que 0 |
+| `descripcion` · `unidad_de_medida` | Solo si el `codigo_interno` no existe todavía y hay que crear el producto |
+
+### `datos_del_emisor`
+
+Opcional. Si no lo envías se usa el establecimiento del usuario del token, igual que en
+`POST /api/documents`.
 
 ### `datos_destinatario` — Quien recibe la mercadería
 
@@ -161,6 +174,16 @@ Misma estructura que `chofer`. Para choferes adicionales.
 | `vehiculo_secundario` | No | **Sí** (máx. 2) |
 | `chofer_secundario` | No | **Sí** (máx. 2) |
 | `pagador_flete` | No | **Sí** |
+| `chofer` | Según modalidad | **Sí, siempre** |
+| `direccion_partida` / `direccion_llegada` | **Sí** | Se aceptan y **se descartan** |
+
+:::warning Las direcciones del `31` no van donde parece
+`direccion_partida` y `direccion_llegada` solo se leen en la guía remitente (`09`). En el `31`
+el servidor las acepta sin quejarse y **las descarta**: las direcciones de este tipo viajan en
+`direcciones_proveedores` (con `remitente` y `destinatario`, cada uno con `ubigeo` y
+`direccion`) o, si ya están registradas, en `direccion_remitente_id` /
+`direccion_destinatario_id`.
+:::
 
 ---
 
@@ -190,5 +213,6 @@ Misma estructura que `chofer`. Para choferes adicionales.
 ## Notas para Offline
 
 - Mismas consideraciones que la guía remitente: firma digital y envío SUNAT se procesan al sincronizar.
+- Por lote (`sync-batch`) funciona igual que el `09`: ver [15 — Guías de remisión por lote](15-sync-batch.md#guías-de-remisión-por-lote-09-y-31).
 - Los datos de remitente y destinatario se pueden llenar offline usando el catálogo de clientes descargado.
 - Los vehículos secundarios son opcionales (para semirremolques).

@@ -131,7 +131,6 @@ components:
         - fecha_de_emision
         - hora_de_emision
         - codigo_tipo_documento
-        - datos_del_emisor
         - codigo_motivo_traslado
         - fecha_de_traslado
         - indicador_de_transbordo
@@ -164,7 +163,12 @@ components:
           description: '"31" Guía de Remisión Transportista.'
           example: "31"
         datos_del_emisor:
-          $ref: '#/components/schemas/DatosDelEmisor'
+          description: |-
+            Opcional desde el 2026-09-09. Si no se envía, se usa el establecimiento
+            del usuario del token, igual que en `POST /api/documents`. Si se envía
+            con un código que no existe, sigue siendo un 422 `INVALID_ESTABLISHMENT`.
+          allOf:
+            - $ref: '#/components/schemas/DatosDelEmisor'
         codigo_motivo_traslado:
           type: string
           description: >-
@@ -447,7 +451,12 @@ components:
           example: 2
         valor_unitario:
           type: number
-          description: Precio sin IGV. Necesario solo si el producto se crea nuevo.
+          description: |-
+            Opcional. Una guía de remisión no lleva importes: `dispatch_items` no tiene
+            columna de precio y el XML solo emite cantidad, descripción y código. Solo se
+            usa al dar de alta un producto que aún no existe, y desde el 2026-09-09
+            tampoco hace falta entonces: el producto nace con precio 0, visible en el
+            panel para corregirlo. Se acepta igualmente en `precio_unitario`.
           example: 50
         codigo_tipo_afectacion_igv:
           type: string

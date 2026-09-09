@@ -263,6 +263,13 @@ Desde el 2026-09-04 el servidor normaliza `ubigeo`, `codigo_pais` y `codigo_tipo
 vacíos a `null`, así que ya no rompen. Pero `codigo_tipo_documento_identidad: ""` **sí**
 sigue siendo un error —ahí no hay valor por defecto razonable— y sale como `MISSING_FIELDS`.
 
+`codigo_pais` va un paso más allá desde el 2026-09-09: ausente, `null` o vacío se resuelve como
+`"PE"`, que es lo que ya hacían el panel y la API de notas de venta. Antes, `persons.country_id`
+era `NOT NULL` y este era el único camino que no le ponía defecto, así que omitirlo salía como
+`NULL_NOT_ALLOWED` — pese a que esta misma documentación lo listaba como opcional con `"PE"` por
+defecto. Si el cliente **ya existe** con otro país, se conserva el suyo: un defecto ciego se lo
+habría cambiado a `PE` en cada emisión que omitiera el campo, y eso viaja al XML.
+
 ### `NULL_NOT_ALLOWED`
 
 Enviaste la clave, pero con valor `null`, en un campo que no lo admite:
@@ -317,9 +324,24 @@ Desde el 2026-09-04, **toda** fila fallida trae `error_code`:
 
 | `error_code` | Qué hacer |
 |---|---|
-| `MISSING_FIELDS` · `INVALID_PAYLOAD` · `INVALID_REFERENCE` · `NULL_NOT_ALLOWED` · `INVALID_ENCODING` · `VALUE_TOO_LONG` · `VALUE_OUT_OF_RANGE` | Corregir el payload. **No reintentar** sin cambiarlo: el error es permanente |
+| `MISSING_FIELDS` · `NO_ITEMS` · `INVALID_PAYLOAD` · `INVALID_REFERENCE` · `NULL_NOT_ALLOWED` · `INVALID_ENCODING` · `VALUE_TOO_LONG` · `VALUE_OUT_OF_RANGE` | Corregir el payload. **No reintentar** sin cambiarlo: el error es permanente |
 | `CONFLICT_NUMBER` | El correlativo ya lo usó otra venta. Renumerar y reemitir |
-| `DATABASE_ERROR` · `PROCESSING_ERROR` | No es tu payload. Reintentar y, si persiste, avisar a soporte con el `offline_id` |
+| `DATABASE_ERROR` · `PROCESSING_ERROR` | No es tu payload. Reintentar **una vez** y, si persiste, avisar a soporte con el `offline_id` |
+
+:::warning `PROCESSING_ERROR` era el cajón de sastre — ponle tope a los reintentos
+Hasta el 2026-09-09, **un campo ausente del payload salía con este código**: el servidor lo leía
+sin comprobar, PHP avisaba con «Undefined array key …» y el `catch` genérico lo etiquetaba como
+fallo del servidor, con este texto fijo:
+
+> El payload no contiene los campos requeridos por el servidor. Revise los ítems del documento antes de reintentar.
+
+Dos problemas a la vez. El código decía «reintenta», así que un error **permanente** entraba en
+bucle; y el mensaje mandaba a revisar los ítems aunque el campo que faltara fuera de cabecera.
+
+Ahora esa familia sale como `MISSING_FIELDS` nombrando el campo, con su bloque `errors`. Pero si
+tu integración reintenta `DATABASE_ERROR` o `PROCESSING_ERROR` sin límite, **ponle tope igual**:
+un fallo que se repite casi nunca se arregla volviendo a enviar lo mismo.
+:::
 
 Un fallo con `success: true` y `was_duplicate: true` **no es un error**: es la idempotencia
 por `offline_id` devolviendo el comprobante que ya estaba emitido. Márcalo como sincronizado.

@@ -102,11 +102,10 @@ paths:
                 $ref: '#/components/schemas/ErrorValidacion'
         '500':
           description: |-
-            Fallo no controlado. El caso más frecuente es enviar un bloque a medias:
-            el sistema lee sus sub-claves directamente, así que una ausencia sale como
-            `"Undefined array key \"codigo_del_domicilio_fiscal\""` en vez de como un 422
-            con nombre. Corregido el 2026-09-08: los dos mensajes de serie y
-            establecimiento que antes figuraban aquí son en realidad **422**.
+            Fallo real del servidor. Ya no incluye los bloques a medias: desde el
+            2026-09-09 una sub-clave ausente se rechaza antes de emitir con un 422
+            `MISSING_FIELDS` que nombra el campo, en vez del
+            `"Undefined array key ..."` que salía como 500.
           content:
             application/json:
               schema:
@@ -124,7 +123,6 @@ components:
         - fecha_de_emision
         - hora_de_emision
         - codigo_tipo_documento
-        - datos_del_emisor
         - datos_del_cliente_o_receptor
         - codigo_motivo_traslado
         - codigo_modo_transporte
@@ -158,7 +156,12 @@ components:
           description: '"09" Guía de Remisión Remitente, "31" Guía de Remisión Transportista.'
           example: "09"
         datos_del_emisor:
-          $ref: '#/components/schemas/DatosDelEmisor'
+          description: |-
+            Opcional desde el 2026-09-09. Si no se envía, se usa el establecimiento
+            del usuario del token, igual que en `POST /api/documents`. Si se envía
+            con un código que no existe, sigue siendo un 422 `INVALID_ESTABLISHMENT`.
+          allOf:
+            - $ref: '#/components/schemas/DatosDelEmisor'
         datos_del_cliente_o_receptor:
           type: object
           description: Destinatario de los bienes. Igual estructura que en facturas; si el cliente no existe se crea automáticamente.
@@ -411,7 +414,12 @@ components:
           example: 2
         valor_unitario:
           type: number
-          description: Precio sin IGV. Necesario solo si el producto se crea nuevo.
+          description: |-
+            Opcional. Una guía de remisión no lleva importes: `dispatch_items` no tiene
+            columna de precio y el XML solo emite cantidad, descripción y código. Solo se
+            usa al dar de alta un producto que aún no existe, y desde el 2026-09-09
+            tampoco hace falta entonces: el producto nace con precio 0, visible en el
+            panel para corregirlo. Se acepta igualmente en `precio_unitario`.
           example: 50
         codigo_tipo_afectacion_igv:
           type: string

@@ -137,6 +137,7 @@ Authorization: Bearer {token}
                 "serie_documento": "T001",
                 "numero_documento": "13",
                 "fecha_de_emision": "2026-04-18",
+                "hora_de_emision": "09:00:00",
                 "codigo_tipo_documento": "09",
                 "codigo_modo_transporte": "02",
                 "codigo_motivo_traslado": "04",
@@ -149,7 +150,7 @@ Authorization: Bearer {token}
                 "vehiculo": { "numero_de_placa": "ABC-123" },
                 "datos_del_cliente_o_receptor": { "codigo_tipo_documento_identidad": "6", "numero_documento": "20123456789", "apellidos_y_nombres_o_razon_social": "EMPRESA DEMO S.A.C." },
                 "items": [
-                    { "codigo_interno": "ASD", "descripcion": "Precio", "unidad_de_medida": "NIU", "cantidad": 10, "valor_unitario": 3.13, "precio_unitario": 3.69, "codigo_tipo_precio": "01", "codigo_tipo_afectacion_igv": "10", "total_base_igv": 31.3, "porcentaje_igv": 18, "total_igv": 5.63, "total_impuestos": 5.63, "total_valor_item": 31.3, "total_item": 36.93 }
+                    { "codigo_interno": "ASD", "descripcion": "Mercadería trasladada", "unidad_de_medida": "NIU", "cantidad": 10 }
                 ]
             }
         }
@@ -360,14 +361,32 @@ tener que leer el texto del `message`. Es un campo **añadido**: si tu integraci
 
 | `error_code` | Significa | ¿Reintentar? |
 |---|---|---|
-| `MISSING_FIELDS` | Falta `doc_type`/`data`, o un campo obligatorio del comprobante | ❌ No, sin corregir |
+| `MISSING_FIELDS` | Falta `doc_type`/`data`, o un campo obligatorio del comprobante. Desde el 2026-09-09 el `message` **nombra el campo** y `errors.faltantes` lo lista | ❌ No, sin corregir |
+| `NO_ITEMS` | El comprobante llegó sin ítems | ❌ No, sin corregir |
 | `INVALID_PAYLOAD` | No pasó la validación previa o una regla de negocio | ❌ No, sin corregir |
 | `INVALID_REFERENCE` | Un código enviado no existe en el catálogo destino | ❌ No, sin corregir |
 | `NULL_NOT_ALLOWED` | Se envió `null` en un campo que no lo admite | ❌ No, sin corregir |
 | `INVALID_ENCODING` | El cuerpo no es UTF-8 válido | ❌ No, sin corregir |
 | `VALUE_TOO_LONG` · `VALUE_OUT_OF_RANGE` | Texto o importe fuera del ancho del campo | ❌ No, sin corregir |
 | `CONFLICT_NUMBER` | El correlativo ya lo usó **otra** venta | ⚠️ Renumerar y reemitir |
-| `DATABASE_ERROR` · `PROCESSING_ERROR` | **No es tu payload.** Fallo del servidor | ✅ Sí |
+| `DATABASE_ERROR` | Fallo SQL que el traductor no reconoce | ⚠️ Uno, y escalar |
+| `PROCESSING_ERROR` | Excepción que el servidor no sabe atribuir. **Ya no incluye campos ausentes del payload** | ⚠️ Uno, y escalar con el `offline_id` |
+
+:::warning Si reintentas `PROCESSING_ERROR` sin límite, ponle tope
+Hasta el 2026-09-09 **un campo ausente del payload salía con este código**, y con este texto:
+
+> El payload no contiene los campos requeridos por el servidor. Revise los ítems del documento antes de reintentar.
+
+Dos problemas a la vez. El código decía «es del servidor, reintenta», así que un error
+permanente entraba en bucle; y el mensaje mandaba a revisar los ítems aunque el campo que
+faltara fuera de cabecera. Un integrador de guías de remisión estuvo reintentando
+indefinidamente un payload que el servidor nunca iba a aceptar, mirando el único sitio donde no
+estaba el problema.
+
+Ahora esa familia sale como `MISSING_FIELDS` nombrando el campo. `PROCESSING_ERROR` y
+`DATABASE_ERROR` siguen admitiendo reintento, pero **uno** y luego escalar: un fallo que se
+repite casi nunca se arregla volviendo a enviar lo mismo.
+:::
 
 Los códigos de validación llegan por esta vía exactamente igual que por `/api/documents`:
 ver **[Errores de la API](../../errores-de-la-api.md)** para el catálogo completo, los
@@ -552,26 +571,92 @@ Los `doc_type` `80` (nota de venta), `09`/`31` (guías) y `20` (retención) **no
 
 ---
 
-## ⚠️ FIX NECESARIO — Extensión del Controller
+## Guías de remisión por lote — `09` y `31`
 
-### Estado actual
+:::info Desde el 2026-09-09
+Esta página describía las guías como pendientes de implementar. **No lo están: el lote acepta
+`09` y `31` desde hace tiempo**, con su propia idempotencia por `offline_id` contra la tabla
+`dispatches`. Si tu integración las estaba mandando de una en una por `POST /api/dispatches`,
+puedes pasarlas al lote sin cambiar el `data`.
+:::
 
-El controller `OfflineSyncController@syncBatch` solo maneja:
-- `doc_type: "80"` → `processSaleNote()`
-- `doc_type: "01"` / `"03"` → `processDocument()`
+Los siete tipos que acepta `sync-batch` y dónde se guarda su `offline_id`:
 
-### Extensión necesaria
+| `doc_type` | Tabla `offline_id` | Pasa por caja |
+|---|---|---|
+| `"80"` nota de venta | `sale_notes.offline_id` | Sí |
+| `"01"` `"03"` `"07"` `"08"` | `documents.offline_id` | Sí |
+| `"09"` `"31"` guías de remisión | `dispatches.offline_id` | No |
+| `"20"` retención | `retentions.offline_id` | No |
 
-Agregar soporte para:
+### Los ítems de una guía no llevan precio
 
-| `doc_type` | Método nuevo | Tabla `offline_id` |
-|------------|-------------|-------------------|
-| `"07"` | Reusar `processDocument()` | `documents.offline_id` |
-| `"08"` | Reusar `processDocument()` | `documents.offline_id` |
-| `"09"` | `processDispatch()` (nuevo) | `dispatches.offline_id` |
-| `"31"` | `processDispatchCarrier()` (nuevo) | `dispatches.offline_id` |
+Es la duda más frecuente al integrar guías desde un ERP, porque el ejemplo de esta página
+copiaba los ítems de una factura. **Una guía de remisión no tiene importes**: la tabla
+`dispatch_items` no tiene columna de precio y el XML `DespatchAdvice` solo emite tres cosas por
+línea — cantidad, descripción y código de producto.
 
-Ver detalles de implementación en [16-idempotencia.md](16-idempotencia.md).
+Manda solo esto:
+
+```json
+{ "codigo_interno": "200020001", "descripcion": "CONCENTRADO DE COBRE",
+  "unidad_de_medida": "TNE", "cantidad": 9.57 }
+```
+
+| Campo | Requerido |
+|---|---|
+| `codigo_interno` | **Sí**. Sin él todas las líneas se agrupan en un mismo producto y la guía sale con un solo detalle |
+| `cantidad` | **Sí**, mayor que 0 |
+| `descripcion` · `unidad_de_medida` | Solo si el `codigo_interno` **no existe todavía** y hay que crear el producto |
+| `valor_unitario` | Opcional incluso al crear: el producto nace con precio 0, visible en el panel para corregirlo |
+
+`precio_unitario`, `total_item`, `porcentaje_igv`, `total_base_igv` y el resto del bloque de una
+factura se aceptan por compatibilidad y **se descartan**: no llegan al XML.
+
+### Qué pide cada tipo
+
+Comunes a `09` y `31`: `serie_documento`, `numero_documento`, `codigo_tipo_documento`,
+`fecha_de_emision`, `hora_de_emision`, `fecha_de_traslado`, `unidad_peso_total`, `peso_total`,
+`items`.
+
+Solo `09`: `datos_del_cliente_o_receptor`, `direccion_partida`, `direccion_llegada`,
+`codigo_modo_transporte`, `codigo_motivo_traslado`, y **según la modalidad**: `transportista`
+si es `01` (transporte público) o `chofer` si es `02` (transporte privado).
+
+Solo `31`: `datos_remitente`, `datos_destinatario`, `chofer`. **No** pide `direccion_partida`
+ni `direccion_llegada`; si las mandas se aceptan y se descartan. Las direcciones del `31` viajan
+en `direcciones_proveedores` o en `direccion_remitente_id` / `direccion_destinatario_id`.
+
+`datos_del_emisor` es **opcional** en ambos: si no lo mandas se usa el establecimiento del
+usuario del token, igual que en `POST /api/documents`.
+
+`datos_del_cliente_o_receptor.codigo_pais` también es **opcional** desde el 2026-09-09: si no lo
+mandas se asume `PE`, que es lo que ya hacían el panel y la API de notas de venta. Si el cliente
+**ya existe** con otro país, no se le toca.
+
+### `signed` y `sign_message`
+
+:::info Desde el 2026-09-09
+Las filas de guía traen dos campos nuevos dentro de `data`. Son **añadidos**: si tu integración
+solo lee `success` y `data.number`, sigue funcionando igual.
+:::
+
+| Campo | Significa |
+|---|---|
+| `signed` | `true` si el XML se generó, se firmó y el PDF se creó |
+| `sign_message` | El motivo cuando `signed` es `false`; `null` si todo fue bien |
+
+Antes, si la firma fallaba, la guía volvía como `success: true` sin decirlo: una guía sin firmar
+era indistinguible de una firmada.
+
+:::warning `signed: false` NO se reenvía por sync-batch
+La guía **ya está emitida** y su correlativo consumido; reenviarla volvería como duplicada. Lo
+que hay que hacer es rehacer el archivo y mandarla con `POST /api/dispatches/send`.
+:::
+
+Ver también [13 — Guía Remitente](13-guia-remision-remitente.md),
+[14 — Guía Transportista](14-guia-remision-transportista.md) y
+[16 — Idempotencia](16-idempotencia.md).
 
 ---
 
@@ -602,11 +687,16 @@ después de corregir la causa: mandar la apertura de caja que falta, o abrir una
 :::
 
 Para decidir si reintentar, **ramifica por `error_code`, no por el texto del mensaje**: solo
-`DATABASE_ERROR` y `PROCESSING_ERROR` son del servidor y merecen otro intento. Todos los
-demás son del payload y reintentarlos sin corregirlo solo gasta la cola.
+`DATABASE_ERROR` y `PROCESSING_ERROR` pueden ser del servidor, y aun así con tope — desde el
+2026-09-09 ya no incluyen los campos ausentes del payload, que salen como `MISSING_FIELDS`.
+Todos los demás son del payload y reintentarlos sin corregirlo solo gasta la cola.
 
 ```dart
+// Ninguno de los dos es ilimitado: son «vuelve a intentarlo una vez y, si sigue,
+// avisa». Sin el tope, un fallo permanente mal clasificado llena la cola para
+// siempre — que es exactamente lo que pasó antes del 2026-09-09.
 const reintentables = {'DATABASE_ERROR', 'PROCESSING_ERROR'};
+const maxReintentos = 3;
 
 if (r['success'] == true) {
   marcarSincronizado(r);                       // incluye was_duplicate: true
@@ -614,7 +704,7 @@ if (r['success'] == true) {
     // La venta está emitida. Esto se anota para el usuario, NO se reencola.
     anotarIncidenciaDeCaja(r['cash_error_code']);
   }
-} else if (reintentables.contains(r['error_code'])) {
+} else if (reintentables.contains(r['error_code']) && intentosDe(r) < maxReintentos) {
   encolarReintento(r);
 } else {
   marcarErrorPermanente(r, r['message']);      // el mensaje ya nombra el campo a corregir

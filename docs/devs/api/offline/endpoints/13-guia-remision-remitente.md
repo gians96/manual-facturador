@@ -35,6 +35,9 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
     "fecha_de_emision": "2026-04-18",
     "hora_de_emision": "08:00:00",
     "codigo_tipo_documento": "09",
+    "datos_del_emisor": {
+        "codigo_del_domicilio_fiscal": "0000"
+    },
     "datos_del_cliente_o_receptor": {
         "codigo_tipo_documento_identidad": "6",
         "numero_documento": "20123456789",
@@ -87,19 +90,9 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
     "items": [
         {
             "codigo_interno": "ASD",
-            "descripcion": "Precio",
+            "descripcion": "Mercadería trasladada",
             "unidad_de_medida": "NIU",
-            "cantidad": 10,
-            "valor_unitario": 3.13,
-            "precio_unitario": 3.69,
-            "codigo_tipo_precio": "01",
-            "codigo_tipo_afectacion_igv": "10",
-            "total_base_igv": 31.3,
-            "porcentaje_igv": 18,
-            "total_igv": 5.63,
-            "total_impuestos": 5.63,
-            "total_valor_item": 31.3,
-            "total_item": 36.93
+            "cantidad": 10
         }
     ]
 }
@@ -118,12 +111,15 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
 | `fecha_de_emision` | string | **Sí** | `YYYY-MM-DD` |
 | `hora_de_emision` | string | **Sí** | `HH:mm:ss` |
 | `codigo_tipo_documento` | string | **Sí** | `"09"` Guía Remitente |
+| `datos_del_emisor` | object | No | Solo `codigo_del_domicilio_fiscal`. **Si no lo envías se usa el establecimiento del usuario del token**, igual que en `POST /api/documents`. Si lo envías con un código que no existe, `INVALID_ESTABLISHMENT` |
+| `datos_del_cliente_o_receptor.codigo_pais` | string | No | Opcional **desde el 2026-09-09**: si no lo envías se asume `"PE"`, igual que el panel y la API de notas de venta. Si el cliente ya existe con otro país, se conserva el suyo. Antes, omitirlo devolvía `NULL_NOT_ALLOWED` |
+| `hora_de_emision` | string | **Sí** | `HH:mm:ss`. `dispatches.time_of_issue` no admite null |
 | `observaciones` | string | No | Observaciones |
 | `codigo_modo_transporte` | string | **Sí** | `"01"` Transporte público, `"02"` Transporte privado |
 | `codigo_motivo_traslado` | string | **Sí** | Ver tabla de motivos |
 | `descripcion_motivo_traslado` | string | No | Descripción del motivo |
 | `fecha_de_traslado` | string | **Sí** | Fecha inicio del traslado `YYYY-MM-DD` |
-| `indicador_de_transbordo` | bool | No | Si hay transbordo |
+| `indicador_de_transbordo` | bool | No | Si hay transbordo. Desde el 2026-09-09 también se acepta como texto (`"true"` / `"false"`); ausente cuenta como `false`. Antes, un `"FALSE"` de texto se rechazaba nombrando una columna interna |
 | `unidad_peso_total` | string | **Sí** | Unidad de peso: `"KGM"` (kilos), `"TNE"` (toneladas) |
 | `peso_total` | float | **Sí** | Peso total de la carga |
 | `numero_de_bultos` | int | No | Cantidad de bultos |
@@ -135,7 +131,7 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
 |-------|------|-----------|-------------|
 | `ubigeo` | string | **Sí** | Código ubigeo (6 dígitos) |
 | `direccion` | string | **Sí** | Dirección completa (máx. 100 caracteres) |
-| `codigo_del_domicilio_fiscal` | string\|null | No | Código establecimiento SUNAT |
+| `codigo_del_domicilio_fiscal` | string\|null | No | Código establecimiento SUNAT. Opcional **de verdad desde el 2026-09-09**: antes, omitir la clave devolvía un 500 aunque aquí figurase como opcional. Si no aplica, omítela o envía `null`; el servidor usa `"0000"` |
 
 ### `direccion_llegada` (destino)
 
@@ -148,9 +144,14 @@ Misma estructura que `direccion_partida`.
 | `codigo_tipo_documento_identidad` | string | **Sí** | `"6"` (RUC) para empresas |
 | `numero_documento` | string | **Sí** | RUC del transportista |
 | `apellidos_y_nombres_o_razon_social` | string | **Sí** | Razón social |
-| `numero_mtc` | string | No | Número de registro MTC |
+| `numero_mtc` | string | No | Número de registro MTC. Opcional **de verdad desde el 2026-09-09**: antes, omitirlo devolvía un 500 |
 
-> Solo requerido si `codigo_modo_transporte = "01"` (transporte público).
+> Solo requerido si `codigo_modo_transporte = "01"` (transporte público) — y desde el
+> 2026-09-09 el servidor lo comprueba y lo dice por su nombre. Antes, omitirlo en transporte
+> público era un 500.
+>
+> Con `codigo_modo_transporte = "02"` (transporte privado) el bloque obligatorio es `chofer`,
+> por el mismo motivo y con la misma comprobación.
 
 ### `chofer`
 
@@ -189,7 +190,37 @@ Misma estructura que `direccion_partida`.
 
 ### `items[]`
 
-Misma estructura de items que Boleta/Factura (ver [09-boleta-factura.md](09-boleta-factura.md#items)).
+:::tip Una guía de remisión NO lleva precios
+Es la duda más frecuente al integrar guías desde un ERP, porque esta página remitía a la
+estructura de una factura. La tabla `dispatch_items` **no tiene columna de importe** y el XML
+`DespatchAdvice` solo emite tres cosas por línea: cantidad, descripción y código de producto.
+Si tu sistema solo conoce la cantidad atendida, con eso basta.
+:::
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `codigo_interno` | string | **Sí** | Debe coincidir exactamente con el del producto. Sin él, todas las líneas se agrupan en un mismo producto y la guía sale con un solo detalle |
+| `cantidad` | number | **Sí** | Mayor que 0. Es el `<cbc:DeliveredQuantity>` del XML |
+| `descripcion` | string | Condicional | Solo si el `codigo_interno` **no existe todavía** y hay que crear el producto |
+| `unidad_de_medida` | string | Condicional | Igual: solo al crear. Catálogo 03 de SUNAT (`NIU`, `KGM`, `TNE`…) |
+| `valor_unitario` | number | No | Opcional incluso al crear: el producto nace con precio 0, visible en el panel para corregirlo |
+
+Ejemplo completo de un ítem de guía:
+
+```json
+{ "codigo_interno": "200020001", "descripcion": "CONCENTRADO DE COBRE",
+  "unidad_de_medida": "TNE", "cantidad": 9.57 }
+```
+
+`precio_unitario`, `total_item`, `porcentaje_igv`, `total_base_igv`, `total_impuestos` y el
+resto del bloque de una factura **se aceptan por compatibilidad y se descartan**: no llegan al
+XML ni se guardan como importe.
+
+:::note La descripción del XML sale del producto, no de la línea
+`<cbc:Description>` se toma de la ficha del producto (`items.description`), no de la
+`descripcion` que mandas en el ítem. La de la línea sí aparece en el PDF. Si necesitas texto
+que cambia por viaje —precintos, lotes— tenlo en cuenta al revisar el XML firmado.
+:::
 
 ---
 
@@ -223,5 +254,5 @@ Misma estructura de items que Boleta/Factura (ver [09-boleta-factura.md](09-bole
 
 - **La guía requiere firma digital y envío a SUNAT (GRE 2.0).** Al crear offline, se almacena localmente y se procesa al sincronizar.
 - Las direcciones de partida/llegada usan ubigeo del catálogo descargado (ver [05-ubigeo.md](05-ubigeo.md)).
-- Validaciones estrictas del backend: `delivery.address` y `origin.address` son **requeridos** y máx. 100 caracteres.
+- Validaciones estrictas del backend: `direccion_llegada.direccion` y `direccion_partida.direccion` son **requeridos** y máx. 100 caracteres. (Hasta el 2026-09-09 el error los nombraba como `delivery.address` y `origin.address`, que son los nombres internos y no existen en tu payload.)
 - Para offline, enviar `numero_documento` con número concreto basado en `series-numbering`.
