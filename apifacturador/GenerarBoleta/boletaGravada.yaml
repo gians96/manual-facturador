@@ -59,6 +59,16 @@ paths:
         - **Las boletas NO se envían individualmente a SUNAT:** al emitirse quedan en estado
           `01` Registrado y se declaran después mediante el **resumen diario**
           (`POST /api/summaries`, ver sección Generar Resúmenes).
+        **Bloques opcionales comunes.** Esta página muestra el JSON mínimo de la variante.
+        Los bloques opcionales que acepta `POST /api/documents` —entre ellos `anticipos`,
+        `guias`, `relacionados`, `descuentos`, `cargos`, `detraccion`, `leyendas` y
+        `acciones`— se documentan una sola vez en **Factura Gravada**, que es la referencia
+        completa de campos.
+
+        Para las claves que **enlazan guías de remisión con comprobantes** —`guias`,
+        `guia_de_origen` y `guias_relacionadas`, que no hacen lo mismo— ver
+        [Documentos relacionados](/devs/api/documentos-relacionados).
+
       operationId: boletaGravada
       requestBody:
         description: JSON a enviar

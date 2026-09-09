@@ -63,6 +63,16 @@ paths:
         - Las notas de **factura** se envían a SUNAT al emitirse (la respuesta incluye
           `response.code "0"` y `links.cdr`). Las notas de **boleta** se declaran mediante el
           resumen diario.
+        **Bloques opcionales comunes.** Esta página muestra el JSON mínimo de la variante.
+        Los bloques opcionales que acepta `POST /api/documents` —entre ellos `anticipos`,
+        `guias`, `relacionados`, `descuentos`, `cargos`, `detraccion`, `leyendas` y
+        `acciones`— se documentan una sola vez en **Factura Gravada**, que es la referencia
+        completa de campos.
+
+        Para las claves que **enlazan guías de remisión con comprobantes** —`guias`,
+        `guia_de_origen` y `guias_relacionadas`, que no hacen lo mismo— ver
+        [Documentos relacionados](/devs/api/documentos-relacionados).
+
       operationId: notaCredito_factura
       requestBody:
         description: JSON a enviar

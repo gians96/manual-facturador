@@ -94,6 +94,22 @@ recoge la respuesta.
 Ambas son UBL 2.1 con `CustomizationID 2.0` (versión GRE 2021) y siguen exactamente el mismo
 flujo de tres pasos.
 
+:::info La guía transportista tiene endpoint propio
+La `09` se emite con `POST /api/dispatches`; la `31`, con **`POST /api/dispatch-carrier`**.
+No son intercambiables: `/api/dispatches` anula los datos de partida y llegada para todo lo
+que no sea tipo `09` y luego los exige, así que con una guía transportista responde siempre
+422. Corregido el 2026-09-08, cuando tres páginas de esta documentación aún indicaban el
+endpoint equivocado.
+:::
+
+## Enlazarlas con el comprobante
+
+Emitir la guía es la mitad del trabajo: falta decir **qué comprobante la sustenta**, o qué
+comprobante la factura. Son cuatro claves que se llaman parecido y hacen cosas distintas —
+unas mandan texto al XML y otras relacionan los registros de verdad.
+
+→ [Documentos relacionados: enlazar guías y comprobantes](./documentos-relacionados.md)
+
 ## Modo de pruebas
 
 En modo demo las guías no se envían a SUNAT sino a un entorno de pruebas, con credenciales de

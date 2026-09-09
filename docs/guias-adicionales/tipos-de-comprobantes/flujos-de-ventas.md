@@ -7,6 +7,15 @@ title: Flujos de Ventas
 
 En esta lista conocerá los diferentes flujos posibles para concretar ventas:
 
+:::tip Los dos flujos con guías, explicados
+Casi todos los flujos de abajo terminan en **→ Guías de Remisión** o en
+**Guías de Remisión → CPE**. Son las dos direcciones de la misma conversión, y cada una
+tiene su artículo:
+
+- **CPE → Guías de Remisión** — [Crear una guía a partir de un comprobante](../../modulos/Complementarios/guias-de-remision/05-Generar-guias-de-remision.md)
+- **Guías de Remisión → CPE** — [Generar comprobante desde una guía](../../modulos/Complementarios/guias-de-remision/03-Generar-comprobante-desde-una-guia.md)
+:::
+
 ## COMPROBANTES ELECTRÓNICOS (Facturas - Boletas)
 
 - CPE: Emitir Factura o Boleta y concretar la venta directa.
@@ -49,4 +58,4 @@ En esta lista conocerá los diferentes flujos posibles para concretar ventas:
 
 ## GUÍAS DE REMISIÓN
 
-- Guías de Remisión → CPE
+- [Guías de Remisión → CPE](../../modulos/Complementarios/guias-de-remision/03-Generar-comprobante-desde-una-guia.md)

@@ -525,7 +525,10 @@ components:
               example: 118
         anticipos:
           type: array
-          description: Anticipos a deducir.
+          description: >-
+            Anticipos a deducir. La clave del correlativo es `numero` (desde el 2026-09-08 se
+            acepta `numero_documento` como alias). `total` es el importe con IGV; si se omite
+            se toma `monto`.
           items:
             type: object
             properties:
@@ -543,7 +546,17 @@ components:
                 example: 59
         guias:
           type: array
-          description: Guías de remisión relacionadas.
+          description: >-
+            Guías de remisión relacionadas. Pone la referencia **en el XML**
+            (`cac:DespatchDocumentReference`), que es lo que ve SUNAT, pero **no** relaciona
+            los registros: la guía sigue figurando como pendiente de facturar. Para eso están
+            `guia_de_origen` y `guias_relacionadas`.
+
+
+            La clave del correlativo es `numero`; desde el 2026-09-08 se acepta
+            `numero_documento` como alias. El tipo `31` (guía transportista) se guarda y se
+            imprime pero **se omite del XML**: ver
+            [Documentos relacionados](/devs/api/documentos-relacionados).
           items:
             type: object
             properties:
@@ -552,7 +565,67 @@ components:
                 example: "T001-25"
               codigo_tipo_documento:
                 type: string
+                description: '"09" guía remitente, "31" guía transportista.'
                 example: "09"
+        guia_de_origen:
+          type: object
+          description: >-
+            Opcional. La guía de remisión de la que nace este comprobante. **Enlaza los
+            registros de verdad** (`documents.dispatch_id`). Disponible desde el 2026-09-08.
+
+
+            **Efecto sobre el stock:** con esta clave el comprobante **no** descuenta
+            existencias, porque ya las descontó la guía.
+
+
+            Tres formas de nombrarla, elige una: `external_id`; la terna `serie_documento` +
+            `numero_documento` (+ `codigo_tipo_documento`); o `codigo`, el id interno. Ver
+            [Documentos relacionados](/devs/api/documentos-relacionados).
+          properties:
+            external_id:
+              type: string
+              example: "9f3e2b7c-1a4d-4c8e-9b2f-7d6a5c4e3b21"
+            serie_documento:
+              type: string
+              example: "T001"
+            numero_documento:
+              type: string
+              example: "4"
+            codigo_tipo_documento:
+              type: string
+              example: "09"
+            codigo:
+              type: integer
+              example: 44
+        guias_relacionadas:
+          type: array
+          description: >-
+            Opcional. Guías que quedan **facturadas** por este comprobante: a cada una se le
+            escribe `reference_document_id` y se le regenera el PDF. Disponible desde el
+            2026-09-08. Es la vía para cerrar varias guías con una sola factura.
+
+
+            Una guía ya facturada por un comprobante vigente se rechaza con
+            `DISPATCH_ALREADY_LINKED`. No cambia el descuento de stock del comprobante.
+          items:
+            type: object
+            description: Misma forma que `guia_de_origen`.
+            properties:
+              external_id:
+                type: string
+                example: "9f3e2b7c-1a4d-4c8e-9b2f-7d6a5c4e3b21"
+              serie_documento:
+                type: string
+                example: "T001"
+              numero_documento:
+                type: string
+                example: "5"
+              codigo_tipo_documento:
+                type: string
+                example: "09"
+              codigo:
+                type: integer
+                example: 44
         relacionados:
           type: array
           description: Otros documentos relacionados.

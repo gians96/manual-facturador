@@ -33,7 +33,7 @@ tags:
     description: Emisión de comprobantes electrónicos (CPE)
 
 paths:
-  /api/dispatches:
+  /api/dispatch-carrier:
     post:
       tags:
         - api
@@ -44,11 +44,18 @@ paths:
         se envían los arrays opcionales `chofer_secundario` y `vehiculo_secundario`
         (máximo 2 cada uno; los elementos extra se descartan).
 
-        La guía del transportista se genera con el **mismo endpoint** `POST /api/dispatches`
-        que las demás guías (no existe un endpoint `/api/dispatch-carrier`).
+        La guía del transportista tiene **endpoint propio**, `POST /api/dispatch-carrier`,
+        distinto del de la guía remitente.
+
+        > **Corregido el 2026-09-08.** Hasta esa fecha esta página documentaba
+        > `POST /api/dispatches`, que **siempre responde 422** con una guía transportista:
+        > ese endpoint anula `direccion_partida` y `direccion_llegada` para todo lo que no
+        > sea tipo `09` y acto seguido las exige, así que no existe payload que lo satisfaga.
+        > El endpoint correcto es `POST /api/dispatch-carrier`, y `direccion_partida` /
+        > `direccion_llegada` no intervienen: el domicilio viaja en `direcciones_proveedores`.
 
         **Flujo completo de una guía de remisión:**
-        1. `POST /api/dispatches` → genera la guía (XML firmado + PDF) y devuelve `external_id`.
+        1. `POST /api/dispatch-carrier` → genera la guía (XML firmado + PDF) y devuelve `external_id`.
            Este paso **no** envía a SUNAT.
         2. `POST /api/dispatches/send` con `{"external_id": "..."}` → envía al API GRE de SUNAT
            y obtiene el número de ticket (la guía pasa a estado `03` Enviado).
@@ -57,7 +64,7 @@ paths:
 
         ***Ejemplo:***
          - **Método:** POST
-         - **URL:** `https://tu-dominio.com/api/dispatches`
+         - **URL:** `https://tu-dominio.com/api/dispatch-carrier`
          - **Encabezados:** `Authorization: Bearer <TU_TOKEN>`, `Accept: application/json` y `Content-Type: application/json`
 
         > **No existe ambiente de pruebas (beta) de SUNAT para guías de remisión** — a diferencia
@@ -93,17 +100,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorLicencia'
         '422':
-          description: Error de validación de campos (p. ej. falta `direccion` en `direccion_partida` o `direccion_llegada`)
+          description: |-
+            Entrada rechazada por ser atribuible al integrador. Mensajes reales:
+            - `"La serie ingresada V001, es incorrecta."`
+            - `"El código ingresado del establecimiento es incorrecto."`
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorValidacion'
         '500':
           description: |-
-            Error de negocio. Mensajes reales:
-            - `"La serie ingresada V001, es incorrecta."`
-            - `"El código ingresado del establecimiento es incorrecto."`
-            - `"Undefined array key \"codigo_del_domicilio_fiscal\""` (falta esa clave en `direccion_partida`/`direccion_llegada`)
+            Fallo no controlado. El caso más frecuente es enviar un bloque opcional
+            a medias: el sistema lee sus sub-claves directamente, así que una ausencia
+            sale como `"Undefined array key \"...\""` en vez de como un 422 con nombre.
+            Ejemplo: `datos_remitente` sin `numero_documento`.
           content:
             application/json:
               schema:
@@ -127,8 +137,6 @@ components:
         - indicador_de_transbordo
         - unidad_peso_total
         - peso_total
-        - direccion_partida
-        - direccion_llegada
         - datos_remitente
         - datos_destinatario
         - direcciones_proveedores
@@ -204,10 +212,6 @@ components:
           format: date
           description: Opcional. Fecha de entrega de los bienes al transportista.
           example: "2026-07-22"
-        direccion_partida:
-          $ref: '#/components/schemas/DireccionTraslado'
-        direccion_llegada:
-          $ref: '#/components/schemas/DireccionTraslado'
         datos_remitente:
           $ref: '#/components/schemas/ParteTraslado'
         datos_destinatario:
@@ -249,6 +253,8 @@ components:
           type: string
           description: Opcional.
           example: ""
+        comprobante_de_referencia:
+          $ref: '#/components/schemas/ComprobanteDeReferencia'
         documento_afectado:
           $ref: '#/components/schemas/DocumentoAfectado'
         documento_relacionado:
@@ -430,15 +436,62 @@ components:
           description: Catálogo 07 SUNAT ("10" gravado, "20" exonerado, "30" inafecto). Necesario solo si el producto se crea nuevo.
           example: "10"
 
-    DocumentoAfectado:
+    ComprobanteDeReferencia:
       type: object
       description: >-
-        Opcional. Comprobante que sustenta el traslado. Enviar `external_id` **o** la terna
-        serie/número/tipo de un comprobante ya emitido en el sistema.
+        Opcional. Comprobante (factura o boleta) que origina el traslado, **enlazado de
+        verdad**: escribe la clave foránea, de modo que la guía deja de figurar como
+        pendiente de facturar, el listado muestra su N.º de comprobante y el PDF lo imprime.
+        Si no envías `documento_relacionado`, además lo deriva de aquí para que el
+        `cac:AdditionalDocumentReference` salga en el XML.
+
+
+        Disponible desde el 2026-09-08. **Efecto sobre el stock:** con esta clave la guía
+        **no** descuenta existencias, porque ya las descontó el comprobante. Ver
+        [Documentos relacionados](/devs/api/documentos-relacionados).
+
+
+        Tres formas de nombrarlo, elige una: `external_id`; la terna
+        `serie_documento` + `numero_documento` (+ `codigo_tipo_documento` para desambiguar);
+        o `codigo`, el id interno.
       properties:
         external_id:
           type: string
-          description: external_id del comprobante (alternativa a serie/número/tipo).
+          description: external_id que devolvió la API al emitir el comprobante. La forma recomendada.
+          example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
+        serie_documento:
+          type: string
+          example: "F001"
+        numero_documento:
+          type: string
+          description: >-
+            Correlativo. Admite ceros a la izquierda y también la forma combinada "F001-190".
+          example: "190"
+        codigo_tipo_documento:
+          type: string
+          description: Opcional; solo hace falta si la serie-número pudiera existir en dos tipos.
+          example: "01"
+        codigo:
+          type: integer
+          description: Id interno del comprobante. Último recurso.
+          example: 1234
+
+    DocumentoAfectado:
+      type: object
+      description: >-
+        Opcional. Comprobante que sustenta el traslado, **solo a efectos de impresión**: se
+        guarda en la guía y se imprime en su PDF, pero **no viaja en el XML** que recibe
+        SUNAT **ni relaciona los dos registros** en base de datos — la guía seguirá
+        figurando como pendiente de facturar. Corregido el 2026-09-08: la redacción
+        anterior («de un comprobante ya emitido en el sistema») hacía pensar en un enlace
+        que nunca ocurría. Para que SUNAT vea el comprobante, usa `documento_relacionado`.
+      properties:
+        external_id:
+          type: string
+          description: >-
+            **Hoy se ignora**: el sistema lo recibe y lo descarta sin avisar, de modo que la
+            guía se emite sin ningún dato del comprobante. Usa la terna
+            serie/número/tipo en su lugar.
           example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
         serie_documento:
           type: string
@@ -559,10 +612,14 @@ components:
           type: boolean
           example: false
         message:
-          type: object
-          description: Objeto con los errores por campo.
-          example:
-            direccion_partida.direccion: ["El campo direccion partida.direccion es obligatorio."]
+          type: string
+          description: Motivo del rechazo, en texto plano.
+          example: "La serie ingresada V001, es incorrecta."
+        error_code:
+          type: string
+          description: >-
+            Opcional. Código estable para ramificar sin parsear el mensaje.
+          example: "MISSING_FIELDS"
 
     ErrorNegocio:
       type: object

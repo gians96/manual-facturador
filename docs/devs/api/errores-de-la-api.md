@@ -102,6 +102,17 @@ Pago #1: falta 'codigo_destino_pago'. Si no aplica, envíalo como null.
 Para notas de crédito y débito es obligatorio 'documento_afectado'.
 ```
 
+### Referencias a otros documentos
+
+`REFERENCE_NOT_FOUND`, `MALFORMED_REFERENCE`, `AMBIGUOUS_REFERENCE`, `INVALID_DOCUMENT_TYPE`
+y `DISPATCH_ALREADY_LINKED` salen de las claves que enlazan guías con comprobantes. Qué
+significa cada una y qué clave usar en cada caso:
+[Documentos relacionados](./documentos-relacionados.md).
+
+No confundir `MALFORMED_REFERENCE` —el bloque que enviaste no tiene la forma de una
+referencia— con `INVALID_REFERENCE`, más abajo, que es un código que no existe en su
+catálogo.
+
 ### `INVALID_UNIT_TYPE`
 
 ```

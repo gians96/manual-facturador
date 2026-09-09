@@ -742,32 +742,66 @@ Campos opcionales a nivel raíz del payload que controlan comportamientos especi
 
 ### `guias[]` — Guías de remisión vinculadas
 
+La clave del correlativo es **`numero`**, no `numero_documento`.
+
 ```json
 {
     "guias": [
         {
             "codigo_tipo_documento": "09",
-            "numero_documento": "T001-1"
-        },
-        {
-            "codigo_tipo_documento": "31",
-            "numero_documento": "V001-1"
+            "numero": "T001-1"
         }
     ],
     "...": "..."
 }
 ```
 
+> **Corregido el 2026-09-08.** Hasta esa fecha este ejemplo usaba `numero_documento`, que
+> el sistema no leía: la emisión respondía **500** con `"Undefined array key \"numero\""`.
+> Lo mismo ocurría en `anticipos[]`. Desde esa fecha `numero_documento` se acepta como
+> alias, pero el nombre canónico es `numero`.
+
+Solo crea la referencia **en el XML** (`cac:DespatchDocumentReference`). **No** relaciona
+los dos registros en base de datos: la guía sigue apareciendo como pendiente de facturar.
+Para eso están `guia_de_origen` y `guias_relacionadas` — ver
+[Documentos relacionados](../../documentos-relacionados.md).
+
+> **La guía transportista (`31`) no llega a SUNAT.** El sistema la guarda y la imprime en
+> el PDF, pero la omite del XML de la factura. Si necesitas que SUNAT la vea, hoy no hay
+> forma de conseguirlo por esta vía.
+
 ### `anticipos[]` — Pagos anticipados
+
+Tres claves obligatorias — `numero`, `codigo_tipo_documento` y `monto` (sin IGV) — más
+`total` (con IGV), que es opcional: si se omite se toma `monto`. `codigo_tipo_moneda` no
+existe en este bloque y se ignora.
 
 ```json
 {
     "anticipos": [
         {
             "codigo_tipo_documento": "02",
-            "numero_documento": "F001-5",
-            "codigo_tipo_moneda": "PEN",
-            "monto": 500
+            "numero": "F001-5",
+            "monto": 500,
+            "total": 590
+        }
+    ],
+    "...": "..."
+}
+```
+
+### `relacionados[]` — Otros documentos relacionados
+
+Tres claves, todas obligatorias: `numero`, `codigo_tipo_documento` y `monto`. Se emiten como
+`cac:AdditionalDocumentReference` en el XML.
+
+```json
+{
+    "relacionados": [
+        {
+            "codigo_tipo_documento": "01",
+            "numero": "F001-99",
+            "monto": 118
         }
     ],
     "...": "..."

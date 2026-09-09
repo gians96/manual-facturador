@@ -26,9 +26,18 @@ bun install
 bun run start          # dev server (http://localhost:3000)
 bun run build          # build de producción — RESPETA onBrokenLinks: "throw"
 bun run serve          # sirve el build local
-# API OpenAPI (regenera los .mdx desde los specs YAML):
-bun run docusaurus gen-api-docs facturador     # (id de plugin openapi = "facturador")
-bun run docusaurus clean-api-docs facturador
+# API OpenAPI (regenera los .mdx desde los specs YAML).
+# OJO: el primer argumento es el id del SPEC (la clave dentro de `config` en
+# docusaurus.config.ts: guia_remision, generar_factura, generar_boleta, ...), y el
+# plugin va aparte con --plugin-id. Pasar "facturador" como spec falla con
+# "Cannot destructure property 'outputDir' of 'options' as it is undefined".
+# OJO 2: `gen-api-docs` NO sobrescribe los .mdx que ya existen — termina sin decir
+# nada y te deja la version vieja. SIEMPRE limpiar primero:
+bun run docusaurus clean-api-docs guia_remision --plugin-id facturador
+bun run docusaurus gen-api-docs   guia_remision --plugin-id facturador
+# `all` en vez del id regenera todos los specs — evítalo salvo que quieras tocarlos
+# todos: `api_rest` escribe en docs/api-rest/, un directorio que hoy no existe ni
+# está en git.
 ```
 
 > Ver memoria del proyecto: los 34 specs del API tenant fueron reescritos con el contrato real (2026-07-22).
@@ -45,7 +54,7 @@ bun run docusaurus clean-api-docs facturador
 
 ## 4. Reglas OBLIGATORIAS
 
-- **NO editar a mano** lo generado: `build/`, `.docusaurus/` (gitignored) ni los `.mdx` bajo `docs/devs/api/**` (llevan `custom_edit_url: null`/`id:`/blobs base64). Para cambiarlos: edita el **YAML** en `apifacturador/` y re-corre `gen-api-docs facturador`.
+- **NO editar a mano** lo generado: `build/`, `.docusaurus/` (gitignored) ni los `.mdx` bajo `docs/devs/api/**` (llevan `custom_edit_url: null`/`id:`/blobs base64). Para cambiarlos: edita el **YAML** en `apifacturador/` y re-corre `gen-api-docs <id-del-spec> --plugin-id facturador` (ver §2).
 - **`onBrokenLinks: "throw"`**: un enlace interno roto **rompe el build**. Valida con `bun run build` antes de cerrar.
 - **Marca del producto = "Facturador".** El nombre de producto se escribe **"Facturador"** (no "Pro 8"). PERO:
   - **Conservar** etiquetas de **versión/edición**: "Pro 7", "Pro 8.1/8.2", "ProX", migraciones "Pro5→Pro6".
