@@ -39,6 +39,7 @@ docker exec fpm_nt-suite_pro sh -c "cd /var/www/html && CACHE_DRIVER=file php ar
 |---|---|---|---|---|
 | `tenancy:run tenant:run` | Tareas por tenant: consultas a SUNAT y envíos automáticos. Ejecuta solo las que estén **activas** en la tabla `tasks` del tenant (interruptor de la pantalla *Tareas programadas*) | cada minuto | `docker exec fpm_… php artisan schedule:list \| grep tenant:run` | — |
 | `status:server` | Muestra de CPU y RAM para las gráficas de `/information` | cada 5 min | Que aparezcan filas nuevas en `history_resources` | — |
+| `system:check` | Comprueba que **Laravel alcanza** Redis, la base y el WebSocket, y deja el resultado para `/information` | cada 5 min | `docker exec fpm_… php artisan system:check` (tabla en verde y salida 0) | `system_check.log` |
 | `storage:scan` | Mide disco, inodes y consumo por tenant para `/information` | cada hora | `stat -c %y storage/app/system/storage-usage.json` (debe ser de hace &lt; 1 h) | `storage_scan.log` |
 | `tenants:clean-pdfs --older-than=90` | Libera disco e inodes borrando PDF regenerables de más de 90 días | domingos 04:30 | `tail storage/logs/clean_tenant_pdfs.log` | `clean_tenant_pdfs.log` |
 | `telescope:prune --hours=48` | Poda `telescope_entries`, que si no crece sin límite | diaria | `SELECT COUNT(*) FROM telescope_entries` (no debe crecer sin fin) | `telescope_prune.log` |
@@ -48,6 +49,29 @@ docker exec fpm_nt-suite_pro sh -c "cd /var/www/html && CACHE_DRIVER=file php ar
 | `backup:prune-runs --days=180` | Poda el historial de copias | lunes 05:30 | `SELECT COUNT(*) FROM backup_runs` | `backup_prune_runs.log` |
 | `tenancy:run print-orders:prune` | Borra órdenes de impresión ya impresas (`pdf_b64` es pesado) | diaria 04:00 | `tail storage/logs/print_orders_prune.log` | `print_orders_prune.log` |
 | `order:payments` | Procesa pagos pendientes | cada 2 min | `tail storage/logs/order_create.log` | `order_create.log` |
+
+:::danger `system:check` no es el healthcheck de Docker
+Son cosas distintas y confundirlas ya costó meses. El healthcheck del contenedor hace
+`redis-cli ping` **dentro del propio Redis**: prueba que Redis está vivo. `system:check`
+pregunta **desde php-fpm y con la configuración de Laravel**: prueba que la aplicación
+llega hasta él.
+
+En `nt-suite.pro` el `.env` tenía `REDIS_HOST=127.0.0.1` —que dentro del contenedor de PHP
+es el propio contenedor— y **todos los healthchecks del stack seguían en verde** mientras la
+sincronización de catálogo con el app llevaba meses sin funcionar. Como la cola iba por
+`database` y las sesiones por `file`, ninguna otra pieza tocaba Redis y nada más falló.
+
+Si `system:check` marca Redis en rojo, mira el host que muestra: si dice `127.0.0.1`, esa
+es la avería.
+
+```bash
+docker exec fpm_… php artisan system:check
+grep REDIS_HOST .env   # debe ser el nombre del contenedor: redis_<prefijo>
+```
+
+Desde el 2026-09-09 `scripts/prod-update.sh` reafirma `REDIS_HOST` en cada despliegue y
+ejecuta esta comprobación al terminar, devolviendo error si algo no se alcanza.
+:::
 
 > **Las tareas de cada empresa se ven y se apagan desde el panel del tenant**, en
 > *Tareas programadas* (`/tasks`). Lo que se ofrece ahí es una lista blanca

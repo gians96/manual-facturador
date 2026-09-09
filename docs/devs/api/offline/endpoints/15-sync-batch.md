@@ -167,8 +167,19 @@ Authorization: Bearer {token}
 |-------|------|-----------|-------------|
 | `doc_type` | string | **Sí** | Código tipo: `"80"`, `"01"`, `"03"`, `"07"`, `"08"`, `"09"`, `"31"` |
 | `offline_id` | string | **Sí** | UUID v4 generado por Flutter. Clave de idempotencia |
-| `cash_id` | int | No | ID de la caja abierta (para registrar venta en caja) |
+| `cash_id` | int | No | ID de servidor de la caja donde registrar la venta |
+| `cash_offline_id` | string | No | UUID de la caja creada sin conexión, si aún no tiene ID de servidor |
 | `data` | object | **Sí** | Payload completo del comprobante (ver endpoints individuales) |
+
+:::tip Cuál de los dos mandar
+Manda `cash_id` cuando la caja ya se sincronizó y conoces su ID de servidor. Manda
+`cash_offline_id` cuando la caja se abrió sin conexión y viaja en el mismo lote, dentro de
+`cash_openings[]`: el backend resuelve el UUID contra la caja recién creada. Puedes mandar
+los dos; se intenta primero `cash_id`.
+
+Si no mandas ninguno, la venta se registra en la caja que ese usuario tenga abierta en ese
+momento.
+:::
 
 ### Formato del `data` según `doc_type`
 
@@ -202,7 +213,9 @@ Authorization: Bearer {token}
                     "external_id": "4611364d-2bc8-482c-9eea-4162216d582b",
                     "filename": "NV01-25-20260418",
                     "state_type_id": "01"
-                }
+                },
+                "cash_registered": true,
+                "cash_error_code": null
             },
             {
                 "index": 1,
@@ -360,6 +373,111 @@ Los códigos de validación llegan por esta vía exactamente igual que por `/api
 ver **[Errores de la API](../../errores-de-la-api.md)** para el catálogo completo, los
 mensajes literales y qué corregir en cada caso.
 
+---
+
+## Registro en caja — `cash_registered` y `cash_error_code`
+
+:::info Desde el 2026-09-09
+`cash_error_code` es nuevo. `cash_registered` existía pero no estaba documentado.
+Ambos viajan en filas con `success: true`, porque **el registro en caja es independiente de
+la emisión**: una venta puede emitirse correctamente y no llegar a su caja.
+:::
+
+Cada fila de `results[]` lleva estos dos campos:
+
+| Campo | Tipo | Significa |
+|---|---|---|
+| `cash_registered` | bool | `true` si la venta está en una caja, ya sea porque se registró ahora o porque ya lo estaba |
+| `cash_error_code` | string \| null | `null` cuando `cash_registered` es `true`. Si no, cuál de los cuatro fallos fue |
+| `cash_message` | string \| null | Frase lista para enseñar al cajero: nombra la caja concreta y dice si hay que reintentar |
+
+Ejemplo de una fila con fallo de caja. Fíjate en que `success` es `true`:
+
+```json
+{
+  "index": 0,
+  "offline_id": "7c445379-377a-4219-8763-eeb08fff84d2",
+  "success": true,
+  "doc_type": "01",
+  "data": { "id": 8, "number": "B001-8" },
+  "was_duplicate": true,
+  "cash_registered": false,
+  "cash_error_code": "CASH_NOT_FOUND",
+  "cash_message": "La venta se emitió correctamente, pero la caja #999999 no existe en el servidor. Envía su apertura en cash_openings y reintenta esta venta UNA vez."
+}
+```
+
+`cash_message` empieza siempre por «La venta se emitió correctamente» a propósito: el fallo
+llega en una fila de éxito y, sin esa frase, un cajero puede creer que la venta se perdió y
+volver a emitirla.
+
+### La idempotencia se comprueba antes que el payload
+
+:::info Desde el 2026-09-09
+Si el `offline_id` corresponde a una venta **ya sincronizada**, el servidor la devuelve como
+`was_duplicate: true` **sin mirar el `data`**. Puedes reenviarla con el payload vacío.
+:::
+
+Antes se validaba primero, así que un reenvío con el payload incompleto —o con un formato
+que hubiera cambiado desde que la venta se emitió— salía como `INVALID_PAYLOAD` en vez de
+como duplicado, y esa fila se quedaba atascada para siempre reintentando algo que el
+servidor nunca iba a aceptar.
+
+`data` sigue siendo obligatorio para una venta que **no** está sincronizada todavía; en ese
+caso el error es `MISSING_FIELDS`.
+
+### `cash_summary` — el recuento del lote
+
+`data.cash_summary` trae cuántas ventas cayeron en cada desenlace, para ver de un vistazo si
+el lote entero choca contra lo mismo sin recorrer `results[]`:
+
+```json
+"cash_summary": { "already_registered": 1948, "CASH_CLOSED": 22 }
+```
+
+Las claves son los `cash_error_code` más `ok`, `already_registered` y `not_applicable`.
+
+### Los cuatro códigos
+
+| `cash_error_code` | Significa | Qué debe hacer el app |
+|---|---|---|
+| `CASH_NOT_FOUND` | La caja que pediste no existe en el servidor | Mandar su apertura en `cash_openings[]` y reintentar **una** vez |
+| `CASH_OTHER_USER` | La caja existe pero pertenece a otro usuario | ❌ No reintentar. Es un error de datos del app |
+| `CASH_CLOSED` | La caja existe y es tuya, pero ya se cerró | ❌ No reintentar. Ver abajo |
+| `CASH_NONE_OPEN` | No mandaste caja y el usuario no tiene ninguna abierta | Abrir caja y reintentar |
+
+### Regla que evita el bucle infinito
+
+**Con `cash_registered: true`, da la venta por terminada y no la vuelvas a enviar.** Vale
+igual que `was_duplicate: true`.
+
+Esto no es un detalle de estilo. Hasta el 2026-09-09 el backend respondía `false` a toda
+venta cuya caja original ya estuviera cerrada, aunque la venta estuviera perfectamente
+registrada en otra caja. Como el estado «pendiente de caja» vive solo en el SQLite del app,
+el lote entero se reenviaba en cada sincronización: en un tenant real eso eran **7.250 avisos
+por lote para 2.086 ventas, de las que 2.064 estaban bien**. Desde esa fecha el backend
+responde `true` con `cash_error_code: null` en cuanto la venta ya figura en cualquier caja.
+
+### Por qué `CASH_CLOSED` no se reintenta
+
+Una caja cerrada no vuelve a abrirse, así que el reintento no puede tener éxito nunca.
+
+Ocurre cuando la venta se emitió sin conexión durante un turno y se sincronizó después de
+cerrarlo. En ese caso la venta **ya quedó registrada** en la caja que estuviera abierta al
+sincronizar, así que su importe no se ha perdido: cuenta en el arqueo del día en que se
+sincronizó, no en el del turno en que se hizo. Volver a engancharla a su caja original la
+contaría dos veces.
+
+### Comprobantes que no pasan por caja
+
+Los `doc_type` `09`, `31` (guías de remisión) y `20` (retención) no mueven el efectivo del
+cajón. Siempre devuelven `cash_registered: true` y `cash_error_code: null`.
+
+La retención se excluyó el 2026-09-09: la columna `cash_documents.document_id` tiene clave
+foránea contra `documents`, y el id de un `doc_type` `20` pertenece a `retentions`. O tumbaba
+la venta entera con un error de integridad, o —peor— enganchaba la caja a un documento ajeno
+cuyo id coincidiera, falseando el arqueo sin dar ningún error.
+
 #### Antes: un mensaje que no nombraba nada
 
 Hasta el 2026-09-04, cualquier violación de restricción de la base salía como:
@@ -476,6 +594,13 @@ Ver detalles de implementación en [16-idempotencia.md](16-idempotencia.md).
 - Si un comprobante tiene `was_duplicate: true` → marcarlo como sincronizado exitosamente
 - Exponential backoff: 1s, 2s, 4s, 8s, 16s (máx. 5 intentos)
 
+:::danger Nunca reencoles una venta por `cash_registered: false`
+La emisión y el registro en caja son cosas distintas. Con `success: true` la venta **ya está
+en el servidor**: volver a enviarla no la registra en caja y sí llena el log. De los cuatro
+`cash_error_code`, solo `CASH_NOT_FOUND` y `CASH_NONE_OPEN` admiten **un** reintento, y
+después de corregir la causa: mandar la apertura de caja que falta, o abrir una.
+:::
+
 Para decidir si reintentar, **ramifica por `error_code`, no por el texto del mensaje**: solo
 `DATABASE_ERROR` y `PROCESSING_ERROR` son del servidor y merecen otro intento. Todos los
 demás son del payload y reintentarlos sin corregirlo solo gasta la cola.
@@ -485,6 +610,10 @@ const reintentables = {'DATABASE_ERROR', 'PROCESSING_ERROR'};
 
 if (r['success'] == true) {
   marcarSincronizado(r);                       // incluye was_duplicate: true
+  if (r['cash_registered'] == false) {
+    // La venta está emitida. Esto se anota para el usuario, NO se reencola.
+    anotarIncidenciaDeCaja(r['cash_error_code']);
+  }
 } else if (reintentables.contains(r['error_code'])) {
   encolarReintento(r);
 } else {
@@ -496,3 +625,11 @@ if (r['success'] == true) {
 
 - Recomendado: máximo **50 comprobantes** por batch
 - Si hay más, dividir en múltiples llamadas
+
+:::caution Por encima de 500 el servidor lo anota
+No hay tope: el lote se procesa igual, porque rechazarlo dejaría sin sincronizar justo al
+cliente que más lo necesita. Pero a partir de **500 ventas** el servidor escribe un aviso en
+su log, porque casi siempre significa que el cliente está reenviando ventas ya sincronizadas
+en vez de vaciar su cola. Revisa `cash_summary`: si `already_registered` es alto, tu cola no
+se está vaciando.
+:::
