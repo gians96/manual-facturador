@@ -379,6 +379,91 @@ la credencial GRE real, que se saca en SUNAT SOL marcando *GREE Emisión de Comp
 
 → [Configuración previa de guías de remisión](../../modulos/Complementarios/guias-de-remision/01-Configuracion-previa-guia-remision.md)
 
+## Aceptada con observaciones
+
+**SUNAT puede aceptar una guía y observarla a la vez.** El código de respuesta viene `0` y los
+reparos viajan aparte, en las notas del CDR. La guía es válida, pero SUNAT está señalando algo.
+
+El sistema las guarda y las muestra: en el cuadro de opciones aparece un aviso ámbar con la
+lista, en lugar del verde de una guía limpia.
+
+Estas son las que aparecen de verdad en el tráfico corriente, tomadas de CDR reales:
+
+| Código | Qué observa |
+|---|---|
+| 4186 | El campo observaciones supera los 250 caracteres |
+| 4388 | Falta el indicador de pagador del flete |
+| 4391 | El transportista no tiene número de registro del Ministerio de Transportes |
+| 4398 | La placa no figura en las bases de SUNAT |
+| 4412 | La licencia de conducir no figura en las bases de SUNAT |
+| 4434 | En la guía de transportista no corresponde enviar el detalle de bienes |
+
+:::tip Hoy observa, mañana puede rechazar
+SUNAT viene endureciendo las reglas de la guía de remisión. Una observación de hoy puede ser un
+rechazo el año que viene. Conviene corregirlas aunque la guía se acepte.
+:::
+
+## Avisos antes de emitir
+
+La emisión devuelve un campo `warnings` con lo que SUNAT va a observar o rechazar. **No
+bloquean nada**: la guía se emite igual y tú decides.
+
+```json
+{
+  "success": true,
+  "data": {
+    "number": "V001-7",
+    "external_id": "...",
+    "warnings": [
+      {"codigo": "2567", "campo": "vehiculo.numero_de_placa",
+       "mensaje": "La placa «AKM-863» lleva separadores y SUNAT la rechaza. Envíala como «AKM863»."}
+    ]
+  }
+}
+```
+
+Es un campo añadido: si no lo lees, todo sigue funcionando igual que antes.
+
+## Corregir una guía rechazada
+
+Cuando SUNAT rechaza una guía, **no hace falta emitir otra**. Se corrige y se reenvía con el
+mismo número.
+
+Basta con incluir el `external_id` que recibiste al emitirla, junto con el payload corregido:
+
+```json
+{
+  "external_id": "229f45f3-3c5f-411e-922b-c800ccbeea75",
+  "serie_documento": "V001",
+  "...": "resto del payload ya corregido"
+}
+```
+
+Se conservan la serie, el número y el propio `external_id`. Después basta con volver a llamar al
+envío.
+
+:::warning Una guía aceptada no se puede modificar
+Si SUNAT ya la aceptó, el sistema responde `DISPATCH_ALREADY_ACCEPTED`. Para deshacerla hay que
+darla de baja en el portal de SUNAT, y eso **solo se puede el mismo día**. Después, el estado se
+puede reflejar a mano desde el menú de tres puntos del listado.
+:::
+
+## Cinco tropiezos que cuestan una tarde
+
+Capturados emitiendo de verdad contra SUNAT. Todos devuelven un rechazo tras consumir el
+correlativo, así que conviene conocerlos antes:
+
+| Código | Qué pasa |
+|---|---|
+| 2560 | El transportista no puede ser el mismo que el remitente |
+| 2567 | La placa no admite separadores: `ABC-123` se rechaza, `ABC123` pasa |
+| 2775 | En la guía de transportista las direcciones van en `direcciones_proveedores`. Las habituales se aceptan y **se descartan en silencio** |
+| 3359 | El documento del conductor se contrasta con el padrón de SUNAT |
+| 3443 | El RUC del destinatario, también |
+
+El de las direcciones es el más caro de depurar, porque el sistema acepta el payload sin
+quejarse y el rechazo llega después, hablando de un ubigeo vacío que tú sí enviaste.
+
 ## Cuando el envío falla: cómo leer el aviso
 
 El envío y la consulta devuelven los errores con el prefijo `Code: … - Message: …`. Lo que
