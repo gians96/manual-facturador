@@ -379,6 +379,45 @@ la credencial GRE real, que se saca en SUNAT SOL marcando *GREE Emisión de Comp
 
 → [Configuración previa de guías de remisión](../../modulos/Complementarios/guias-de-remision/01-Configuracion-previa-guia-remision.md)
 
+## El estado manda qué se puede hacer
+
+Una guía pasa por cuatro estados, y cada uno permite cosas distintas. No es un detalle de
+pantalla: el servidor lo hace cumplir.
+
+| Estado | Qué se puede hacer | Por qué |
+|---|---|---|
+| **Registrado** | Editar · Enviar a SUNAT · **Eliminar** | SUNAT todavía no la ha visto |
+| **Enviado** | Solo consultar el ticket | Está en manos de SUNAT y aún no hay respuesta |
+| **Aceptado** | Opciones · Generar comprobante · **Marcar como anulada** | SUNAT ya la tiene |
+| **Rechazado** | Editar y volver a enviar | Se corrige y se reintenta con el mismo número |
+
+:::warning Una guía enviada no se edita
+Aunque siga sin respuesta. Tocarla mientras SUNAT la procesa deja el sistema diciendo una cosa y
+SUNAT otra.
+:::
+
+### Eliminar: solo antes de enviar, y con verificación
+
+Se puede borrar una guía **en Registrado**, porque SUNAT no la conoce. En cuanto se envía, ya
+no: borrarla dejaría un documento vivo en SUNAT que aquí no existe, y un hueco en el correlativo
+imposible de explicar.
+
+Pero que figure como *Registrado* **no demuestra que no haya salido**. Hay dos formas de que una
+guía llegue a SUNAT sin que el sistema se entere: un envío que vence por tiempo de espera puede
+haber llegado igualmente, y con algunos proveedores el acuse tarda en reflejarse.
+
+Por eso, **antes de borrar el sistema le pregunta a SUNAT**. No envía nada, solo consulta. Si
+SUNAT la conoce, la consulta corrige el estado y el borrado se cancela. Y si no se puede
+preguntar, tampoco se borra.
+
+### Marcar como anulada: no da de baja en SUNAT
+
+La baja se hace **en el portal de SUNAT**, y **solo el mismo día de la emisión**. Esta acción
+refleja en el sistema lo que ya se hizo allí, para que los dos digan lo mismo. Antes había que
+entrar a la base de datos.
+
+Tanto eliminar como anular dejan rastro en la bitácora del sistema, con usuario y fecha.
+
 ## Aceptada con observaciones
 
 **SUNAT puede aceptar una guía y observarla a la vez.** El código de respuesta viene `0` y los
