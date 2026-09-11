@@ -234,14 +234,28 @@ components:
           example: false
         unidad_peso_total:
           type: string
-          description: Unidad del peso bruto total. Usar "KGM" (kilogramos).
+          enum: ["KGM", "TNE"]
+          description: >-
+            Unidad del peso bruto total. SUNAT admite **solo** "KGM" (kilogramos) y
+            "TNE" (toneladas); cualquier otra se rechaza con 2523. El panel lo limita
+            en el desplegable, pero este campo acepta lo que le mandes y lo vuelca al
+            XML, así que revísalo. Sale además como aviso previo.
           example: "KGM"
         peso_total:
           type: number
+          minimum: 0.001
+          description: >-
+            Peso bruto total de la carga. SUNAT exige un decimal **positivo** de hasta
+            12 enteros y 3 decimales: cero se rechaza con 2523, y sale como aviso previo.
           example: 30
         numero_de_bultos:
           type: number
-          description: Opcional.
+          description: >-
+            Opcional. **Excluyente con `numero_de_contenedor`** en los motivos "08",
+            "09" y "19" con documento relacionado de aduanas: declarar los dos es
+            rechazo 3621. En cambio en exportación con DAM o DS y sin contenedor es
+            obligatorio (3419), y con motivo "19" y cita del terminal ("92") no se
+            puede consignar (3626).
           example: 1
         numero_de_contenedor:
           type: integer
@@ -368,7 +382,14 @@ components:
       properties:
         ubigeo:
           type: string
-          description: Código de ubigeo INEI de 6 dígitos.
+          pattern: '^[0-9]{6}$'
+          description: >-
+            Código de ubigeo INEI de **6 dígitos exactos**. Uno más corto se rechaza, y
+            desde ahora sale como aviso previo 2775.
+            Nota para integraciones anteriores al 11/09/2026: el ubigeo de
+            `direccion_partida` se truncaba a un solo carácter en 285 de los 1876
+            distritos, los de provincias numeradas de la 10 en adelante. Huari (021001)
+            se emitía como "1". Ya está corregido.
           example: "150101"
         direccion:
           type: string

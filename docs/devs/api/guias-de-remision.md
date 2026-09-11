@@ -463,6 +463,39 @@ bloquean nada**: la guía se emite igual y tú decides.
 
 Es un campo añadido: si no lo lees, todo sigue funcionando igual que antes.
 
+### Los avisos que existen hoy
+
+Todos salen de reglas del pliego oficial de SUNAT, y la mayoría de rechazos reales capturados
+emitiendo contra producción.
+
+| Código | Campo | Qué mira |
+|---|---|---|
+| `2523` | `unidad_de_medida` del peso | Solo se admite `KGM` o `TNE`. La API acepta las 68 del catálogo y las vuelca al XML |
+| `2523` | `peso_bruto_total` | SUNAT exige un decimal **positivo**: cero se rechaza |
+| `2567` | `vehiculo.numero_de_placa` | Una placa con guiones o espacios se rechaza |
+| `2775` | `direccion_partida.ubigeo` | Seis dígitos exactos, en partida y en llegada |
+| `2775` | direcciones | Se descartan en la guía de transportista |
+| `3364` | `direccion_partida.ubigeo` | Debe coincidir con el ubigeo del puerto informado |
+| `3440` | `documento_relacionado` | Importación y exportación exigen DAM o DS |
+| `3441` | `documento_relacionado.numero` | El régimen aduanero del número no cuadra con el motivo |
+| `3483` | `codigo_de_puerto` | El motivo `19` lo exige |
+| `3493` | `documento_relacionado` | El motivo `19` exige `50`, `52`, `91` o `92` |
+| `3618` | `fecha_entrega_transporte` | Anterior a la de emisión |
+| `4186` | `observaciones` | Más de 250 caracteres |
+| `4391` | `transportista.numero_mtc` | Sin registro del Ministerio de Transportes |
+
+:::danger El ubigeo de partida se truncaba
+Hasta el 11 de septiembre de 2026, el `ubigeo` de `direccion_partida` se cortaba a **un solo
+carácter** en 285 de los 1876 distritos del país, y solo por la API. La guía se firmaba con el
+ubigeo roto y SUNAT la rechazaba.
+
+Los afectados eran los distritos de **provincias numeradas de la 10 en adelante**. Huari es
+`021001` y se emitía `1`. Las provincias `01` a `09` funcionaban por casualidad.
+
+Si tienes guías rechazadas con un ubigeo raro, es esto. Ya está corregido, y desde ahora un
+ubigeo que no tenga seis dígitos sale además como aviso `2775` antes de enviar.
+:::
+
 ## Los motivos aduaneros piden más
 
 Tres motivos de traslado —`08` importación, `09` exportación y `19` traslado de mercancía
