@@ -42,11 +42,12 @@ docker exec fpm_nt-suite_pro sh -c "cd /var/www/html && CACHE_DRIVER=file php ar
 | `system:check` | Comprueba que **Laravel alcanza** Redis, la base y el WebSocket, y deja el resultado para `/information` | cada 5 min | `docker exec fpm_… php artisan system:check` (tabla en verde y salida 0) | `system_check.log` |
 | `storage:scan` | Mide disco, inodes y consumo por tenant para `/information` | cada hora | `stat -c %y storage/app/system/storage-usage.json` (debe ser de hace &lt; 1 h) | `storage_scan.log` |
 | `tenants:clean-pdfs --older-than=90` | Libera disco e inodes borrando PDF regenerables de más de 90 días | domingos 04:30 | `tail storage/logs/clean_tenant_pdfs.log` | `clean_tenant_pdfs.log` |
-| `telescope:prune --hours=48` | Poda `telescope_entries`, que si no crece sin límite | diaria | `SELECT COUNT(*) FROM telescope_entries` (no debe crecer sin fin) | `telescope_prune.log` |
+| `telescope:prune --hours=12` | Poda `telescope_entries`, que si no crece sin límite. **Solo se programa con `TELESCOPE_ENABLED=true`**: con Telescope apagado la tabla no existe y la poda fallaba en cada pasada, duplicando el mismo stacktrace en `telescope_prune.log` y en `laravel-FECHA.log` | cada 6 h | `docker exec fpm_… php artisan schedule:list \| grep telescope` (no aparece si está apagado, y es lo correcto) | `telescope_prune.log` |
 | `backup:tick` | Decide si toca copia y **encarga** la orden al runner del host | cada 15 min | `tail storage/logs/backup_tick.log` | `backup_tick.log` |
 | `backup:watch` | Reconcilia el historial con lo que dejó el runner y **avisa por correo** si falla | cada 15 min | `tail storage/logs/backup_watch.log` | `backup_watch.log` |
 | `tenants:usage --flush` | Vuelca el consumo por tenant y refresca tamaños de BD y disco | cada 20 min | `php artisan tenants:usage --days=7` | `tenant_usage.log` |
 | `backup:prune-runs --days=180` | Poda el historial de copias | lunes 05:30 | `SELECT COUNT(*) FROM backup_runs` | `backup_prune_runs.log` |
+| `logs:prune --max-mb=20 --keep-mb=5` | Recorta los logs que Monolog **no** rota: la salida de estas mismas tareas y `laravel.log` del canal `single`. Conserva la cola, no vacía | lunes 05:45 | `docker exec fpm_… php artisan logs:prune --dry-run` (lista lo que recortaría sin tocar nada) | `logs_prune.log` |
 | `tenancy:run print-orders:prune` | Borra órdenes de impresión ya impresas (`pdf_b64` es pesado) | diaria 04:00 | `tail storage/logs/print_orders_prune.log` | `print_orders_prune.log` |
 | `order:payments` | Procesa pagos pendientes | cada 2 min | `tail storage/logs/order_create.log` | `order_create.log` |
 
@@ -109,7 +110,7 @@ un proceso que viviera dentro moriría a mitad.
 | Servicio | Qué hace | Frecuencia | Cómo verificar que está vivo |
 |---|---|---|---|
 | `nt-suite-runner.service` / `.timer` | Recoge las órdenes que deja el panel (`/auto-update`, `/backup`) y las ejecuta | cada minuto | `systemctl status nt-suite-runner.timer` — debe decir `active (waiting)` y traer hora en `Trigger:` |
-| `logrotate` de `storage/logs/*.log` | Rota los logs del scheduler, que **no** pasan por Monolog y no rotan solos | diaria | `logrotate -d /etc/logrotate.d/nt-suite` |
+| ~~`logrotate` de `storage/logs/*.log`~~ | **Ya no hace falta.** Lo sustituye `logs:prune` dentro del scheduler (tabla de arriba): viaja con el código, funciona igual en on-prem y corre donde los permisos de `storage/logs` son los correctos, que es dentro del contenedor | — | — |
 | `docker system prune` | Libera las capas huérfanas que deja cada despliegue (suelen ser la causa real de quedarse sin inodes) | semanal | `docker system df` |
 
 ### Instalar el runner del host
