@@ -222,8 +222,24 @@ components:
           example: null
         codigo_de_puerto:
           type: string
-          description: Opcional (solo importación/exportación).
-          example: ""
+          nullable: true
+          description: >-
+            Código del puerto (Catálogo N.° 63) o del aeropuerto (Catálogo N.° 64).
+            **Obligatorio con `codigo_motivo_traslado` "19"**: sin él SUNAT rechaza
+            con 3483. Opcional en "08" y "09". Debe ir acompañado de
+            `tipo_de_puerto`: si envías uno sin el otro, la guía sale sin el dato y
+            SUNAT observa (4413, 4415). El ubigeo del puerto tiene que coincidir con
+            el de `direccion_partida`, o SUNAT rechaza con 3364.
+          example: "CLL"
+        tipo_de_puerto:
+          type: string
+          nullable: true
+          enum: ["1", "2"]
+          description: >-
+            "1" puerto, "2" aeropuerto. Hace falta porque el mismo código puede ser
+            las dos cosas: "IQT" es el puerto de Iquitos y también el aeropuerto
+            Coronel FAP Francisco Secada Vignetta.
+          example: "1"
         fecha_entrega_transporte:
           type: string
           format: date
@@ -266,7 +282,16 @@ components:
           $ref: '#/components/schemas/DocumentoAfectado'
         documento_relacionado:
           type: array
-          description: Opcional. Otros documentos relacionados al traslado.
+          description: >-
+            Otros documentos relacionados al traslado (Catálogo N.° 61).
+            **Obligatorio en los motivos aduaneros**, donde SUNAT rechaza si falta:
+            "08" y "09" exigen una DAM ("50") o una DS ("52") o devuelven 3440, y
+            "19" exige "50", "52", "91" (manifiesto de carga) o "92" (cita del
+            terminal portuario) o devuelve 3493.
+            El número de la DAM y de la DS es `aduana(3)-año(4)-régimen(2)-correlativo(1..6)`
+            y **el régimen depende del motivo**, o SUNAT rechaza con 3441:
+            "10" en importación, "40" en exportación (DS: "18" y "48"). En el motivo
+            "19" la DAM admite "10", "20", "21", "30", "36", "70" y "80".
           items:
             $ref: '#/components/schemas/DocumentoRelacionado'
         leyendas:

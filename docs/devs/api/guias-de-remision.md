@@ -463,6 +463,57 @@ bloquean nada**: la guía se emite igual y tú decides.
 
 Es un campo añadido: si no lo lees, todo sigue funcionando igual que antes.
 
+## Los motivos aduaneros piden más
+
+Tres motivos de traslado —`08` importación, `09` exportación y `19` traslado de mercancía
+extranjera— tienen reglas propias, y en todas ellas **SUNAT rechaza, no observa**. Merece la
+pena leerlas antes de integrar, porque los errores llegan al consultar el ticket, no al emitir.
+
+### El documento de aduanas es obligatorio
+
+| Motivo | Documentos que admite | Si falta |
+|---|---|---|
+| `08` importación | `50` DAM, `52` DS | `3440` |
+| `09` exportación | `50` DAM, `52` DS | `3440` |
+| `19` mercancía extranjera | `50`, `52`, `91` manifiesto de carga, `92` cita del terminal | `3493` |
+
+Van en `documento_relacionado`, con el código del **Catálogo N.° 61**. Enviar un código que no
+esté en la lista de ese motivo también es rechazo, con `3445`.
+
+### El régimen aduanero viaja dentro del número
+
+El número de la DAM y de la DS tiene cuatro partes,
+`aduana(3)-año(4)-régimen(2)-correlativo(1..6)`, y **el par del medio no es libre**: SUNAT lo
+exige distinto según el motivo. Es el error `3441`, y cuesta de diagnosticar porque el mensaje
+solo dice que el formato no cumple.
+
+| Motivo | DAM `50` | DS `52` |
+|---|---|---|
+| `08` importación | `10` | `18` |
+| `09` exportación | `40` | `48` |
+| `19` mercancía extranjera | `10`, `20`, `21`, `30`, `36`, `70`, `80` | `18` |
+
+Así que en una exportación `235-2026-40-123456` pasa y `235-2026-10-123456` no.
+
+### El puerto, y dónde tiene que estar
+
+El motivo `19` exige `codigo_de_puerto` y `tipo_de_puerto` (`3483`). En `08` y `09` son
+opcionales, pero van en pareja: uno sin el otro se observa con `4413` o `4415`.
+
+El tipo hace falta porque el mismo código puede ser dos sitios distintos. `IQT` es el puerto de
+Iquitos y también el aeropuerto Coronel FAP Francisco Secada Vignetta. Lo mismo con `ILO`,
+`CHM`, `PIO`, `PCL`, `TYL` y `YMS`.
+
+Y hay una regla que no aparece en la documentación de SUNAT y solo se ve al emitir: **el ubigeo
+del puerto tiene que coincidir con el de `direccion_partida`**, o la guía se rechaza con `3364`.
+Tiene sentido, porque en un traslado de mercancía extranjera la carga sale del terminal. Con el
+puerto del Callao, la partida va en `070101`.
+
+:::warning El motivo 19 todavía no se puede emitir entero
+Le faltan reglas por línea de detalle: la unidad de medida (`3446`) y los campos del manifiesto
+de carga. Los avisos previos te dirán lo que falta, pero hoy la guía no llega a ser aceptada.
+:::
+
 ## Corregir una guía rechazada
 
 Cuando SUNAT rechaza una guía, **no hace falta emitir otra**. Se corrige y se reenvía con el
