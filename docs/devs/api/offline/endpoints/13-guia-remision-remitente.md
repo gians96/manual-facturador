@@ -248,6 +248,23 @@ que cambia por viaje —precintos, lotes— tenlo en cuenta al revisar el XML fi
 | `GET` | `/api/dispatches/tables` | Tablas auxiliares (modos transporte, motivos, etc.) |
 | `GET` | `/api/dispatches/records` | Listar guías emitidas (paginado) |
 
+Descarga de los archivos. Son rutas **públicas**: no piden token, las protege solo el
+`external_id`.
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/downloads/dispatch/pdf/{external_id}/{formato?}` | PDF. Se regenera con el QR si la guía ya tiene CDR |
+| `GET` | `/downloads/dispatch/xml/{external_id}` | XML firmado |
+| `GET` | `/downloads/dispatch/cdr/{external_id}` | CDR, solo cuando SUNAT ya respondió |
+
+:::warning El PDF del paso 1 no lleva QR
+Se puede descargar desde que la guía se registra, pero el QR lo entrega SUNAT dentro del CDR:
+aparece recién al consultar el ticket con resultado aceptado. Vuelve a pedir el PDF después de
+ese paso.
+
+→ [El QR y el PDF: cuándo aparecen](../../guias-de-remision.md#el-qr-y-el-pdf-cuándo-aparecen)
+:::
+
 ---
 
 ## Notas para Offline

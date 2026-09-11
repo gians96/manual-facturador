@@ -208,11 +208,32 @@ el servidor las acepta sin quejarse y **las descarta**: las direcciones de este 
 |--------|----------|-------------|
 | `GET` | `/api/dispatch-carrier/records` | Listar guías de transportista (paginado) |
 
+El envío a SUNAT y la consulta del ticket **no tienen ruta propia de transportista**: se hacen
+con los mismos endpoints que la remitente, que buscan la guía por `external_id` sin importar si
+es `09` o `31`.
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `POST` | `/api/dispatches/send` | Enviar la guía a SUNAT por `external_id` |
+| `POST` | `/api/dispatches/status_ticket` | Consultar el ticket y recoger el CDR |
+| `GET` | `/downloads/dispatch/pdf/{external_id}/{formato?}` | PDF |
+| `GET` | `/downloads/dispatch/xml/{external_id}` | XML firmado |
+| `GET` | `/downloads/dispatch/cdr/{external_id}` | CDR, solo cuando SUNAT ya respondió |
+
+:::warning El PDF de la `31` no se rehace solo al descargarlo
+La regeneración automática del PDF en la descarga hoy cubre únicamente la guía remitente
+(`09`). Para que una guía de transportista muestre el QR, consulta el ticket por API, que sí
+rehace el archivo, o pídela por la ruta de impresión `/print/dispatch/{external_id}/{formato}`,
+que la regenera siempre.
+
+→ [El QR y el PDF: cuándo aparecen](../../guias-de-remision.md#el-qr-y-el-pdf-cuándo-aparecen)
+:::
+
 ---
 
 ## Notas para Offline
 
 - Mismas consideraciones que la guía remitente: firma digital y envío SUNAT se procesan al sincronizar.
-- Por lote (`sync-batch`) funciona igual que el `09`: ver [15 — Guías de remisión por lote](15-sync-batch.md#guías-de-remisión-por-lote-09-y-31).
+- Por lote (`sync-batch`) funciona igual que el `09`: ver [15 — Guías de remisión por lote](15-sync-batch.md#guías-de-remisión-por-lote--09-y-31).
 - Los datos de remitente y destinatario se pueden llenar offline usando el catálogo de clientes descargado.
 - Los vehículos secundarios son opcionales (para semirremolques).

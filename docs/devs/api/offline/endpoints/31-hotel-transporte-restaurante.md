@@ -198,7 +198,7 @@ GET /api/pro8/districts
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| `soap_type_id` | string(2) | Tipo SOAP (01=producción, 02=pruebas) |
+| `soap_type_id` | string(2) | Tipo SOAP (**01=Demo, 02=Producción**, 03=Interno) |
 | `date` | date | Fecha propina |
 | `origin_date_of_issue` | date | Fecha emisión del comprobante origen |
 | `origin_id` | int | ID polimórfico |

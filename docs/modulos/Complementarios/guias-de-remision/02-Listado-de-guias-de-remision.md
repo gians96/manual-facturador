@@ -52,7 +52,18 @@ paso aparte. Si quieres el detalle técnico de por qué,
   [Generar comprobante desde una guía](./03-Generar-comprobante-desde-una-guia.md).
 - **Generar comprobante** (en la fila): emite el comprobante de **esa** guía. Solo aparece
   si la guía aún no está facturada.
-- **Opciones** (en la fila): reimprimir, enviar por correo, consultar el estado en SUNAT.
+- **Opciones** (en la fila): reimprimir, descargar el CDR, enviar por correo y por WhatsApp.
+  **No consulta nada a SUNAT**, y solo aparece cuando la guía ya está *Aceptada*.
+
+Los botones de cada fila dependen del estado de la guía:
+
+| Estado | Botón que aparece |
+|---|---|
+| Registrado | **Enviar a Sunat** |
+| Enviado | **Consultar ticket** |
+| Aceptado | **Opciones** y **Generar comprobante** |
+
+**Editar** aparece en cualquier estado menos *Aceptado*.
 
 ## De dónde vienen las guías
 

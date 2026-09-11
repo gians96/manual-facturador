@@ -188,4 +188,6 @@ Ninguno.
 - Las `series` aquí son una vista general. Para numeración offline con `last_number`, usar `GET /api/offline/series-numbering` (ver [04-series-numeracion.md](04-series-numeracion.md)).
 - Los `customers` son el catálogo base. Se pueden crear clientes nuevos offline (ver [08-clientes.md](08-clientes.md)).
 - Los `payment_method_types` se necesitan para los `pagos[]` de boleta/factura y los `payments[]` de nota de venta.
-- El `company.soap_type_id` indica el modo SUNAT: `01` = Producción, `02` = Beta/Demo.
+- El `company.soap_type_id` indica el modo SUNAT: **`01` = Demo, `02` = Producción**, `03` = Interno.
+  Están en ese orden en el catálogo `soap_types` del tenant, y el código lo lee así
+  (`isDemo` es cierto cuando vale `01`). Hasta el 2026-09-10 esta línea los daba invertidos.

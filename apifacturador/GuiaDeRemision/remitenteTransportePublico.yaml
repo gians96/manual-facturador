@@ -57,11 +57,19 @@ paths:
          - **URL:** `https://tu-dominio.com/api/dispatches`
          - **Encabezados:** `Authorization: Bearer <TU_TOKEN>`, `Accept: application/json` y `Content-Type: application/json`
 
-        > **No existe ambiente de pruebas (beta) de SUNAT para guías de remisión** — a diferencia
-        > de facturas/boletas/notas. El envío usa el **API GRE de SUNAT en producción** y requiere
-        > credenciales configuradas en la empresa: `client_id` / `client_secret` del API GRE +
-        > usuario secundario SUNAT. Sin credenciales, `/api/dispatches/send` responde:
-        > `{"success":false,"message":"Code: 0 - Message: Error al obtener token - error_description:  error: "}`
+        > **Sí se puede probar, y sin tramitar credenciales.** Con **SOAP Tipo = Demo**
+        > (`soap_type_id = 01`) el sistema **descarta** el usuario secundario y el `client_id` /
+        > `client_secret` que haya configurados, y envía al emulador de NubeFact con credenciales
+        > de prueba ya incorporadas. Los cuatro campos pueden quedar vacíos y tampoco hace falta
+        > certificado digital propio.
+        >
+        > Lo que no tiene ambiente beta es la **API REST de SUNAT**: el `e-beta.sunat.gob.pe` que
+        > aparece al buscar pertenece al servicio SOAP de guías, que este flujo no usa. En
+        > **Producción** sí hacen falta el `client_id` / `client_secret` del API GRE y el usuario
+        > secundario; sin ellos el envío responde
+        > `{"success":false,"message":"Code: 0 - Message: Error al obtener token..."}`.
+        >
+        > Cómo probar paso a paso: [Modo de pruebas](/devs/api/guias-de-remision#modo-de-pruebas).
       operationId: remitenteTransportePublico
       requestBody:
         description: JSON a enviar

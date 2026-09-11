@@ -151,8 +151,11 @@ Si las credenciales son inválidas, el login responde HTTP 200 con
 5. **Anulaciones**: facturas con `POST /api/voided` (+ `voided/status`); boletas con resumen de
    tipo `3` (`POST /api/summaries`).
 6. **Guías de remisión**: `POST /api/dispatches` → `POST /api/dispatches/send` →
-   `POST /api/dispatches/status_ticket`. ⚠️ Las guías **no tienen ambiente de pruebas de SUNAT**:
-   el envío requiere credenciales del API GRE de producción configuradas en la empresa.
+   `POST /api/dispatches/status_ticket`. Son tres llamadas porque el API GRE de SUNAT es
+   asíncrono: el envío devuelve un ticket y la aceptación se recoge después.
+   **Sí se pueden probar sin credenciales**: con *SOAP Tipo* en **Demo** el sistema usa un
+   emulador con credenciales ya incorporadas.
+   → [Guías de remisión: cómo funcionan por dentro](./guias-de-remision.md)
 7. **Descargas**: usa los `links` (`xml`, `pdf`, `cdr`) que devuelve cada operación.
 
 ## Soporte
