@@ -12,24 +12,32 @@ Para agregar más tipo de motivos de transferencias, dirígete a **Configuració
 
 ![alt text](img/listodetransferencias.jpg)
 
-Leyenda:
+Leyenda, según la **Resolución de Superintendencia 000240-2024** (vigente desde el 14 de
+noviembre de 2024), que es el catálogo que acepta hoy la nueva plataforma GRE:
 
 * **CÓDIGO → Descripción**
 
 * 01 → Venta
 * 02 → Compra
-* 04 → Traslado entre establecimientos de la misma empresa
-* 08 → Importación
-* 09 → Exportación
-* 13 → Otros no comprendido en ningún código del presente catálogo
-* 14 → Venta sujeta a confirmación del comprador
-* 18 → Traslado emisor itinerante de comprobantes de pago Aquí no se está considerando el traslado a zona primaria.
-* 19 → Traslado a zona primaria
 * 03 → Venta con entrega a terceros
-* 05 →  Consignación
+* 04 → Traslado entre establecimientos de la misma empresa
+* 05 → Consignación
 * 06 → Devolución
 * 07 → Recojo de bienes transformados
+* 08 → Importación
+* 09 → Exportación
+* 13 → Otros no comprendidos en ningún código del presente catálogo
+* 14 → Venta sujeta a confirmación del comprador
 * 17 → Traslado de bienes para transformación
+* 18 → Traslado por emisor itinerante de comprobantes de pago
+* 19 → Traslado de mercancía extranjera
+
+:::warning El código 19 cambió de significado
+Hasta esta página decía *«Traslado a zona primaria»*, que es lo que el 19 significaba en el
+catálogo de 2012. Ese motivo desapareció, y el 19 volvió en noviembre de 2024 con otra
+identidad: **traslado de mercancía extranjera**. Se usa para mover mercancía que todavía no
+ha terminado su trámite aduanero, y exige informar el puerto o aeropuerto de llegada.
+:::
 
 ![Alt text](img/Sunat-avanzado-1.jpg)
 

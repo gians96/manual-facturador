@@ -174,19 +174,35 @@ Misma estructura que `direccion_partida`.
 
 ### Motivos de Traslado (`codigo_motivo_traslado`)
 
+El catálogo vigente es el de la **Resolución de Superintendencia 000240-2024**, que sustituye al
+anterior. Son catorce códigos:
+
 | Código | Descripción |
 |--------|-------------|
 | `01` | Venta |
 | `02` | Compra |
 | `03` | Venta con entrega a terceros |
-| `04` | Traslado entre establecimientos |
+| `04` | Traslado entre establecimientos de la misma empresa |
+| `05` | Consignación |
+| `06` | Devolución |
+| `07` | Recojo de bienes transformados |
 | `08` | Importación |
 | `09` | Exportación |
-| `13` | Otros |
-| `14` | Venta sujeta a confirmación |
-| `17` | Traslado emisor itinerante |
-| `18` | Traslado a zona primaria |
-| `19` | Compra con entrega a terceros |
+| `13` | Otros no comprendidos en ningún código del presente catálogo |
+| `14` | Venta sujeta a confirmación del comprador |
+| `17` | Traslado de bienes para transformación |
+| `18` | Traslado por emisor itinerante de comprobantes de pago |
+| `19` | Traslado de mercancía extranjera |
+
+:::warning Esta tabla estaba mal hasta el 2026-09-11
+Faltaban tres códigos (`05`, `06` y `07`) y las descripciones estaban corridas una fila: el `17`
+mostraba lo del `18`, el `18` lo que antes era el `19`, y el `19` mostraba *«Compra con entrega a
+terceros»*, que **no existe en ningún catálogo de SUNAT**.
+
+Ojo con el `19`, porque no cambió de nombre sino de identidad: en el catálogo de 2012 era
+*«Traslado a zona primaria»*, luego desapareció, y volvió el 14 de noviembre de 2024 con un
+significado distinto. Si encuentras la descripción antigua en algún sitio, está desactualizada.
+:::
 
 ### `items[]`
 
