@@ -1,0 +1,200 @@
+openapi: 3.0.3
+info:
+  title: Introducción
+  description: |-
+    La API del **Facturador** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
+
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
+    10. Productos
+
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
+servers:
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://tu-dominio.com
+    description: Demostración
+tags:
+  - name: api
+    description: Emisión de comprobantes electrónicos (CPE)
+
+paths:
+  /api/dispatches/{external_id}:
+    delete:
+      tags:
+        - api
+      summary: Eliminar - Guía de Remisión
+      description: |
+        Elimina una guía de remisión (remitente "09" o transportista "31") que **SUNAT no
+        tiene**: una guía **Registrada** (`01`, nunca enviada) o **Rechazada** (`09`).
+
+        Una guía rechazada **no queda registrada en SUNAT**: salió, SUNAT la procesó y
+        devolvió un CDR de rechazo, pero no la dio de alta. Por eso se puede eliminar, o
+        corregir y reenviar con el mismo número (ver `POST /api/dispatches` con
+        `external_id`).
+
+        **Antes de eliminar, el sistema le pregunta a SUNAT.** Consulta la guía contra SUNAT
+        (o el PSE) y solo la borra si SUNAT confirma que no la tiene. Si la consulta falla, **no
+        borra nada** y responde `503`.
+
+        El borrado arrastra los ítems de la guía y deja rastro en el registro de actividad. Si
+        la guía era la última de su serie, el número vuelve a quedar libre; si no, queda un
+        hueco en el correlativo que SUNAT nunca registró.
+
+        ***Ejemplo:***
+         - **Método:** DELETE
+         - **URL:** `https://tu-dominio.com/api/dispatches/2c1a2e6a-680d-4b60-96fc-6eb568971e44`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        **Qué hacer ante cada error** (campo `error_code`):
+
+        | HTTP | `error_code` | Significa | Qué hacer |
+        |---|---|---|---|
+        | 422 | `DISPATCH_NOT_FOUND` | El `external_id` no existe | No reintentar |
+        | 409 | `DISPATCH_ALREADY_ACCEPTED` | SUNAT ya tiene la guía (aceptada o anulada), o la consulta previa descubrió que sí la tenía | No reintentar. La baja se hace en el portal de SUNAT |
+        | 409 | `DISPATCH_PENDING_TICKET` | La guía está enviada y SUNAT aún no responde | Consultar el ticket con `POST /api/dispatches/status_ticket` y decidir con el resultado |
+        | 503 | `SUNAT_UNREACHABLE` | No se pudo confirmar con SUNAT que no tiene la guía | **Reintentar** más tarde. Es el único error pasajero |
+      operationId: eliminarGuiaRemision
+      parameters:
+        - name: external_id
+          in: path
+          required: true
+          description: Identificador devuelto por `POST /api/dispatches` al generar la guía.
+          schema:
+            type: string
+            example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+      responses:
+        '200':
+          description: Guía eliminada. SUNAT confirmó antes que no la tenía.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEliminar'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '409':
+          description: |-
+            SUNAT tiene la guía o la está procesando. No se borró nada.
+            - `DISPATCH_ALREADY_ACCEPTED`: aceptada o anulada, o la consulta previa resultó aceptada.
+            - `DISPATCH_PENDING_TICKET`: enviada y esperando respuesta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              example:
+                success: false
+                message: "No se eliminó: la guía T001-15 ya está en SUNAT. Para darla de baja se usa el portal de SUNAT."
+                error_code: "DISPATCH_ALREADY_ACCEPTED"
+                errors:
+                  external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+                  estado: "05"
+        '422':
+          description: El `external_id` no corresponde a ninguna guía (`DISPATCH_NOT_FOUND`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              example:
+                success: false
+                message: "El external id es incorrecto"
+                error_code: "DISPATCH_NOT_FOUND"
+                errors:
+                  external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+        '503':
+          description: No se pudo consultar a SUNAT (`SUNAT_UNREACHABLE`). No se borró nada; reintentar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              example:
+                success: false
+                message: "No se eliminó: no se pudo consultar a SUNAT para confirmar que no tiene la guía T001-16. Inténtalo de nuevo en un momento."
+                error_code: "SUNAT_UNREACHABLE"
+                errors:
+                  external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+                  estado: "09"
+      security:
+        - bearerAuth: []
+
+components:
+  schemas:
+    RespuestaEliminar:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "La guía T001-16 fue eliminada."
+        data:
+          type: object
+          properties:
+            external_id:
+              type: string
+              example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+      required:
+        - success
+        - message
+
+    ErrorConCodigo:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error_code:
+          type: string
+          description: Código estable para ramificar sin leer el texto.
+          enum:
+            - DISPATCH_NOT_FOUND
+            - DISPATCH_ALREADY_ACCEPTED
+            - DISPATCH_PENDING_TICKET
+            - SUNAT_UNREACHABLE
+        errors:
+          type: object
+          properties:
+            external_id:
+              type: string
+            estado:
+              type: string
+              description: Estado de la guía tras la decisión (`01`, `03`, `05`, `09`, `11`...).
+
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

@@ -48,3 +48,22 @@ Tendrá que rellenar los siguientes campos:
    - **2. Cantidad:** Ingresa la cantidad del producto.
 
 2. Una vez completado, selecciona el botón **Agregar** y luego **Generar**.
+
+## Corregir, recrear o eliminar una guía de transportista
+
+Desde el listado de **G.R Transportista**, una guía *Registrada* o *Rechazada* ofrece:
+
+- **Editar:** abre el formulario con los datos de la guía (remitente, destinatario, sus
+  direcciones, vehículos, conductores y carga). Corrige, guarda y pulsa **Enviar a Sunat**. La
+  guía conserva su serie y su número.
+- **Volver a recrear** (menú ⋮): vuelve a generar el XML y el PDF, para cuando la guía se guardó
+  sin sus archivos. Necesita el permiso de usuario **Recrear documentos**.
+- **Eliminar** (menú ⋮): antes de borrarla, el sistema le pregunta a SUNAT. Si SUNAT la tiene, o
+  no responde, no se borra.
+
+:::info Guías emitidas por API
+Si la guía la creó otra aplicación por API, al editarla puede que el remitente, el destinatario o
+el vehículo aparezcan vacíos. Selecciónalos de nuevo antes de guardar.
+:::
+
+Todos los estados y botones: [Listado de Guías de Remisión](./02-Listado-de-guias-de-remision.md#qué-hacer-con-una-guía-rechazada).

@@ -386,29 +386,75 @@ pantalla: el servidor lo hace cumplir.
 
 | Estado | Qué se puede hacer | Por qué |
 |---|---|---|
-| **Registrado** | Editar · Enviar a SUNAT · **Eliminar** | SUNAT todavía no la ha visto |
+| **Registrado** | Editar · Enviar a SUNAT · **Volver a recrear** · **Eliminar** | SUNAT todavía no la ha visto |
 | **Enviado** | Solo consultar el ticket | Está en manos de SUNAT y aún no hay respuesta |
 | **Aceptado** | Opciones · Generar comprobante · **Marcar como anulada** | SUNAT ya la tiene |
-| **Rechazado** | Editar y volver a enviar | Se corrige y se reintenta con el mismo número |
+| **Rechazado** | Editar y volver a enviar · **Volver a recrear** · **Eliminar** | SUNAT la rechazó y **no la registró** |
 
 :::warning Una guía enviada no se edita
 Aunque siga sin respuesta. Tocarla mientras SUNAT la procesa deja el sistema diciendo una cosa y
 SUNAT otra.
 :::
 
-### Eliminar: solo antes de enviar, y con verificación
+### Eliminar: nunca lo que SUNAT tiene, y siempre preguntando antes
 
-Se puede borrar una guía **en Registrado**, porque SUNAT no la conoce. En cuanto se envía, ya
-no: borrarla dejaría un documento vivo en SUNAT que aquí no existe, y un hueco en el correlativo
-imposible de explicar.
+Se puede borrar una guía **Registrada** o **Rechazada**, remitente o transportista. Ninguna de las
+dos está en SUNAT: la registrada no ha salido, y la rechazada salió, SUNAT la procesó y devolvió un
+CDR de rechazo, pero **no la dio de alta**. Está comprobado en el portal: la consulta de *GRE
+emitidas* devuelve las aceptadas y ninguna rechazada. Una guía enviada o aceptada no se borra:
+dejaría un documento vivo en SUNAT que aquí no existe.
 
-Pero que figure como *Registrado* **no demuestra que no haya salido**. Hay dos formas de que una
-guía llegue a SUNAT sin que el sistema se entere: un envío que vence por tiempo de espera puede
-haber llegado igualmente, y con algunos proveedores el acuse tarda en reflejarse.
+Pero el estado guardado **no demuestra lo que tiene SUNAT**. Un envío que vence por tiempo de espera
+puede haber llegado igualmente, y con algunos proveedores el acuse tarda en reflejarse.
 
-Por eso, **antes de borrar el sistema le pregunta a SUNAT**. No envía nada, solo consulta. Si
-SUNAT la conoce, la consulta corrige el estado y el borrado se cancela. Y si no se puede
-preguntar, tampoco se borra.
+Por eso, **antes de borrar el sistema le pregunta a SUNAT**. No envía nada, solo consulta:
+
+- Si SUNAT la tiene, la consulta corrige el estado y el borrado se cancela.
+- Si la consulta no se puede hacer, **no se borra**.
+- Para una rechazada hace falta además una **respuesta concluyente**: el CDR, o un código de rechazo
+  de SUNAT (del `2000` al `3999`). Con un proveedor PSE, una caída llega con la misma forma que un
+  rechazo, sin error y con el estado intacto, y solo el código las distingue. Borrar con cualquier
+  otra respuesta sería borrar a ciegas.
+
+Si la guía era la última de su serie, el número vuelve a quedar libre; si estaba en medio, queda un
+hueco que SUNAT nunca registró.
+
+En el panel está en el menú ⋮ de la fila. Por API,
+[`DELETE /api/dispatches/{external_id}`](/devs/api/tenant/Guia-remision/eliminar-guia-remision):
+
+| HTTP | `error_code` | Significa | Qué hacer |
+|---|---|---|---|
+| 422 | `DISPATCH_NOT_FOUND` | El `external_id` no existe | No reintentar |
+| 409 | `DISPATCH_ALREADY_ACCEPTED` | SUNAT ya tiene la guía, o la consulta previa descubrió que sí la tenía | No reintentar. La baja va por el portal de SUNAT |
+| 409 | `DISPATCH_PENDING_TICKET` | Está enviada y SUNAT aún no responde | Consultar el ticket y decidir con el resultado |
+| 503 | `SUNAT_UNREACHABLE` | No se pudo confirmar con SUNAT que no la tiene | **Reintentar** más tarde |
+
+Solo el `503` se reintenta: es el único error pasajero de los cuatro.
+
+### Volver a recrear: cuando la guía quedó sin sus archivos
+
+Genera y firma otra vez el **XML** y el **PDF** con los datos actuales de la guía, igual que el
+«Volver a recrear» de facturas y boletas. **No envía nada a SUNAT** ni cambia el estado.
+
+Sirve cuando la guía existe pero sus archivos no llegaron a crearse, por ejemplo porque la emisión
+falló a mitad. Al enviarla, el aviso lo dice así:
+
+```
+La guía V001-9 no tiene XML firmado. Usa «Volver a recrear» en el menú ⋮ y vuelve a enviarla.
+```
+
+Está en el menú ⋮ de la fila, con dos condiciones:
+
+- El usuario tiene que tener el permiso **Recrear documentos** (Usuarios → editar el usuario →
+  *Otros permisos*). Viene desmarcado.
+- Solo en **Registrado** o **Rechazado**. Una guía enviada o aceptada ya tiene en SUNAT un XML
+  concreto, y firmar otro dejaría dos documentos distintos con el mismo número.
+
+:::caution Recrear no cambia la fecha
+Se firma con los datos que tiene la guía. Si la emisión es de hace días, SUNAT puede rechazarla al
+enviarla con `2108` («Presentación fuera de fecha»). En ese caso, corrige la fecha con **Editar** y
+vuelve a enviarla.
+:::
 
 ### Marcar como anulada: no da de baja en SUNAT
 
@@ -416,15 +462,17 @@ La baja se hace **en el portal de SUNAT**, y **solo el mismo día de la emisión
 refleja en el sistema lo que ya se hizo allí, para que los dos digan lo mismo. Antes había que
 entrar a la base de datos.
 
-Tanto eliminar como anular dejan rastro en la bitácora del sistema, con usuario y fecha.
+Eliminar, recrear y anular dejan rastro en la bitácora del sistema, con usuario y fecha.
 
 ## Aceptada con observaciones
 
 **SUNAT puede aceptar una guía y observarla a la vez.** El código de respuesta viene `0` y los
 reparos viajan aparte, en las notas del CDR. La guía es válida, pero SUNAT está señalando algo.
 
-El sistema las guarda y las muestra: en el cuadro de opciones aparece un aviso ámbar con la
-lista, en lugar del verde de una guía limpia.
+El sistema las guarda y las muestra: en el cuadro de opciones aparece un único aviso ámbar,
+«SUNAT aceptó la guía con N observaciones», en lugar del verde de una guía limpia. La lista se
+despliega con **Ver detalle**, y cada observación sale sin su cola técnica (`errorCode … (nodo: …)`);
+el texto completo aparece al pasar el cursor.
 
 Estas son las que aparecen de verdad en el tráfico corriente, tomadas de CDR reales:
 
@@ -564,6 +612,15 @@ Basta con incluir el `external_id` que recibiste al emitirla, junto con el paylo
 
 Se conservan la serie, el número y el propio `external_id`. Después basta con volver a llamar al
 envío.
+
+**¿Y el error `1032`?** El pliego de SUNAT lo define como *«El comprobante ya esta informado y se
+encuentra con estado anulado o rechazado»*, y parecía impedir reenviar con el mismo número. Se
+comprobó emitiendo contra SUNAT producción: una guía remitente rechazada con `3443` y una de
+transportista rechazada con `2567`, corregidas y reenviadas con su mismo número, **fueron aceptadas
+las dos**. Un rechazo por CDR no deja rastro del número; el `1032` se refiere a los rechazos por
+evento.
+
+Si no la vas a corregir, también se puede [eliminar](#eliminar-nunca-lo-que-sunat-tiene-y-siempre-preguntando-antes).
 
 :::warning Una guía aceptada no se puede modificar
 Si SUNAT ya la aceptó, el sistema responde `DISPATCH_ALREADY_ACCEPTED`. Para deshacerla hay que
