@@ -4,7 +4,7 @@ sidebar_position: 4
 ---
 # Plantillas PDF - Guías de remisión
 
-En este artículo te enseñaremos a diseñar el PDF A4 de tus guías de remisión: qué bloques salen, en qué orden y con qué formato. Cada empresa crea sus propias plantillas y decide cuál usa toda la empresa y, si quiere, cuál usa cada establecimiento.
+En este artículo te enseñaremos a diseñar el PDF A4 de tus guías de remisión sobre una **hoja** que se parece al PDF: arrastras los bloques, se acomodan solos y, con un clic, cambias su ancho, letra, colores o qué datos muestran. Lo que ves en la hoja se aplica al instante; la **vista previa PDF** te muestra el resultado exacto.
 
 :::info importante
 
@@ -18,68 +18,57 @@ Ingresa al módulo de **Configuración**, luego en la categoría **Plantillas PD
 
 También puedes llegar desde **Configuración → Empresa → Avanzado → pestaña Extra**: en la tarjeta **Guías de Remisión**, selecciona el botón **Editar plantillas de guía**.
 
-Arriba verás dos pestañas, **Guía remitente (09)** y **Guía transportista (31)**. Cada tipo de guía tiene sus propias plantillas y su propia asignación.
+## La barra de arriba
 
-## Editar el formato paso a paso
+- **Guía remitente (09) / Guía transportista (31):** cada tipo de guía tiene su propia plantilla.
+- **Editar para:** **Toda la empresa** o un establecimiento. La etiqueta de al lado indica qué usa hoy ese alcance:
+  - **Predeterminada:** el diseño de fábrica, el mismo para todas las empresas.
+  - **Usa la de la empresa:** el establecimiento todavía no tiene una propia.
+  - **Personalizada:** ya la guardaste para ese alcance.
+- **Vista previa PDF:** abre el PDF real con los cambios, aunque no los hayas guardado.
+- **Restaurar:** vuelve atrás (ver más abajo).
+- **Guardar:** se activa cuando hay cambios. Arriba a la derecha verás **Cambios sin guardar** o la fecha en que se guardó.
+- **Estilo general:** letra, espaciado, colores y bordes de toda la plantilla.
+- **Ver con:** **Guía de ejemplo** (datos ficticios que llenan todos los bloques) o **Guía real** (busca una guía tuya por serie-número).
 
-1. Elige la pestaña de la guía: **Guía remitente (09)** o **Guía transportista (31)**.
-2. En la tarjeta **Predeterminada**, selecciona **Personalizar**. Escribe un nombre y selecciona **Crear y editar**: se crea tu copia y se abre el editor.
-3. En **Bloques**, arrastra cada bloque para ordenarlo, apaga los que no quieres imprimir y marca o desmarca sus datos opcionales (por ejemplo **Vendedor**, o **Serie** y **Modelo** en **Bienes**).
-4. En **Formato**, cambia la letra, el espaciado, los colores y los bordes.
-5. Revisa el resultado en **Vista previa**, a la derecha: se actualiza sola.
-6. Selecciona **Guardar y usar en la empresa**. Desde ese momento las guías de ese tipo se imprimen con tu plantilla.
+No tienes que crear nada: abres la página y editas directamente.
 
-Para volver a cambiarla, selecciona **Editar** en su tarjeta o haz clic en su nombre.
+## Editar la hoja
 
-## La plantilla Predeterminada
+### Mover bloques
 
-Todas las empresas parten de la **Predeterminada**, el diseño que se imprime si no eliges otro. **No se edita**: para personalizarla, selecciona **Personalizar** en su tarjeta y trabajas sobre una copia.
+Arrastra cualquier bloque a otra posición. Los bloques **se acomodan solos en filas**: si caben juntos van lado a lado y, si no, bajan a la fila siguiente. La **cabecera** (logo, empresa, RUC y número) va siempre primero y el **cierre** (QR) siempre al final.
 
-La Predeterminada de tu empresa conserva los datos opcionales que tenías elegidos antes en la tarjeta **Guías de Remisión** (vendedor, teléfonos, columnas de los productos, términos…). Al duplicarla, la copia sale igual a lo que ya imprimías.
+### Clic (o clic derecho) sobre un bloque
 
-## Crear, editar y eliminar plantillas
+Se abre un panel con todo lo que puedes cambiar de ese bloque:
 
-En **Plantillas** ves la Predeterminada y las plantillas de tu empresa, cada una en una tarjeta:
+- **Ancho:** **1/3**, **1/2**, **2/3** o **Todo**. Vehículos, Conductores, Documentos relacionados y Bienes son tablas y van siempre a lo ancho.
+- **Letra:** **A−** y **A+** achican o agrandan la letra solo de ese bloque; el botón del medio muestra el tamaño y lo devuelve al general.
+- **Título:** escribe otro título (hasta 40 caracteres; vacío = el de siempre). También puedes hacer **doble clic** sobre el bloque. Los dos cuadros de color cambian el **fondo** y el **texto** del título de ese bloque.
+- **Alinear:** izquierda, centro o derecha. En las tablas alinea solo el título.
+- **Mostrar:** los datos opcionales del bloque, por ejemplo **Vendedor** o **Teléfono del destinatario**. En **Bienes** está además **Columnas de la tabla…**.
+- **↑ / ↓:** sube o baja el bloque una posición.
+- **Restablecer:** devuelve ese bloque a como venía.
+- **Ocultar:** solo en los bloques que no van a SUNAT.
 
-- **Personalizar** (en la Predeterminada) o **Nueva plantilla:** crea una copia de la Predeterminada. Escribe un nombre y se abre el editor.
-- **Vista previa:** muestra el PDF con esa plantilla.
-- **Editar** (o clic en el nombre): abre el editor. Solo en tus plantillas.
-- **Duplicar** (en el botón **⋯**): crea una copia de esa plantilla y abre el editor.
-- **Renombrar** y **Eliminar** (en el botón **⋯**): solo en tus plantillas. Si eliminas una plantilla que está en uso, donde se usaba se vuelve a imprimir con la Predeterminada.
+Cierra el panel con la **X**, con **Esc** o haciendo clic fuera.
 
-Puedes tener hasta **20 plantillas** por tipo de guía. Cada tarjeta indica si la plantilla está **En uso en la empresa** y en qué establecimientos.
+### Cómo se reparte una fila
 
-## Asignar la plantilla en uso
-
-En **Plantilla en uso**:
-
-1. En **Toda la empresa**, elige la plantilla que usarán las guías de ese tipo. Deja **Predeterminada** si no quieres cambiar nada.
-2. Si tienes más de un establecimiento, en **Por establecimiento (opcional)** puedes elegir otra plantilla para alguno de ellos. **La de la empresa** significa que ese establecimiento usa la de arriba.
-
-La asignación se guarda al elegirla. Para imprimir una guía, el sistema usa la plantilla de su establecimiento; si no tiene, la de la empresa; y si tampoco hay, la Predeterminada.
-
-## El editor
-
-El editor ocupa toda la pantalla. Arriba puedes cambiar el nombre de la plantilla y están los botones **Cerrar**, **Guardar** (se activa cuando hay cambios) y **Guardar y usar en la empresa**, que guarda y la deja asignada a toda la empresa. Si la plantilla ya está en uso, ese botón se reemplaza por la etiqueta **En uso en la empresa**. Debajo hay tres columnas: **Bloques**, **Formato** y **Vista previa**.
-
-### Bloques
-
-Cada sección del PDF es un bloque. Arrastra un bloque desde el ícono de su izquierda para cambiar el orden.
-
-- La **Cabecera** (logo, empresa, RUC y número) va siempre primero y el **Cierre** (QR y representación impresa) siempre al final. Estos dos no se mueven.
-- **Título:** escribe otro título para el bloque, de hasta 40 caracteres. Si lo dejas vacío, usa el de siempre.
-- **Completo / Media:** un bloque **Completo** ocupa todo el ancho de la hoja y uno en **Media**, la mitad. **Dos bloques en Media seguidos se imprimen lado a lado**, y el editor lo indica con «Se imprime junto a: …». Si en una guía uno de los dos no tiene nada que imprimir, el otro sale solo a todo el ancho. Vehículos, Conductores, Documentos relacionados y Bienes son tablas y van siempre a ancho completo.
-- El ícono de información explica cuándo aparece un bloque: por ejemplo, **Transportista** solo sale en transporte público y **Comprador**, solo en el motivo 03.
+Los anchos suman una fila completa: por ejemplo **1/3 + 1/3 + 1/3**, **1/2 + 1/2** o **2/3 + 1/3**. Si un bloque no cabe en la fila, pasa a la siguiente. Cuando en una guía un bloque de la fila no tiene datos (por ejemplo **Comprador** fuera del motivo 03), los demás de esa fila **se reparten el espacio**; si queda uno solo, va a lo ancho. En la hoja, un bloque sin datos en la guía que estás viendo sale tenue y dice cuándo se imprime.
 
 :::info Lo que viaja a SUNAT tiene candado
 
-Los bloques con datos que viajan a SUNAT llevan un **candado**: se pueden mover, renombrar y dar formato, pero **no se ocultan**. Son Remitente, Destinatario, Datos del traslado, Pagador del flete, Punto de partida, Punto de llegada, Comprador, Datos aduaneros y de carga, Transportista, Vehículos, Conductores, Documentos relacionados y Bienes. El PDF es la representación impresa de la guía firmada y no puede decir menos que ella.
-
-Solo tienen interruptor para ocultarse los bloques que no son fiscales: **Referencias internas** (el comprobante, pedido o nota de venta de origen), **Campos personalizados** y **Observaciones**. Los dos primeros existen solo en la guía remitente.
+Los bloques con datos que viajan a SUNAT se pueden mover, cambiar de ancho, renombrar y dar formato, pero **no se ocultan**: Remitente, Destinatario, Datos del traslado, Pagador del flete, Punto de partida, Punto de llegada, Comprador, Datos aduaneros y de carga, Transportista, Vehículos, Conductores, Documentos relacionados y Bienes. El PDF es la representación impresa de la guía firmada y no puede decir menos que ella.
 
 :::
 
-Algunos bloques tienen **datos opcionales** que se marcan con una casilla. Para una empresa que nunca los cambió, vienen así:
+### Bloques ocultos
+
+A la izquierda está **Bloques ocultos**: **Referencias internas** (el comprobante, pedido o nota de venta de origen), **Campos personalizados** y **Observaciones** cuando están apagados. Arrástralos a la hoja o selecciona **Mostrar** para volver a imprimirlos, y arrastra ahí un bloque para ocultarlo.
+
+Para una empresa que nunca los cambió, los datos opcionales vienen así:
 
 | Bloque | Dato opcional | De fábrica |
 |---|---|---|
@@ -92,50 +81,48 @@ Algunos bloques tienen **datos opcionales** que se marcan con una casilla. Para 
 | Referencias internas y Campos personalizados | Todo el bloque | Se muestra |
 | Observaciones | Todo el bloque | **No se muestra** |
 
-#### Columnas de Bienes
+### Columnas de la tabla de bienes
 
-Dentro del bloque **Bienes** están sus columnas. Arrástralas para ordenarlas y elige el ancho de cada una en % (de 3 a 60), o marca **Auto** para que ocupe el espacio que sobra. Si los anchos suman más de 95 %, al guardar se ajustan.
+En el panel de **Bienes**, selecciona **Columnas de la tabla…**. Arrastra las columnas para ordenarlas y elige el ancho de cada una en % (de 3 a 60), o marca **Auto** para que ocupe el espacio que sobra. Si los anchos suman más de 95 %, al guardar se ajustan.
 
 - **Item, Código, Descripción, Unidad y Cantidad** tienen candado: se imprimen siempre.
 - **Serie, Modelo, Marca, Lote y F. Venc.** tienen la casilla **Mostrar**. Aunque estén marcadas, solo aparecen si algún producto de la guía tiene ese dato.
-- **Peso, Precio y Total** (solo en la guía remitente) indican «Según Configuración»: no dependen de la plantilla, sino de si la empresa tiene habilitados el peso y el precio en sus guías.
+- **Peso, Precio y Total** (solo en la guía remitente) indican «Según configuración»: dependen de si la empresa tiene habilitados el peso y el precio en sus guías.
 
-### Formato
+### Estilo general
 
-- **Tamaño de letra:** de 7 a 10 pt, en pasos de medio punto. La Predeterminada usa 8 pt.
+- **Tamaño de letra:** de 7 a 10 pt, en pasos de medio punto. La Predeterminada usa 8 pt. La letra de un bloque con **A+/A−** se calcula sobre este tamaño.
 - **Espaciado:** compacto (el de la Predeterminada), normal o amplio.
-- **Fondo de títulos**, **Texto de títulos** y **Bordes:** el color de cada uno. Si el texto de los títulos queda del mismo color que su fondo, el editor te avisa.
+- **Fondo de títulos**, **Texto de títulos** y **Bordes:** el color de toda la plantilla. Un bloque con colores propios los conserva.
 - **Grosor de bordes:** 0.5, 0.8 (el de la Predeterminada), 1 o 1.5 pt.
+- **Ancho del logo** (10 % a 30 %), **Ancho del recuadro del RUC** (28 % a 45 %; los datos de la empresa ocupan el resto, nunca menos del 30 %) y **Alto del logo sin límite** (desmárcalo para fijar un alto máximo de 30 a 120 pt).
 
-En **Cabecera**:
+## Guardar, vista previa y restaurar
 
-- **Ancho del logo:** de 10 % a 30 %. La Predeterminada usa 20 %.
-- **Ancho del recuadro del RUC:** de 28 % a 45 %. La Predeterminada usa 36 %. Los datos de la empresa ocupan el resto, nunca menos del 30 %.
-- **Alto del logo sin límite:** desmárcalo para fijar un alto máximo del logo, de 30 a 120 pt.
+- **Guardar** aplica la plantilla al alcance elegido en **Editar para**. Desde ese momento las guías de ese tipo se imprimen así.
+- **Vista previa PDF** usa la misma guía que estás viendo en la hoja (ejemplo o real). No guarda nada ni modifica la guía.
+- **Restaurar**:
+  - en **Toda la empresa**, vuelve a la **Predeterminada** (los establecimientos con plantilla propia no cambian);
+  - en un establecimiento, vuelve a **usar la de la empresa**;
+  - si todavía no guardaste, solo descarta los cambios.
 
-### Vista previa
+Si cambias de tipo de guía o de alcance con cambios sin guardar, el sistema te pregunta antes de descartarlos.
 
-La columna derecha muestra el **PDF real** con los cambios, aunque todavía no los hayas guardado. Se actualiza sola un momento después de cada cambio.
-
-- **Guía de ejemplo:** una guía con datos ficticios que llena todos los bloques, para que veas dónde queda cada uno. Si tienes varios establecimientos, elige con cuál se arma.
-- **Guía real:** busca una guía de tu empresa por serie-número.
-
-La vista previa **no guarda nada ni modifica la guía**: ni sus datos ni su PDF.
-
-Cuando termines, selecciona **Guardar y usar en la empresa**. Si solo seleccionas **Guardar**, la plantilla queda guardada pero empieza a usarse cuando la asignas en **Plantilla en uso** (a la empresa o a un establecimiento).
+Para imprimir una guía, el sistema usa la plantilla de su establecimiento; si no tiene, la de la empresa; y si tampoco hay, la Predeterminada.
 
 ## Qué conviene saber
 
-:::tip Deja «Bienes» cerca del final
+:::tip La hoja es una aproximación
 
-Una lista de bienes larga ocupa varias hojas. Si subes el bloque **Bienes** o pones un bloque largo en media columna, el PDF puede saltar de página antes de tiempo y dejar huecos grandes. Revísalo en la vista previa con una guía real de muchos productos.
+La hoja se dibuja en el navegador para que el cambio sea instantáneo. Las líneas **≈ fin de la hoja** son orientativas: dónde corta la página de verdad lo decide el PDF. Antes de guardar un cambio grande, ábrelo en **Vista previa PDF**, mejor con una guía real de muchos productos.
 
 :::
 
-- **Reimprimir usa la plantilla vigente.** Una guía no guarda la plantilla con la que se imprimió: al volver a descargarla o imprimirla sale con la plantilla asignada **hoy**. Los datos de la guía no cambian, solo el diseño.
-- **Las observaciones no se imprimen por defecto** desde el 14 de septiembre de 2026, aunque viajan a SUNAT. Para que salgan, enciende el bloque **Observaciones** en tu plantilla.
-- **Marca de agua:** si el establecimiento usa la plantilla PDF **marca_de_agua**, la guía conserva su logo de fondo; el resto del diseño lo decide la plantilla de guía.
-- **Plantilla personalizable:** el engranaje de su tarjeta en **Plantillas PDF - PDF** abre **Columnas de comprobantes, notas de venta, cotizaciones y pedidos**. Esas columnas son de facturas, boletas, notas de venta, cotizaciones, pedidos y contratos, **no de las guías**: las columnas de la guía se eligen en el bloque **Bienes** de este editor.
-- **Tus ajustes anteriores:** los interruptores de **Datos opcionales del PDF de la guía (A4)** que estaban en **Avanzado → Extra → Guías de Remisión** se conservan como valores de la Predeterminada de tu empresa. Esa tarjeta ahora solo tiene el botón **Editar plantillas de guía**.
+- **Deja «Bienes» cerca del final.** Una lista larga ocupa varias hojas; si subes el bloque, las secciones que van después pueden pasar a otra hoja. Un bloque que no cabe en lo que queda de la hoja pasa entero a la siguiente, sin achicarse.
+- **Reimprimir usa la plantilla vigente.** Una guía no guarda la plantilla con la que se imprimió: al volver a descargarla sale con la plantilla de **hoy**. Los datos de la guía no cambian, solo el diseño.
+- **Las observaciones no se imprimen por defecto** desde el 14 de septiembre de 2026, aunque viajan a SUNAT. Para que salgan, muéstralas desde **Bloques ocultos**.
+- **Marca de agua:** si el establecimiento usa la plantilla PDF **marca_de_agua**, la guía conserva su logo de fondo; el resto del diseño lo decide esta plantilla.
+- **Plantilla personalizable:** el engranaje de su tarjeta en **Plantillas PDF - PDF** abre **Columnas de comprobantes, notas de venta, cotizaciones y pedidos**. Esas columnas son de facturas, boletas, notas de venta, cotizaciones, pedidos y contratos, **no de las guías**.
+- **Tus ajustes anteriores:** los interruptores de **Datos opcionales del PDF de la guía (A4)** que estaban en **Avanzado → Extra → Guías de Remisión** se conservan como valores de la Predeterminada de tu empresa.
 
 Para las credenciales y el resto de ajustes de las guías, consulta el artículo **[Configuración previa - Guía de remisión](../../../Complementarios/guias-de-remision/01-Configuracion-previa-guia-remision.md)**.
