@@ -89,6 +89,25 @@ En el panel de **Bienes**, selecciona **Columnas de la tabla…**. Arrastra las 
 - **Serie, Modelo, Marca, Lote y F. Venc.** tienen la casilla **Mostrar**. Aunque estén marcadas, solo aparecen si algún producto de la guía tiene ese dato.
 - **Peso, Precio y Total** (solo en la guía remitente) indican «Según configuración»: dependen de si la empresa tiene habilitados el peso y el precio en sus guías.
 
+### El código QR
+
+El QR identifica la guía: el agente de transporte lo escanea para verificarla durante el trayecto. Haz clic sobre el QR (o sobre la franja del pie de página) y elige:
+
+- **Código QR:**
+  - **Pie de página** (así viene): el QR, la leyenda «Representación impresa de la guía…» y «Página X de Y» salen **al pie de cada hoja**. El QR nunca queda solo en una hoja aparte y se puede escanear en cualquiera.
+  - **Junto a la cabecera:** al lado del recuadro del RUC, solo en la primera hoja. No ocupa espacio abajo, pero si la cabecera está muy llena el PDF lo achica un poco.
+  - **Al final:** después de los bienes, como antes. Si no cabe en la hoja, pasa a la siguiente.
+- **Tamaño:** **Pequeño** (20 mm), **Mediano** (25 mm, el de fábrica) o **Grande** (30 mm).
+- **Términos y condiciones:** mostrar u ocultar. Siempre van al final del contenido.
+
+En la hoja, el pie de página se ve como una franja al fondo con el rótulo **Pie de página: se repite al pie de cada hoja**. Si la guía todavía no tiene QR (aún no se envió a SUNAT), el PDF no lleva pie y solo imprime la leyenda al final.
+
+:::info Establecimientos con papel membretado
+
+Si el establecimiento usa las plantillas PDF **blank** o **brand** (cabecera y pie propios), el QR en **Pie de página** se imprime **al final**, para no taparlos.
+
+:::
+
 ### Estilo general
 
 - **Tamaño de letra:** de 7 a 10 pt, en pasos de medio punto. La Predeterminada usa 8 pt. La letra de un bloque con **A+/A−** se calcula sobre este tamaño.
