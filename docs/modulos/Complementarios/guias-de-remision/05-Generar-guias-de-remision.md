@@ -67,7 +67,20 @@ Si el punto de llegada no carga correctamente, usa el botón **+Nuevo** y selecc
 
 ![Alt text](img/guiactualizada3.jpg)
 
-- **Datos del transportista:** Selecciona el transportista o crea uno nuevo con el botón **+Nuevo**.
+- **Datos del transportista:** Selecciona el transportista o crea uno nuevo con el botón **+Nuevo**. Si el transportista tiene **autorización especial** registrada (ver [Creación de transportistas](./07-Creacion-de-transportistas.md)), viaja con la guía.
+
+### Registrar vehículos y conductores del transportista
+
+Marca la casilla **Registrar vehículos y conductores del transportista** cuando declares el vehículo y el conductor de la empresa de transporte. Al marcarla aparecen los mismos datos del conductor y del vehículo que en transporte privado.
+
+- **Conductor principal y placa son obligatorios para SUNAT.** Sin ellos rechaza la guía.
+- La tabla de vehículos muestra el **TUC** y la **Aut. especial** (número y entidad) de cada vehículo, tal como están en [Creación de vehículos](./09-Creacion-de-Vehiculos.md).
+- Si el vehículo principal **no tiene TUC**, aparece un aviso: SUNAT aceptará la guía pero la observará. La guía se guarda igual.
+- La **fecha de traslado** no puede ser anterior a la **fecha de entrega al transportista**: SUNAT la rechaza.
+
+:::tip Editar una guía conserva su transporte
+Al usar **Editar** en una guía registrada o rechazada, el formulario muestra el transportista, los conductores y los vehículos que tenía la guía, aunque alguno ya no esté activo en el catálogo. Antes los reemplazaba por los predeterminados.
+:::
 
 :::info IMPORTANTE
 - Las unidades de medida válidas según SUNAT son: **KGM y TNE**.

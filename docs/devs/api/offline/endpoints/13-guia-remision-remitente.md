@@ -145,6 +145,8 @@ Misma estructura que `direccion_partida`.
 | `numero_documento` | string | **Sí** | RUC del transportista |
 | `apellidos_y_nombres_o_razon_social` | string | **Sí** | Razón social |
 | `numero_mtc` | string | No | Número de registro MTC. Opcional **de verdad desde el 2026-09-09**: antes, omitirlo devolvía un 500 |
+| `numero_autorizacion_especial` | string | No | Desde el 2026-09-14. Número de la autorización especial del transportista. Va junto con `codigo_entidad_autorizadora` |
+| `codigo_entidad_autorizadora` | string | No | Desde el 2026-09-14. Entidad que otorgó la autorización, catálogo D-37 (tabla más abajo). `"6"` se acepta como `"06"` |
 
 > Solo requerido si `codigo_modo_transporte = "01"` (transporte público) — y desde el
 > 2026-09-09 el servidor lo comprueba y lo dice por su nombre. Antes, omitirlo en transporte
@@ -152,25 +154,136 @@ Misma estructura que `direccion_partida`.
 >
 > Con `codigo_modo_transporte = "02"` (transporte privado) el bloque obligatorio es `chofer`,
 > por el mismo motivo y con la misma comprobación.
+>
+> Si el transportista ya existe en el sistema, la guía completa **solo sus datos vacíos**
+> (registro MTC y autorización especial). Lo que ya está escrito en el maestro no se pisa.
 
 ### `chofer`
+
+En transporte privado (`"02"`) es obligatorio. En transporte público solo se usa con
+`indicador_vehiculos_conductores_transportista` (ver más abajo); sin él se descarta.
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `codigo_tipo_documento_identidad` | string | **Sí** | `"1"` (DNI) |
 | `numero_documento` | string | **Sí** | DNI del chofer |
-| `nombres` | string | **Sí** | Nombre completo |
+| `nombres` | string | **Sí** | Apellidos y nombres en un solo campo, con la forma `"APELLIDOS, NOMBRES"`. La coma separa en el XML los apellidos de los nombres; sin coma, el nombre completo va en los dos |
 | `numero_licencia` | string | **Sí** | Número de licencia de conducir |
 | `telefono` | string | No | Teléfono del chofer |
+
+`chofer_secundario` es un arreglo opcional con la misma estructura, de máximo 2 conductores.
 
 ### `vehiculo`
 
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
-| `numero_de_placa` | string | **Sí** | Placa del vehículo |
+| `numero_de_placa` | string | **Sí** | Placa del vehículo, sin guiones ni espacios |
 | `modelo` | string | No | Modelo del vehículo |
 | `marca` | string | No | Marca del vehículo |
-| `certificado_habilitacion_vehicular` | string\|null | No | TUC |
+| `certificado_habilitacion_vehicular` | string\|null | No | TUC. Solo viaja al XML en transporte público con el indicador |
+| `numero_autorizacion_especial` | string | No | Desde el 2026-09-14. Autorización especial del vehículo. Solo viaja al XML con el indicador |
+| `codigo_entidad_autorizadora` | string | No | Desde el 2026-09-14. Catálogo D-37 |
+
+`vehiculo_secundario` es un arreglo opcional con la misma estructura, de máximo 2 vehículos.
+
+### Vehículos y conductores del transportista
+
+:::info Desde el 2026-09-14
+Antes esta guía era imposible por API: no había clave para el indicador, y `chofer` y `vehiculo`
+se descartaban siempre en transporte público.
+:::
+
+Es el transporte público en el que **el remitente declara el vehículo y el conductor de la
+empresa de transporte**. SUNAT lo identifica por el indicador
+`SUNAT_Envio_IndicadorVehiculoConductoresTransp`. Se activa así:
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `indicador_vehiculos_conductores_transportista` | bool | No | `true` activa el régimen. Solo con `codigo_modo_transporte = "01"`. Acepta también texto (`"true"` / `"false"`); un `"FALSE"` de texto **no** lo activa. Ausente cuenta como `false` |
+
+Con el indicador en `true`:
+
+- **`chofer` completo y `vehiculo.numero_de_placa` son obligatorios.** Sin ellos SUNAT rechaza con
+  `3357` o `2566`, así que la guía no se emite: responde `MISSING_FIELDS` con todo lo que falta en
+  `errors.faltantes`.
+- El XML lleva la fecha de inicio del traslado, el conductor principal y los secundarios, las
+  placas, el **TUC de cada vehículo** y sus autorizaciones especiales.
+- `fecha_de_traslado` no puede ser anterior a `fecha_entrega_transporte`: SUNAT rechaza con `3616`.
+  Sale como aviso.
+
+Ejemplo, con datos ficticios, de una venta sujeta a confirmación (`14`) con un vehículo
+secundario y la autorización de residuos sólidos del transportista:
+
+```json
+{
+    "codigo_modo_transporte": "01",
+    "codigo_motivo_traslado": "14",
+    "fecha_de_traslado": "2026-09-12",
+    "fecha_entrega_transporte": "2026-09-11",
+    "indicador_vehiculos_conductores_transportista": true,
+    "transportista": {
+        "codigo_tipo_documento_identidad": "6",
+        "numero_documento": "20000000002",
+        "apellidos_y_nombres_o_razon_social": "TRANSPORTES DEMO S.R.L.",
+        "numero_mtc": "1500001CNG",
+        "numero_autorizacion_especial": "1500002MRP",
+        "codigo_entidad_autorizadora": "06"
+    },
+    "chofer": {
+        "codigo_tipo_documento_identidad": "1",
+        "numero_documento": "12345678",
+        "nombres": "PEREZ GARCIA, JUAN",
+        "numero_licencia": "Q12345678"
+    },
+    "chofer_secundario": [
+        { "codigo_tipo_documento_identidad": "1", "numero_documento": "87654321",
+          "nombres": "QUISPE ROJAS, PEDRO", "numero_licencia": "Q87654321" }
+    ],
+    "vehiculo": {
+        "numero_de_placa": "ABC123",
+        "certificado_habilitacion_vehicular": "15MRP00000001E",
+        "numero_autorizacion_especial": "1500003CNG",
+        "codigo_entidad_autorizadora": "06"
+    },
+    "vehiculo_secundario": [
+        { "numero_de_placa": "DEF456", "certificado_habilitacion_vehicular": "15MRP00000002E",
+          "numero_autorizacion_especial": "1500004CNG", "codigo_entidad_autorizadora": "06" }
+    ],
+    "documento_relacionado": [
+        { "numero": "1500002MRP", "empresa": "TRANSPORTES DEMO S.R.L.", "ruc": "20000000002",
+          "documento": { "id": "76", "descripcion": "Autorización para manejo y recojo de residuos sólidos peligrosos y no peligrosos" } }
+    ]
+}
+```
+
+El resto del payload es el de cualquier guía remitente.
+
+:::warning Revisa la entidad de tus autorizaciones
+Una autorización especial se emite **solo con número y entidad del catálogo D-37**. No hay
+entidad por defecto: el sistema no la inventa. Si falta uno de los dos, o la entidad no está en
+el catálogo, la guía se emite **sin** esa autorización y `warnings` lo dice. Una guía de otro
+proveedor con `schemeID="76"` en la autorización está mal: `76` es el código del documento
+relacionado (catálogo 61), no de la entidad.
+:::
+
+**Catálogo D-37 — `codigo_entidad_autorizadora`**
+
+| Código | Entidad | Código | Entidad |
+|--------|---------|--------|---------|
+| `01` | SUCAMEC | `08` | Ministerio del Ambiente |
+| `02` | DIGEMID | `09` | SANIPES |
+| `03` | DIGESA | `10` | Municipalidad Metropolitana de Lima |
+| `04` | SENASA | `11` | MINSA |
+| `05` | SERFOR | `12` | Gobierno Regional |
+| `06` | MTC | `13` | OSINERGMIN |
+| `07` | PRODUCE | | |
+
+### `documento_relacionado`: quién lo emitió
+
+Desde el 2026-09-14 el RUC emisor del documento en el XML (`IssuerParty`) depende del código:
+
+- `01`, `03`, `04`, `09`, `12` y `48`: siempre la empresa que emite la guía (regla 3381).
+- Cualquier otro, por ejemplo `76`: el `ruc` de la fila si tiene 11 dígitos; si no, la empresa.
 
 ### Motivos de Traslado (`codigo_motivo_traslado`)
 

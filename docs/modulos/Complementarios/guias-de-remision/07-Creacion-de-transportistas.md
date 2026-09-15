@@ -24,4 +24,11 @@ Completa los siguientes campos:
 
 **6. Predeterminado:** Activa si el transportista es de manera frecuente.
 
+Además hay dos campos opcionales para la **autorización especial** del transportista, la que exigen algunos traslados (por ejemplo, residuos sólidos o materiales peligrosos):
+
+- **Autorización especial (N°):** número de la autorización. Solo letras y números, de 3 a 50 caracteres.
+- **Entidad emisora (D-37):** la entidad que la otorgó, elegida del catálogo D-37 de SUNAT (MTC, DIGESA, SUCAMEC, Ministerio del Ambiente, etc.).
+
+Los dos van **juntos**: si llenas uno, el sistema pide el otro. En la guía de remisión remitente con transporte público, la autorización viaja a SUNAT solo cuando tiene número y entidad. El sistema nunca asume la entidad: si no la conoces, pregúntala a la empresa de transporte.
+
 Seguido seleccione el botón **Guardar**. Y podrá visualizar al transportista creado.

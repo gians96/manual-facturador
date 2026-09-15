@@ -411,8 +411,12 @@ components:
           example: "41784439"
         nombres:
           type: string
-          description: Nombres y apellidos del conductor.
-          example: "JUAN PEREZ"
+          description: >-
+            Apellidos y nombres del conductor en un solo campo, con la forma
+            "APELLIDOS, NOMBRES". La coma es la que separa en el XML los apellidos
+            (`FamilyName`) de los nombres (`FirstName`); sin coma, el nombre completo
+            va en los dos.
+          example: "PEREZ GARCIA, JUAN"
         numero_licencia:
           type: string
           example: "Q41784439"
@@ -440,7 +444,12 @@ components:
           example: "TOYOTA"
         certificado_habilitacion_vehicular:
           type: string
-          description: Opcional. TUC / certificado de habilitación vehicular.
+          description: >-
+            Opcional. TUC / certificado de habilitación vehicular. En transporte privado
+            **no viaja al XML**: SUNAT solo lo pide en transporte público con el indicador de
+            vehículos y conductores del transportista. Se guarda y se imprime en el PDF.
+            Por lo mismo, en esta modalidad no se emiten las autorizaciones especiales del
+            vehículo (`numero_autorizacion_especial`, `codigo_entidad_autorizadora`).
           example: ""
 
     ItemGuia:

@@ -44,6 +44,21 @@ paths:
         el traslado lo realiza una empresa transportista contratada: se envía el bloque
         `transportista` con el RUC y la razón social de la empresa de transporte.
 
+        **Vehículos y conductores del transportista** (desde el 2026-09-14). Si el remitente
+        declara el vehículo y el conductor de la empresa de transporte (indicador SUNAT
+        `SUNAT_Envio_IndicadorVehiculoConductoresTransp`), envía
+        `indicador_vehiculos_conductores_transportista: true` junto con `chofer` y `vehiculo`, y
+        opcionalmente `chofer_secundario` y `vehiculo_secundario`. Sin esa clave, `chofer` y
+        `vehiculo` se **descartan** en transporte público, como siempre. Con ella la guía lleva la
+        fecha de inicio del traslado, los conductores, las placas, el TUC de cada vehículo y sus
+        autorizaciones especiales. Es el ejemplo *Vehículos y conductores del transportista*.
+
+        **Autorizaciones especiales.** El transportista y cada vehículo pueden llevar
+        `numero_autorizacion_especial` y `codigo_entidad_autorizadora` (catálogo D-37). Solo se
+        emiten si vienen **los dos** y la entidad es del catálogo: no hay entidad por defecto. Si
+        falta uno o la entidad no existe, la guía se emite sin la autorización y la respuesta lo
+        dice en `warnings`.
+
         **Flujo completo de una guía de remisión:**
         1. `POST /api/dispatches` → genera la guía (XML firmado + PDF) y devuelve `external_id`.
            Este paso **no** envía a SUNAT.
@@ -77,6 +92,84 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/GuiaRemitentePublicoRequest'
+            examples:
+              vehiculos_del_transportista:
+                summary: Vehículos y conductores del transportista (motivo 14, datos ficticios)
+                description: >-
+                  Venta sujeta a confirmación del comprador con el indicador de vehículos y
+                  conductores del transportista, un conductor y un vehículo secundarios, TUC,
+                  autorizaciones especiales con entidad D-37 "06" (MTC) y la autorización de
+                  residuos sólidos del transportista como documento relacionado "76". Todos
+                  los datos son ficticios.
+                value:
+                  serie_documento: "T001"
+                  numero_documento: "#"
+                  fecha_de_emision: "2026-09-11"
+                  hora_de_emision: "10:00:00"
+                  codigo_tipo_documento: "09"
+                  datos_del_cliente_o_receptor:
+                    codigo_tipo_documento_identidad: "6"
+                    numero_documento: "20000000001"
+                    apellidos_y_nombres_o_razon_social: "MINERA DEMO S.A.C."
+                    codigo_pais: "PE"
+                    ubigeo: "150101"
+                    direccion: "Av. Ejemplo 123 - Lima"
+                  codigo_motivo_traslado: "14"
+                  descripcion_motivo_traslado: "Venta sujeta a confirmación del comprador"
+                  codigo_modo_transporte: "01"
+                  fecha_de_traslado: "2026-09-12"
+                  fecha_entrega_transporte: "2026-09-11"
+                  indicador_de_transbordo: false
+                  indicador_vehiculos_conductores_transportista: true
+                  unidad_peso_total: "TNE"
+                  peso_total: 12.5
+                  direccion_partida:
+                    ubigeo: "150101"
+                    direccion: "Av. Almacén 456 - Lima"
+                    codigo_del_domicilio_fiscal: "0000"
+                  direccion_llegada:
+                    ubigeo: "070101"
+                    direccion: "Jr. Destino 789 - Callao"
+                    codigo_del_domicilio_fiscal: "0000"
+                  transportista:
+                    codigo_tipo_documento_identidad: "6"
+                    numero_documento: "20000000002"
+                    apellidos_y_nombres_o_razon_social: "TRANSPORTES DEMO S.R.L."
+                    numero_mtc: "1500001CNG"
+                    numero_autorizacion_especial: "1500002MRP"
+                    codigo_entidad_autorizadora: "06"
+                  chofer:
+                    codigo_tipo_documento_identidad: "1"
+                    numero_documento: "12345678"
+                    nombres: "PEREZ GARCIA, JUAN"
+                    numero_licencia: "Q12345678"
+                  chofer_secundario:
+                    - codigo_tipo_documento_identidad: "1"
+                      numero_documento: "87654321"
+                      nombres: "QUISPE ROJAS, PEDRO"
+                      numero_licencia: "Q87654321"
+                  vehiculo:
+                    numero_de_placa: "ABC123"
+                    certificado_habilitacion_vehicular: "15MRP00000001E"
+                    numero_autorizacion_especial: "1500003CNG"
+                    codigo_entidad_autorizadora: "06"
+                  vehiculo_secundario:
+                    - numero_de_placa: "DEF456"
+                      certificado_habilitacion_vehicular: "15MRP00000002E"
+                      numero_autorizacion_especial: "1500004CNG"
+                      codigo_entidad_autorizadora: "06"
+                  documento_relacionado:
+                    - numero: "1500002MRP"
+                      empresa: "TRANSPORTES DEMO S.R.L."
+                      ruc: "20000000002"
+                      documento:
+                        id: "76"
+                        descripcion: "Autorización para manejo y recojo de residuos sólidos peligrosos y no peligrosos"
+                  items:
+                    - codigo_interno: "P0001"
+                      descripcion: "RESIDUOS SOLIDOS NO PELIGROSOS"
+                      unidad_de_medida: "TNE"
+                      cantidad: 12.5
         required: true
       responses:
         '200':
@@ -101,6 +194,12 @@ paths:
           description: |-
             Entrada rechazada por ser atribuible al integrador. Dos orígenes distintos:
             - Validación de campos: falta `direccion` en `direccion_partida` o `direccion_llegada`.
+            - `MISSING_FIELDS` con `indicador_vehiculos_conductores_transportista` verdadero y sin
+              el conductor completo (`chofer.codigo_tipo_documento_identidad`,
+              `chofer.numero_documento`, `chofer.nombres`, `chofer.numero_licencia`) o sin
+              `vehiculo.numero_de_placa`. SUNAT rechaza esa guía (3357 y 2566), así que no se
+              emite. `errors.faltantes` lista todo lo que falta de una vez. Un `"FALSE"` de texto
+              no activa esta exigencia.
             - Referencias que no existen: `"La serie ingresada T001, es incorrecta."`,
               `"El código ingresado del establecimiento es incorrecto."`
           content:
@@ -288,8 +387,21 @@ components:
         fecha_entrega_transporte:
           type: string
           format: date
-          description: Opcional. Fecha de entrega de los bienes al transportista.
+          description: >-
+            Opcional. Fecha de entrega de los bienes al transportista. Con
+            `indicador_vehiculos_conductores_transportista`, `fecha_de_traslado` no puede ser
+            anterior a esta fecha: SUNAT rechaza con 3616, y sale como aviso previo.
           example: "2026-07-22"
+        indicador_vehiculos_conductores_transportista:
+          type: boolean
+          description: >-
+            Opcional, desde el 2026-09-14. `true` cuando el remitente declara el vehículo y el
+            conductor de la empresa de transporte (`SUNAT_Envio_IndicadorVehiculoConductoresTransp`).
+            Solo aplica con `codigo_modo_transporte` "01". Acepta también texto (`"true"` /
+            `"false"`); ausente cuenta como `false` y `chofer` y `vehiculo` se descartan.
+            Con `true` exige `chofer` completo y `vehiculo.numero_de_placa`, o responde 422
+            `MISSING_FIELDS`.
+          example: false
         direccion_partida:
           $ref: '#/components/schemas/DireccionTraslado'
         direccion_llegada:
@@ -297,13 +409,14 @@ components:
         transportista:
           type: object
           description: >-
-            Empresa de transporte contratada (solo modo "01"). Las 4 claves deben estar
-            presentes (el backend las accede directamente); `numero_mtc` puede ir vacío "".
+            Empresa de transporte contratada (solo modo "01"). Son obligatorias las 3 claves de
+            identidad. `numero_mtc` es opcional desde el 2026-09-09: sin él SUNAT observa 4391.
+            Si el transportista ya existe en el sistema, se completan **solo** los datos que
+            tenga vacíos (registro MTC y autorización especial).
           required:
             - codigo_tipo_documento_identidad
             - numero_documento
             - apellidos_y_nombres_o_razon_social
-            - numero_mtc
           properties:
             codigo_tipo_documento_identidad:
               type: string
@@ -318,8 +431,41 @@ components:
               example: "TRANSPORTES ABC S.A.C."
             numero_mtc:
               type: string
-              description: Número de registro MTC. Puede enviarse vacío "".
+              description: Opcional. Número de registro MTC.
               example: ""
+            numero_autorizacion_especial:
+              type: string
+              description: >-
+                Opcional. Número de la autorización especial del transportista (por ejemplo,
+                para residuos sólidos o materiales peligrosos). Va con
+                `codigo_entidad_autorizadora`: sin ella no se emite (aviso 4394).
+              example: "1500002MRP"
+            codigo_entidad_autorizadora:
+              $ref: '#/components/schemas/EntidadAutorizadora'
+        chofer:
+          description: >-
+            Solo con `indicador_vehiculos_conductores_transportista` en `true`, y entonces
+            obligatorio con sus 4 claves. Sin el indicador se descarta.
+          allOf:
+            - $ref: '#/components/schemas/Chofer'
+        chofer_secundario:
+          type: array
+          maxItems: 2
+          description: Opcional, solo con el indicador. Conductores secundarios (máximo 2).
+          items:
+            $ref: '#/components/schemas/Chofer'
+        vehiculo:
+          description: >-
+            Solo con `indicador_vehiculos_conductores_transportista` en `true`, y entonces
+            `numero_de_placa` es obligatoria. Sin el indicador se descarta.
+          allOf:
+            - $ref: '#/components/schemas/Vehiculo'
+        vehiculo_secundario:
+          type: array
+          maxItems: 2
+          description: Opcional, solo con el indicador. Vehículos secundarios (máximo 2).
+          items:
+            $ref: '#/components/schemas/Vehiculo'
         items:
           type: array
           minItems: 1
@@ -346,6 +492,13 @@ components:
             y **el régimen depende del motivo**, o SUNAT rechaza con 3441:
             "10" en importación, "40" en exportación (DS: "18" y "48"). En el motivo
             "19" la DAM admite "10", "20", "21", "30", "36", "70" y "80".
+
+
+            **Quién emitió el documento** (`IssuerParty` en el XML, desde el 2026-09-14): con
+            los códigos "01", "03", "04", "09", "12" y "48" es siempre la empresa que emite la
+            guía (regla 3381). Con cualquier otro código, por ejemplo "76" (autorización de
+            residuos sólidos del transportista), se usa el `ruc` de la fila si tiene 11 dígitos;
+            si no, la empresa.
           items:
             $ref: '#/components/schemas/DocumentoRelacionado'
         leyendas:
@@ -400,6 +553,86 @@ components:
           type: string
           description: Código de establecimiento anexo declarado en SUNAT; "0000" si no aplica.
           example: "0000"
+
+    EntidadAutorizadora:
+      type: string
+      enum: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"]
+      description: >-
+        Opcional, desde el 2026-09-14. Entidad que otorgó la autorización especial, catálogo
+        D-37 de SUNAT: "01" SUCAMEC, "02" DIGEMID, "03" DIGESA, "04" SENASA, "05" SERFOR,
+        "06" MTC, "07" PRODUCE, "08" Ministerio del Ambiente, "09" SANIPES, "10" Municipalidad
+        Metropolitana de Lima, "11" MINSA, "12" Gobierno Regional, "13" OSINERGMIN. "6" se
+        acepta como "06". No hay entidad por defecto: sin número y entidad válida la
+        autorización no se emite y se avisa en `warnings` (4394/4397 y 4395 en el
+        transportista; 4403/4405 y 4407 en un vehículo). Ojo: "76" es un código de documento
+        relacionado (catálogo 61), no una entidad.
+      example: "06"
+
+    Chofer:
+      type: object
+      description: Datos del conductor.
+      required:
+        - codigo_tipo_documento_identidad
+        - numero_documento
+        - nombres
+        - numero_licencia
+      properties:
+        codigo_tipo_documento_identidad:
+          type: string
+          description: Catálogo 06 SUNAT. "1" DNI, "4" Carnet de extranjería.
+          example: "1"
+        numero_documento:
+          type: string
+          example: "12345678"
+        nombres:
+          type: string
+          description: >-
+            Apellidos y nombres del conductor en un solo campo, con la forma
+            "APELLIDOS, NOMBRES". La coma es la que separa en el XML los apellidos
+            (`FamilyName`) de los nombres (`FirstName`); sin coma, el nombre completo
+            va en los dos.
+          example: "PEREZ GARCIA, JUAN"
+        numero_licencia:
+          type: string
+          example: "Q12345678"
+        telefono:
+          type: string
+          description: Opcional.
+          example: "999888777"
+
+    Vehiculo:
+      type: object
+      description: Datos del vehículo.
+      required:
+        - numero_de_placa
+      properties:
+        numero_de_placa:
+          type: string
+          description: Sin guiones ni espacios, o SUNAT rechaza con 2567.
+          example: "ABC123"
+        modelo:
+          type: string
+          description: Opcional.
+          example: "FH 540"
+        marca:
+          type: string
+          description: Opcional.
+          example: "VOLVO"
+        certificado_habilitacion_vehicular:
+          type: string
+          description: >-
+            Opcional. TUC / certificado de habilitación vehicular. Viaja al XML con el
+            indicador de vehículos y conductores del transportista; sin él SUNAT observa 4399
+            y la guía se emite igual, con aviso.
+          example: "15MRP00000001E"
+        numero_autorizacion_especial:
+          type: string
+          description: >-
+            Opcional, desde el 2026-09-14. Autorización especial del vehículo. Viaja al XML
+            solo con el indicador y con `codigo_entidad_autorizadora`.
+          example: "1500003CNG"
+        codigo_entidad_autorizadora:
+          $ref: '#/components/schemas/EntidadAutorizadora'
 
     ItemGuia:
       type: object
@@ -521,6 +754,10 @@ components:
           example: "EMPRESA ABC S.A.C."
         ruc:
           type: string
+          description: >-
+            RUC de la empresa que emitió el documento. Con códigos distintos de "01", "03",
+            "04", "09", "12" y "48" es el que viaja al XML como emisor (`IssuerParty`) si
+            tiene 11 dígitos; con esos códigos el emisor es siempre la empresa de la guía.
           example: "20123456789"
         documento:
           type: object
@@ -584,6 +821,26 @@ components:
                 Identificador único de la guía. Guardarlo — se usa en
                 `POST /api/dispatches/send` y `POST /api/dispatches/status_ticket`.
               example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            warnings:
+              type: array
+              description: >-
+                Avisos previos: lo que SUNAT va a observar o rechazar. **No bloquean**: la guía
+                ya se emitió. Campo aditivo. Desde el 2026-09-14 incluye los del régimen de
+                vehículos y conductores del transportista (3357, 2566, 3616, 4399) y los de
+                autorizaciones especiales que no se emitirán (4394, 4395, 4397, 4403, 4405,
+                4407), y también llega en las filas de `POST /api/offline/sync-batch`.
+              items:
+                type: object
+                properties:
+                  codigo:
+                    type: string
+                    example: "4399"
+                  campo:
+                    type: string
+                    example: "vehiculo_secundario.0.certificado_habilitacion_vehicular"
+                  mensaje:
+                    type: string
+                    example: "El vehículo de placa «DEF456» no tiene TUC ni certificado de habilitación vehicular. SUNAT aceptará la guía pero la observará."
       required:
         - success
         - data

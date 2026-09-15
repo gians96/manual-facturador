@@ -18,6 +18,17 @@ Completa los siguientes campos para crear un nuevo vehículo:
 
 **4. Predeterminado**: Activa si el vehículo es de manera frecuente.
 
-**5. Certificado de habilitación vehicular:** Campo donde se debe ingresar el número del certificado que acredita la habilitación del vehículo para operar.
+**5. Certificado de habilitación vehicular:** Campo donde se debe ingresar el número del certificado que acredita la habilitación del vehículo para operar (TUC), de 10 a 15 caracteres.
 
-Seguido seleccione el botón **Guardar**. Y podrá visualizar al transportista creado.
+Además hay dos campos opcionales para la **autorización especial** del vehículo:
+
+- **Autorización especial (N°):** número de la autorización. Solo letras y números, de 3 a 50 caracteres.
+- **Entidad emisora (D-37):** la entidad que la otorgó, elegida del catálogo D-37 de SUNAT.
+
+Los dos van **juntos**: si llenas uno, el sistema pide el otro.
+
+:::info Cuándo viajan el TUC y la autorización a SUNAT
+En la guía de remisión remitente, el TUC y la autorización del vehículo se envían a SUNAT cuando la guía es de **transporte público** con la casilla **Registrar vehículos y conductores del transportista** marcada. Si en ese caso el vehículo no tiene TUC, SUNAT acepta la guía pero la observa, y el sistema lo avisa antes. En la guía de transportista, cada vehículo secundario envía **su propio** TUC.
+:::
+
+Seguido seleccione el botón **Guardar**. Y podrá visualizar el vehículo creado.

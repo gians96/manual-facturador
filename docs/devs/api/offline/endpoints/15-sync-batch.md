@@ -645,6 +645,7 @@ solo lee `success` y `data.number`, sigue funcionando igual.
 |---|---|
 | `signed` | `true` si el XML se generó, se firmó y el PDF se creó |
 | `sign_message` | El motivo cuando `signed` es `false`; `null` si todo fue bien |
+| `warnings` | Desde el 2026-09-14. Los avisos previos de la guía: lo que SUNAT va a observar o rechazar, igual que en `POST /api/dispatches`. No convierten la fila en fallo. Ver [avisos antes de emitir](../../guias-de-remision.md#avisos-antes-de-emitir) |
 
 Antes, si la firma fallaba, la guía volvía como `success: true` sin decirlo: una guía sin firmar
 era indistinguible de una firmada.

@@ -511,6 +511,9 @@ bloquean nada**: la guía se emite igual y tú decides.
 
 Es un campo añadido: si no lo lees, todo sigue funcionando igual que antes.
 
+Desde el 2026-09-14 también llega en cada fila de guía de `POST /api/offline/sync-batch`, dentro de
+`data`, junto a `signed` y `sign_message`. Antes solo lo veía quien emitía por la API.
+
 ### Los avisos que existen hoy
 
 Todos salen de reglas del pliego oficial de SUNAT, y la mayoría de rechazos reales capturados
@@ -523,14 +526,33 @@ emitiendo contra producción.
 | `2567` | `vehiculo.numero_de_placa` | Una placa con guiones o espacios se rechaza |
 | `2775` | `direccion_partida.ubigeo` | Seis dígitos exactos, en partida y en llegada |
 | `2775` | direcciones | Se descartan en la guía de transportista |
+| `2566` | `vehiculo.numero_de_placa` | Con el indicador de vehículos y conductores del transportista, falta la placa del vehículo principal |
+| `3357` | `chofer` | Con el indicador, el conductor principal no trae tipo, número, nombres o licencia |
 | `3364` | `direccion_partida.ubigeo` | Debe coincidir con el ubigeo del puerto informado |
 | `3440` | `documento_relacionado` | Importación y exportación exigen DAM o DS |
 | `3441` | `documento_relacionado.numero` | El régimen aduanero del número no cuadra con el motivo |
 | `3483` | `codigo_de_puerto` | El motivo `19` lo exige |
 | `3493` | `documento_relacionado` | El motivo `19` exige `50`, `52`, `91` o `92` |
+| `3616` | `fecha_de_traslado` | Con el indicador, el traslado empieza antes de la entrega al transportista |
 | `3618` | `fecha_entrega_transporte` | Anterior a la de emisión |
 | `4186` | `observaciones` | Más de 250 caracteres |
 | `4391` | `transportista.numero_mtc` | Sin registro del Ministerio de Transportes |
+| `4394` · `4397` | `transportista.codigo_entidad_autorizadora` · `transportista.numero_autorizacion_especial` | Autorización especial del transportista sin entidad o sin número: **no se emite** |
+| `4395` | `transportista.codigo_entidad_autorizadora` | Entidad fuera del catálogo D-37: la autorización **no se emite** |
+| `4399` | `vehiculo.certificado_habilitacion_vehicular` | Con el indicador, un vehículo con placa y sin TUC. Un aviso por vehículo, principal o secundario |
+| `4403` · `4405` | `vehiculo.codigo_entidad_autorizadora` · `vehiculo.numero_autorizacion_especial` | Lo mismo para la autorización de un vehículo: **no se emite** |
+| `4407` | `vehiculo.codigo_entidad_autorizadora` | Entidad del vehículo fuera del D-37: **no se emite** |
+
+`3357`, `2566` y `3616` son rechazos; el resto son observaciones. Con los avisos de autorización
+la guía sale **sin** esa autorización, porque el sistema nunca inventa la entidad que falta. Los
+de un vehículo secundario nombran su posición: `vehiculo_secundario.0.…`.
+
+Por API, `3357` y `2566` casi no se ven como aviso: con
+`indicador_vehiculos_conductores_transportista` en `true`, la emisión ya responde
+`MISSING_FIELDS` si falta el conductor o la placa. El aviso cubre lo que llega por otros caminos,
+como el panel.
+
+→ [Vehículos y conductores del transportista](./offline/endpoints/13-guia-remision-remitente.md#vehículos-y-conductores-del-transportista)
 
 :::danger El ubigeo de partida se truncaba
 Hasta el 11 de septiembre de 2026, el `ubigeo` de `direccion_partida` se cortaba a **un solo
