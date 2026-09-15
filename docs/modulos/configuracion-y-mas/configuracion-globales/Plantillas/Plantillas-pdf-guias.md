@@ -20,9 +20,20 @@ También puedes llegar desde **Configuración → Empresa → Avanzado → pesta
 
 Arriba verás dos pestañas, **Guía remitente (09)** y **Guía transportista (31)**. Cada tipo de guía tiene sus propias plantillas y su propia asignación.
 
+## Editar el formato paso a paso
+
+1. Elige la pestaña de la guía: **Guía remitente (09)** o **Guía transportista (31)**.
+2. En la tarjeta **Predeterminada**, selecciona **Personalizar**. Escribe un nombre y selecciona **Crear y editar**: se crea tu copia y se abre el editor.
+3. En **Bloques**, arrastra cada bloque para ordenarlo, apaga los que no quieres imprimir y marca o desmarca sus datos opcionales (por ejemplo **Vendedor**, o **Serie** y **Modelo** en **Bienes**).
+4. En **Formato**, cambia la letra, el espaciado, los colores y los bordes.
+5. Revisa el resultado en **Vista previa**, a la derecha: se actualiza sola.
+6. Selecciona **Guardar y usar en la empresa**. Desde ese momento las guías de ese tipo se imprimen con tu plantilla.
+
+Para volver a cambiarla, selecciona **Editar** en su tarjeta o haz clic en su nombre.
+
 ## La plantilla Predeterminada
 
-Todas las empresas parten de la **Predeterminada**, el diseño que se imprime si no eliges otro. **No se edita**: para personalizarla, duplícala.
+Todas las empresas parten de la **Predeterminada**, el diseño que se imprime si no eliges otro. **No se edita**: para personalizarla, selecciona **Personalizar** en su tarjeta y trabajas sobre una copia.
 
 La Predeterminada de tu empresa conserva los datos opcionales que tenías elegidos antes en la tarjeta **Guías de Remisión** (vendedor, teléfonos, columnas de los productos, términos…). Al duplicarla, la copia sale igual a lo que ya imprimías.
 
@@ -30,9 +41,9 @@ La Predeterminada de tu empresa conserva los datos opcionales que tenías elegid
 
 En **Plantillas** ves la Predeterminada y las plantillas de tu empresa, cada una en una tarjeta:
 
-- **Nueva plantilla:** crea una copia de la Predeterminada. Escribe un nombre y se abre el editor.
+- **Personalizar** (en la Predeterminada) o **Nueva plantilla:** crea una copia de la Predeterminada. Escribe un nombre y se abre el editor.
 - **Vista previa:** muestra el PDF con esa plantilla.
-- **Editar:** abre el editor. No aparece en la Predeterminada.
+- **Editar** (o clic en el nombre): abre el editor. Solo en tus plantillas.
 - **Duplicar** (en el botón **⋯**): crea una copia de esa plantilla y abre el editor.
 - **Renombrar** y **Eliminar** (en el botón **⋯**): solo en tus plantillas. Si eliminas una plantilla que está en uso, donde se usaba se vuelve a imprimir con la Predeterminada.
 
@@ -49,7 +60,7 @@ La asignación se guarda al elegirla. Para imprimir una guía, el sistema usa la
 
 ## El editor
 
-El editor ocupa toda la pantalla. Arriba puedes cambiar el nombre de la plantilla y están los botones **Cerrar** y **Guardar** (se activa cuando hay cambios). Debajo hay tres columnas: **Bloques**, **Formato** y **Vista previa**.
+El editor ocupa toda la pantalla. Arriba puedes cambiar el nombre de la plantilla y están los botones **Cerrar**, **Guardar** (se activa cuando hay cambios) y **Guardar y usar en la empresa**, que guarda y la deja asignada a toda la empresa. Si la plantilla ya está en uso, ese botón se reemplaza por la etiqueta **En uso en la empresa**. Debajo hay tres columnas: **Bloques**, **Formato** y **Vista previa**.
 
 ### Bloques
 
@@ -111,7 +122,7 @@ La columna derecha muestra el **PDF real** con los cambios, aunque todavía no l
 
 La vista previa **no guarda nada ni modifica la guía**: ni sus datos ni su PDF.
 
-Cuando termines, selecciona **Guardar**. La plantilla empieza a usarse cuando la asignas a la empresa o a un establecimiento.
+Cuando termines, selecciona **Guardar y usar en la empresa**. Si solo seleccionas **Guardar**, la plantilla queda guardada pero empieza a usarse cuando la asignas en **Plantilla en uso** (a la empresa o a un establecimiento).
 
 ## Qué conviene saber
 
@@ -124,7 +135,7 @@ Una lista de bienes larga ocupa varias hojas. Si subes el bloque **Bienes** o po
 - **Reimprimir usa la plantilla vigente.** Una guía no guarda la plantilla con la que se imprimió: al volver a descargarla o imprimirla sale con la plantilla asignada **hoy**. Los datos de la guía no cambian, solo el diseño.
 - **Las observaciones no se imprimen por defecto** desde el 14 de septiembre de 2026, aunque viajan a SUNAT. Para que salgan, enciende el bloque **Observaciones** en tu plantilla.
 - **Marca de agua:** si el establecimiento usa la plantilla PDF **marca_de_agua**, la guía conserva su logo de fondo; el resto del diseño lo decide la plantilla de guía.
-- **Plantilla personalizable:** su opción **Configurar columnas del documento** ya no se aplica a las guías. Sus columnas se eligen en el bloque **Bienes**.
+- **Plantilla personalizable:** el engranaje de su tarjeta en **Plantillas PDF - PDF** abre **Columnas de comprobantes, notas de venta, cotizaciones y pedidos**. Esas columnas son de facturas, boletas, notas de venta, cotizaciones, pedidos y contratos, **no de las guías**: las columnas de la guía se eligen en el bloque **Bienes** de este editor.
 - **Tus ajustes anteriores:** los interruptores de **Datos opcionales del PDF de la guía (A4)** que estaban en **Avanzado → Extra → Guías de Remisión** se conservan como valores de la Predeterminada de tu empresa. Esa tarjeta ahora solo tiene el botón **Editar plantillas de guía**.
 
 Para las credenciales y el resto de ajustes de las guías, consulta el artículo **[Configuración previa - Guía de remisión](../../../Complementarios/guias-de-remision/01-Configuracion-previa-guia-remision.md)**.
