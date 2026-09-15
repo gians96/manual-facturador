@@ -606,8 +606,9 @@ Manda solo esto:
 | Campo | Requerido |
 |---|---|
 | `codigo_interno` | **Sí**. Sin él todas las líneas se agrupan en un mismo producto y la guía sale con un solo detalle |
-| `cantidad` | **Sí**, mayor que 0 |
-| `descripcion` · `unidad_de_medida` | Solo si el `codigo_interno` **no existe todavía** y hay que crear el producto |
+| `cantidad` | **Sí**, mayor que 0. Se guarda con 4 decimales: si envías más, se redondea y avisa `REDONDEO_CANTIDAD` |
+| `descripcion` | Solo si el `codigo_interno` **no existe todavía** y hay que crear el producto |
+| `unidad_de_medida` | Obligatoria al crear el producto. **Si la envías con un producto que ya existe, es la que viaja en el XML** de esa línea; si no, se usa la del producto |
 | `valor_unitario` | Opcional incluso al crear: el producto nace con precio 0, visible en el panel para corregirlo |
 
 `precio_unitario`, `total_item`, `porcentaje_igv`, `total_base_igv` y el resto del bloque de una
@@ -645,7 +646,7 @@ solo lee `success` y `data.number`, sigue funcionando igual.
 |---|---|
 | `signed` | `true` si el XML se generó, se firmó y el PDF se creó |
 | `sign_message` | El motivo cuando `signed` es `false`; `null` si todo fue bien |
-| `warnings` | Desde el 2026-09-14. Los avisos previos de la guía: lo que SUNAT va a observar o rechazar, igual que en `POST /api/dispatches`. No convierten la fila en fallo. Ver [avisos antes de emitir](../../guias-de-remision.md#avisos-antes-de-emitir) |
+| `warnings` | Desde el 2026-09-14. Los avisos previos de la guía: lo que SUNAT va a observar o rechazar y lo que el sistema va a guardar distinto de como lo enviaste, igual que en `POST /api/dispatches`. No convierten la fila en fallo. Ver [avisos antes de emitir](../../guias-de-remision.md#avisos-antes-de-emitir) |
 
 Antes, si la firma fallaba, la guía volvía como `success: true` sin decirlo: una guía sin firmar
 era indistinguible de una firmada.
@@ -654,6 +655,131 @@ era indistinguible de una firmada.
 La guía **ya está emitida** y su correlativo consumido; reenviarla volvería como duplicada. Lo
 que hay que hacer es rehacer el archivo y mandarla con `POST /api/dispatches/send`.
 :::
+
+### Ejemplo completo de una fila `09`
+
+Una guía remitente de transporte público con vehículos y conductores del transportista, con datos
+ficticios. Lleva **a propósito** dos descuidos para que veas cómo vuelven los avisos: el peso con
+tres decimales y el documento relacionado sin `descripcion`.
+
+```json
+{
+    "sales": [
+        {
+            "doc_type": "09",
+            "offline_id": "d4e5f6a7-b8c9-4012-8def-234567890123",
+            "data": {
+                "serie_documento": "T001",
+                "numero_documento": "14",
+                "fecha_de_emision": "2026-09-11",
+                "hora_de_emision": "10:00:00",
+                "codigo_tipo_documento": "09",
+                "datos_del_cliente_o_receptor": {
+                    "codigo_tipo_documento_identidad": "6",
+                    "numero_documento": "20000000001",
+                    "apellidos_y_nombres_o_razon_social": "MINERA DEMO S.A.C.",
+                    "ubigeo": "150101",
+                    "direccion": "Av. Ejemplo 123 - Lima"
+                },
+                "codigo_modo_transporte": "01",
+                "codigo_motivo_traslado": "14",
+                "descripcion_motivo_traslado": "Venta sujeta a confirmación del comprador",
+                "fecha_de_traslado": "2026-09-12",
+                "fecha_entrega_transporte": "2026-09-11",
+                "indicador_de_transbordo": false,
+                "indicador_vehiculos_conductores_transportista": true,
+                "unidad_peso_total": "TNE",
+                "peso_total": 34.825,
+                "numero_de_bultos": 1,
+                "direccion_partida": { "ubigeo": "150101", "direccion": "Av. Almacén 456 - Lima" },
+                "direccion_llegada": { "ubigeo": "070101", "direccion": "Jr. Destino 789 - Callao" },
+                "transportista": {
+                    "codigo_tipo_documento_identidad": "6",
+                    "numero_documento": "20000000002",
+                    "apellidos_y_nombres_o_razon_social": "TRANSPORTES DEMO S.R.L.",
+                    "numero_mtc": "1500001CNG",
+                    "numero_autorizacion_especial": "1500002MRP",
+                    "codigo_entidad_autorizadora": "06"
+                },
+                "chofer": {
+                    "codigo_tipo_documento_identidad": "1",
+                    "numero_documento": "12345678",
+                    "nombres": "PEREZ GARCIA, JUAN",
+                    "numero_licencia": "Q12345678"
+                },
+                "vehiculo": {
+                    "numero_de_placa": "ABC123",
+                    "certificado_habilitacion_vehicular": "15MRP00000001E",
+                    "numero_autorizacion_especial": "1500003CNG",
+                    "codigo_entidad_autorizadora": "06"
+                },
+                "vehiculo_secundario": [
+                    { "numero_de_placa": "DEF456", "certificado_habilitacion_vehicular": "15MRP00000002E",
+                      "numero_autorizacion_especial": "1500004CNG", "codigo_entidad_autorizadora": "06" }
+                ],
+                "documento_relacionado": [
+                    { "numero": "1500002MRP", "empresa": "TRANSPORTES DEMO S.R.L.", "ruc": "20000000002",
+                      "documento": { "id": "76" } }
+                ],
+                "items": [
+                    { "codigo_interno": "P0001", "descripcion": "RESIDUOS SOLIDOS NO PELIGROSOS",
+                      "unidad_de_medida": "TNE", "cantidad": 34.825 }
+                ]
+            }
+        }
+    ]
+}
+```
+
+La entidad `06` (MTC) es de ejemplo: en cada autorización va el código D-37 de la entidad que la
+otorgó.
+
+La fila vuelve con `success: true`, firmada, y con los dos avisos en `data.warnings`:
+
+```json
+{
+    "success": true,
+    "message": "Sincronización completada",
+    "data": {
+        "results": [
+            {
+                "index": 0,
+                "success": true,
+                "offline_id": "d4e5f6a7-b8c9-4012-8def-234567890123",
+                "doc_type": "09",
+                "data": {
+                    "id": 46,
+                    "number": "T001-14",
+                    "external_id": "7b1e0c4a-2f5d-4e8b-9c3a-5d6e7f8a9b0c",
+                    "filename": "20123456789-09-T001-14",
+                    "signed": true,
+                    "sign_message": null,
+                    "warnings": [
+                        {
+                            "codigo": "4371",
+                            "campo": "documento_relacionado.0.documento.descripcion",
+                            "mensaje": "El documento relacionado «76» no tiene descripción. SUNAT aceptará la guía pero la observará."
+                        },
+                        {
+                            "codigo": "REDONDEO_PESO",
+                            "campo": "peso_total",
+                            "mensaje": "El peso total se guarda con 2 decimales: 34.825 se registrará como 34.83."
+                        }
+                    ]
+                }
+            }
+        ],
+        "total": 1,
+        "success_count": 1,
+        "error_count": 0
+    }
+}
+```
+
+Ninguno de los dos convierte la fila en fallo: la guía ya está emitida con el número `T001-14`. El
+peso quedó en `34.83` y la cantidad, que admite 4 decimales, en `34.825`. Para que SUNAT no la
+observe, corrige la descripción con el `external_id` antes de enviarla, como se explica en
+[corregir una guía rechazada](../../guias-de-remision.md#corregir-una-guía-rechazada).
 
 Ver también [13 — Guía Remitente](13-guia-remision-remitente.md),
 [14 — Guía Transportista](14-guia-remision-transportista.md) y

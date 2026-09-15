@@ -100,6 +100,13 @@ siempre:
 
 No hace falta ningún endpoint especial de "refrescar PDF", ni volver a emitir la guía.
 
+:::note El diseño sale de la plantilla vigente
+Cada vez que se regenera, el PDF A4 usa la plantilla de guía que la empresa tenga asignada en ese
+momento, no la del día de la emisión. Si un administrador cambia la plantilla, las guías que vuelvas
+a descargar saldrán con el diseño nuevo; los datos no cambian. →
+[Plantillas PDF - Guías de remisión](../../modulos/configuracion-y-mas/configuracion-globales/Plantillas/Plantillas-pdf-guias.md)
+:::
+
 :::warning Consultar el ticket NO deja el QR en el archivo guardado
 Por ningún camino. Medido sobre guías reales contra el emulador: tras emitir, enviar y
 consultar el ticket una vez, la guía vuelve aceptada y el `qr_url` queda guardado, pero el PDF
@@ -492,8 +499,9 @@ rechazo el año que viene. Conviene corregirlas aunque la guía se acepte.
 
 ## Avisos antes de emitir
 
-La emisión devuelve un campo `warnings` con lo que SUNAT va a observar o rechazar. **No
-bloquean nada**: la guía se emite igual y tú decides.
+La emisión devuelve un campo `warnings` con lo que SUNAT va a observar o rechazar, y con lo que el
+sistema va a guardar distinto de como lo enviaste. **No bloquean nada**: la guía se emite y se firma
+igual, y tú decides.
 
 ```json
 {
@@ -516,19 +524,22 @@ Desde el 2026-09-14 también llega en cada fila de guía de `POST /api/offline/s
 
 ### Los avisos que existen hoy
 
-Todos salen de reglas del pliego oficial de SUNAT, y la mayoría de rechazos reales capturados
-emitiendo contra producción.
+Los de código numérico salen de reglas del pliego oficial de SUNAT, y la mayoría de rechazos reales
+capturados emitiendo contra producción. Los de código **no numérico** son avisos del sistema: SUNAT
+no los conoce, pero te dicen que la guía no va a quedar exactamente como la enviaste.
 
 | Código | Campo | Qué mira |
 |---|---|---|
 | `2523` | `unidad_de_medida` del peso | Solo se admite `KGM` o `TNE`. La API acepta las 68 del catálogo y las vuelca al XML |
 | `2523` | `peso_bruto_total` | SUNAT exige un decimal **positivo**: cero se rechaza |
 | `2567` | `vehiculo.numero_de_placa` | Una placa con guiones o espacios se rechaza |
+| `2570` | `chofer_secundario.N` | Conductor secundario con datos pero sin tipo de documento. Solo cuando la guía lleva los secundarios al XML: transporte privado, o público con el indicador |
 | `2775` | `direccion_partida.ubigeo` | Seis dígitos exactos, en partida y en llegada |
 | `2775` | direcciones | Se descartan en la guía de transportista |
 | `2566` | `vehiculo.numero_de_placa` | Con el indicador de vehículos y conductores del transportista, falta la placa del vehículo principal |
 | `3357` | `chofer` | Con el indicador, el conductor principal no trae tipo, número, nombres o licencia |
 | `3364` | `direccion_partida.ubigeo` | Debe coincidir con el ubigeo del puerto informado |
+| `3409` | `documento_relacionado.N.ruc` | En un código que no es del remitente (`76`, `92`…) el `ruc` no tiene 11 dígitos: el XML lleva el RUC de tu empresa como emisor |
 | `3440` | `documento_relacionado` | Importación y exportación exigen DAM o DS |
 | `3441` | `documento_relacionado.numero` | El régimen aduanero del número no cuadra con el motivo |
 | `3483` | `codigo_de_puerto` | El motivo `19` lo exige |
@@ -536,16 +547,32 @@ emitiendo contra producción.
 | `3616` | `fecha_de_traslado` | Con el indicador, el traslado empieza antes de la entrega al transportista |
 | `3618` | `fecha_entrega_transporte` | Anterior a la de emisión |
 | `4186` | `observaciones` | Más de 250 caracteres |
+| `4371` | `documento_relacionado.N.documento.descripcion` | Documento relacionado con código y sin descripción: el XML sale con `cbc:DocumentType` vacío |
+| `4372` | `documento_relacionado.N.documento.descripcion` | Descripción de más de 120 caracteres o con saltos de línea |
 | `4391` | `transportista.numero_mtc` | Sin registro del Ministerio de Transportes |
 | `4394` · `4397` | `transportista.codigo_entidad_autorizadora` · `transportista.numero_autorizacion_especial` | Autorización especial del transportista sin entidad o sin número: **no se emite** |
 | `4395` | `transportista.codigo_entidad_autorizadora` | Entidad fuera del catálogo D-37: la autorización **no se emite** |
+| `4396` | `transportista.numero_autorizacion_especial` | Número de la autorización del transportista con menos de 3 o más de 50 caracteres, o con tabulaciones o saltos de línea. Viaja igual y SUNAT la observa |
 | `4399` | `vehiculo.certificado_habilitacion_vehicular` | Con el indicador, un vehículo con placa y sin TUC. Un aviso por vehículo, principal o secundario |
 | `4403` · `4405` | `vehiculo.codigo_entidad_autorizadora` · `vehiculo.numero_autorizacion_especial` | Lo mismo para la autorización de un vehículo: **no se emite** |
+| `4406` | `vehiculo.numero_autorizacion_especial` | Lo mismo que `4396`, para el número de la autorización de un vehículo |
 | `4407` | `vehiculo.codigo_entidad_autorizadora` | Entidad del vehículo fuera del D-37: **no se emite** |
+| `REDONDEO_PESO` | `peso_total` | El peso se guarda con 2 decimales: el tercero se redondea (`34.825` queda en `34.83`) |
+| `REDONDEO_CANTIDAD` | `items.N.cantidad` | La cantidad de un bien se guarda con 4 decimales y se redondea |
+| `SECUNDARIO_INCOMPLETO` | `chofer_secundario.N` · `vehiculo_secundario.N.numero_de_placa` | Conductor secundario a medias (sale con datos vacíos), o vehículo secundario con TUC o autorización y sin placa (sale con la placa vacía). Mismas condiciones que `2570` |
+| `AUTORIZACION_NO_EMITIDA` | `vehiculo.numero_autorizacion_especial` · `vehiculo_secundario.N.numero_autorizacion_especial` | Autorización de un vehículo completa y válida, pero en una guía sin el régimen: transporte privado (`02`), o público (`01`) sin `indicador_vehiculos_conductores_transportista`. Se guarda, pero **no viaja en el XML**. La del transportista sí viaja en cualquier caso |
 
-`3357`, `2566` y `3616` son rechazos; el resto son observaciones. Con los avisos de autorización
-la guía sale **sin** esa autorización, porque el sistema nunca inventa la entidad que falta. Los
-de un vehículo secundario nombran su posición: `vehiculo_secundario.0.…`.
+Como en el pliego de SUNAT, los códigos que empiezan por `2` o `3` son rechazos y los que empiezan
+por `4`, observaciones. `3409` es la excepción: SUNAT no llega a verlo, porque el XML pone el RUC de
+tu empresa en su lugar, y el documento viaja como emitido por quien no lo emitió. Con `4394`,
+`4395`, `4397`, `4403`, `4405`, `4407` y `AUTORIZACION_NO_EMITIDA` la guía sale **sin** esa
+autorización, porque el sistema nunca inventa la entidad que falta ni emite lo que la guía no
+admite; con `4396` y `4406` la autorización sí viaja, y SUNAT la observa. Los de un vehículo
+secundario nombran su posición: `vehiculo_secundario.0.…`.
+
+Los códigos **no numéricos** (`REDONDEO_PESO`, `REDONDEO_CANTIDAD`, `SECUNDARIO_INCOMPLETO` y
+`AUTORIZACION_NO_EMITIDA`) son avisos del sistema, no de SUNAT. Estos cuatro, `2570`, `3409`,
+`4371`, `4372`, `4396` y `4406` existen desde el 2026-09-15.
 
 Por API, `3357` y `2566` casi no se ven como aviso: con
 `indicador_vehiculos_conductores_transportista` en `true`, la emisión ya responde

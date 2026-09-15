@@ -114,14 +114,15 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
 | `datos_del_emisor` | object | No | Solo `codigo_del_domicilio_fiscal`. **Si no lo envías se usa el establecimiento del usuario del token**, igual que en `POST /api/documents`. Si lo envías con un código que no existe, `INVALID_ESTABLISHMENT` |
 | `datos_del_cliente_o_receptor.codigo_pais` | string | No | Opcional **desde el 2026-09-09**: si no lo envías se asume `"PE"`, igual que el panel y la API de notas de venta. Si el cliente ya existe con otro país, se conserva el suyo. Antes, omitirlo devolvía `NULL_NOT_ALLOWED` |
 | `hora_de_emision` | string | **Sí** | `HH:mm:ss`. `dispatches.time_of_issue` no admite null |
-| `observaciones` | string | No | Observaciones |
+| `observaciones` | string | No | Viajan a SUNAT en el XML; con más de 250 caracteres SUNAT observa `4186`. **Desde el 2026-09-14 el PDF A4 no las imprime por defecto**: se activan en la [plantilla de la guía](../../../../modulos/configuracion-y-mas/configuracion-globales/Plantillas/Plantillas-pdf-guias.md) |
 | `codigo_modo_transporte` | string | **Sí** | `"01"` Transporte público, `"02"` Transporte privado |
 | `codigo_motivo_traslado` | string | **Sí** | Ver tabla de motivos |
 | `descripcion_motivo_traslado` | string | No | Descripción del motivo |
 | `fecha_de_traslado` | string | **Sí** | Fecha inicio del traslado `YYYY-MM-DD` |
+| `fecha_entrega_transporte` | string | No | Solo transporte público (`01`): fecha en que entregas los bienes al transportista, `YYYY-MM-DD`. Si no la envías, viaja `fecha_de_traslado` en su lugar. Anterior a `fecha_de_emision`: aviso `3618` (SUNAT la rechaza, pero la guía se genera y se firma igual) |
 | `indicador_de_transbordo` | bool | No | Si hay transbordo. Desde el 2026-09-09 también se acepta como texto (`"true"` / `"false"`); ausente cuenta como `false`. Antes, un `"FALSE"` de texto se rechazaba nombrando una columna interna |
 | `unidad_peso_total` | string | **Sí** | Unidad de peso: `"KGM"` (kilos), `"TNE"` (toneladas) |
-| `peso_total` | float | **Sí** | Peso total de la carga |
+| `peso_total` | float | **Sí** | Peso total de la carga. Se guarda con **2 decimales**: el tercero se redondea (`34.825` queda y viaja como `34.83`) y la respuesta avisa `REDONDEO_PESO` |
 | `numero_de_bultos` | int | No | Cantidad de bultos |
 | `numero_de_contenedor` | int\|null | No | Número de contenedor. **Solo admite dígitos:** un código ISO 6346 alfanumérico (`"MSKU1234567"`) se rechaza con `INVALID_NUMERIC_VALUE`. Si no aplica, envía `null` — no `""` |
 
@@ -145,7 +146,7 @@ Misma estructura que `direccion_partida`.
 | `numero_documento` | string | **Sí** | RUC del transportista |
 | `apellidos_y_nombres_o_razon_social` | string | **Sí** | Razón social |
 | `numero_mtc` | string | No | Número de registro MTC. Opcional **de verdad desde el 2026-09-09**: antes, omitirlo devolvía un 500 |
-| `numero_autorizacion_especial` | string | No | Desde el 2026-09-14. Número de la autorización especial del transportista. Va junto con `codigo_entidad_autorizadora` |
+| `numero_autorizacion_especial` | string | No | Desde el 2026-09-14. Número de la autorización especial del transportista. Va junto con `codigo_entidad_autorizadora`. De 3 a 50 caracteres, sin tabulaciones ni saltos de línea (admite espacios, guiones y barras); si no, SUNAT observa y avisa `4396`. Viaja con o sin el indicador |
 | `codigo_entidad_autorizadora` | string | No | Desde el 2026-09-14. Entidad que otorgó la autorización, catálogo D-37 (tabla más abajo). `"6"` se acepta como `"06"` |
 
 > Solo requerido si `codigo_modo_transporte = "01"` (transporte público) — y desde el
@@ -172,6 +173,10 @@ En transporte privado (`"02"`) es obligatorio. En transporte público solo se us
 | `telefono` | string | No | Teléfono del chofer |
 
 `chofer_secundario` es un arreglo opcional con la misma estructura, de máximo 2 conductores.
+**No se valida**, así que cada conductor tiene que venir completo. Cuando la guía lleva los
+secundarios al XML (transporte privado, o público con el indicador), uno a medias sale con datos
+vacíos y avisa `SECUNDARIO_INCOMPLETO`; sin `codigo_tipo_documento_identidad`, SUNAT lo rechaza con
+`2570`, que también sale como aviso.
 
 ### `vehiculo`
 
@@ -181,10 +186,12 @@ En transporte privado (`"02"`) es obligatorio. En transporte público solo se us
 | `modelo` | string | No | Modelo del vehículo |
 | `marca` | string | No | Marca del vehículo |
 | `certificado_habilitacion_vehicular` | string\|null | No | TUC. Solo viaja al XML en transporte público con el indicador |
-| `numero_autorizacion_especial` | string | No | Desde el 2026-09-14. Autorización especial del vehículo. Solo viaja al XML con el indicador |
+| `numero_autorizacion_especial` | string | No | Desde el 2026-09-14. Autorización especial del vehículo. Mismo formato que la del transportista (aviso `4406`). **Solo viaja al XML con el indicador**: completa y sin él, se guarda y avisa `AUTORIZACION_NO_EMITIDA` |
 | `codigo_entidad_autorizadora` | string | No | Desde el 2026-09-14. Catálogo D-37 |
 
 `vehiculo_secundario` es un arreglo opcional con la misma estructura, de máximo 2 vehículos.
+Tampoco se valida: un vehículo secundario con TUC o autorización especial pero sin
+`numero_de_placa` sale con la placa vacía y avisa `SECUNDARIO_INCOMPLETO`.
 
 ### Vehículos y conductores del transportista
 
@@ -208,19 +215,50 @@ Con el indicador en `true`:
   `errors.faltantes`.
 - El XML lleva la fecha de inicio del traslado, el conductor principal y los secundarios, las
   placas, el **TUC de cada vehículo** y sus autorizaciones especiales.
-- `fecha_de_traslado` no puede ser anterior a `fecha_entrega_transporte`: SUNAT rechaza con `3616`.
-  Sale como aviso.
+- `fecha_de_traslado` no puede ser anterior a `fecha_entrega_transporte` (`3616`), y la entrega no
+  puede ser anterior a la emisión (`3618`). Si no envías `fecha_entrega_transporte`, viaja
+  `fecha_de_traslado` como fecha de entrega. SUNAT rechaza los dos casos, pero aquí salen **como
+  aviso**: la guía se genera y se firma igual, así que corrígela antes de enviarla.
 
-Ejemplo, con datos ficticios, de una venta sujeta a confirmación (`14`) con un vehículo
-secundario y la autorización de residuos sólidos del transportista:
+Ejemplo completo, con datos ficticios, de una venta sujeta a confirmación (`14`) con un conductor
+y un vehículo secundarios y la autorización de residuos sólidos del transportista:
 
 ```json
 {
+    "serie_documento": "T001",
+    "numero_documento": "#",
+    "fecha_de_emision": "2026-09-11",
+    "hora_de_emision": "10:00:00",
+    "codigo_tipo_documento": "09",
+    "datos_del_cliente_o_receptor": {
+        "codigo_tipo_documento_identidad": "6",
+        "numero_documento": "20000000001",
+        "apellidos_y_nombres_o_razon_social": "MINERA DEMO S.A.C.",
+        "codigo_pais": "PE",
+        "ubigeo": "150101",
+        "direccion": "Av. Ejemplo 123 - Lima"
+    },
+    "observaciones": "Precintos 000123 y 000124",
     "codigo_modo_transporte": "01",
     "codigo_motivo_traslado": "14",
+    "descripcion_motivo_traslado": "Venta sujeta a confirmación del comprador",
     "fecha_de_traslado": "2026-09-12",
     "fecha_entrega_transporte": "2026-09-11",
+    "indicador_de_transbordo": false,
     "indicador_vehiculos_conductores_transportista": true,
+    "unidad_peso_total": "TNE",
+    "peso_total": 12.5,
+    "numero_de_bultos": 1,
+    "direccion_partida": {
+        "ubigeo": "150101",
+        "direccion": "Av. Almacén 456 - Lima",
+        "codigo_del_domicilio_fiscal": "0000"
+    },
+    "direccion_llegada": {
+        "ubigeo": "070101",
+        "direccion": "Jr. Destino 789 - Callao",
+        "codigo_del_domicilio_fiscal": "0000"
+    },
     "transportista": {
         "codigo_tipo_documento_identidad": "6",
         "numero_documento": "20000000002",
@@ -252,11 +290,21 @@ secundario y la autorización de residuos sólidos del transportista:
     "documento_relacionado": [
         { "numero": "1500002MRP", "empresa": "TRANSPORTES DEMO S.R.L.", "ruc": "20000000002",
           "documento": { "id": "76", "descripcion": "Autorización para manejo y recojo de residuos sólidos peligrosos y no peligrosos" } }
+    ],
+    "items": [
+        { "codigo_interno": "P0001", "descripcion": "RESIDUOS SOLIDOS NO PELIGROSOS",
+          "unidad_de_medida": "TNE", "cantidad": 12.5 }
     ]
 }
 ```
 
-El resto del payload es el de cualquier guía remitente.
+Qué mirar en este ejemplo:
+
+- `observaciones` viaja a SUNAT, pero el PDF A4 no la imprime salvo que actives el bloque en la
+  plantilla de la guía.
+- `documento_relacionado[].documento.descripcion` va rellena: sin ella SUNAT observa `4371`.
+- La entidad `06` (MTC) de las tres autorizaciones es **de ejemplo**. En cada autorización va el
+  código D-37 de la entidad que la otorgó, que no tiene por qué ser el MTC.
 
 :::warning Revisa la entidad de tus autorizaciones
 Una autorización especial se emite **solo con número y entidad del catálogo D-37**. No hay
@@ -280,10 +328,20 @@ relacionado (catálogo 61), no de la entidad.
 
 ### `documento_relacionado`: quién lo emitió
 
+| Campo | Qué hace |
+|-------|----------|
+| `numero` | Número del documento |
+| `documento.id` | Código del Catálogo N.° 61 |
+| `documento.descripcion` | **Recomendada.** Sin ella el XML sale con `cbc:DocumentType` vacío y SUNAT observa `4371`. Hasta 120 caracteres, sin saltos de línea ni tabuladores, o SUNAT observa `4372` |
+| `ruc` | RUC de quien emitió el documento. Ver abajo |
+| `empresa` | Razón social de quien lo emitió. **Solo sale en el PDF**: no viaja en el XML |
+
 Desde el 2026-09-14 el RUC emisor del documento en el XML (`IssuerParty`) depende del código:
 
 - `01`, `03`, `04`, `09`, `12` y `48`: siempre la empresa que emite la guía (regla 3381).
 - Cualquier otro, por ejemplo `76`: el `ruc` de la fila si tiene 11 dígitos; si no, la empresa.
+  En ese caso el documento viaja **como emitido por tu empresa**, y la respuesta lo avisa con
+  `3409`.
 
 ### Motivos de Traslado (`codigo_motivo_traslado`)
 
@@ -329,9 +387,9 @@ Si tu sistema solo conoce la cantidad atendida, con eso basta.
 | Campo | Tipo | Requerido | Descripción |
 |-------|------|-----------|-------------|
 | `codigo_interno` | string | **Sí** | Debe coincidir exactamente con el del producto. Sin él, todas las líneas se agrupan en un mismo producto y la guía sale con un solo detalle |
-| `cantidad` | number | **Sí** | Mayor que 0. Es el `<cbc:DeliveredQuantity>` del XML |
+| `cantidad` | number | **Sí** | Mayor que 0. Es el `<cbc:DeliveredQuantity>` del XML. Se guarda con 4 decimales: si envías más, se redondea y avisa `REDONDEO_CANTIDAD` |
 | `descripcion` | string | Condicional | Solo si el `codigo_interno` **no existe todavía** y hay que crear el producto |
-| `unidad_de_medida` | string | Condicional | Igual: solo al crear. Catálogo 03 de SUNAT (`NIU`, `KGM`, `TNE`…) |
+| `unidad_de_medida` | string | Condicional | Obligatoria al crear el producto. **Si la envías, es la que viaja en el XML de esa línea aunque el producto ya exista** con otra unidad; si no, se usa la del producto. Catálogo 03 de SUNAT (`NIU`, `KGM`, `TNE`…). En el motivo `09` la línea viaja siempre con `U` |
 | `valor_unitario` | number | No | Opcional incluso al crear: el producto nace con precio 0, visible en el panel para corregirlo |
 
 Ejemplo completo de un ítem de guía:
@@ -361,10 +419,15 @@ que cambia por viaje —precintos, lotes— tenlo en cuenta al revisar el XML fi
     "data": {
         "number": "T001-12",
         "filename": "20123456789-09-T001-12",
-        "external_id": "abc-def-123"
+        "external_id": "abc-def-123",
+        "warnings": []
     }
 }
 ```
+
+`warnings` trae los avisos previos: lo que SUNAT va a observar o rechazar y lo que el sistema va a
+guardar distinto de como lo enviaste. No bloquean. →
+[Avisos antes de emitir](../../guias-de-remision.md#avisos-antes-de-emitir)
 
 ---
 

@@ -98,9 +98,10 @@ paths:
                 description: >-
                   Venta sujeta a confirmación del comprador con el indicador de vehículos y
                   conductores del transportista, un conductor y un vehículo secundarios, TUC,
-                  autorizaciones especiales con entidad D-37 "06" (MTC) y la autorización de
-                  residuos sólidos del transportista como documento relacionado "76". Todos
-                  los datos son ficticios.
+                  autorizaciones especiales y la autorización de residuos sólidos del
+                  transportista como documento relacionado "76", con su descripción. Todos
+                  los datos son ficticios. La entidad D-37 "06" (MTC) de las autorizaciones es
+                  de ejemplo: en cada una va el código de la entidad que la otorgó.
                 value:
                   serie_documento: "T001"
                   numero_documento: "#"
@@ -123,6 +124,8 @@ paths:
                   indicador_vehiculos_conductores_transportista: true
                   unidad_peso_total: "TNE"
                   peso_total: 12.5
+                  numero_de_bultos: 1
+                  observaciones: "Precintos 000123 y 000124"
                   direccion_partida:
                     ubigeo: "150101"
                     direccion: "Av. Almacén 456 - Lima"
@@ -346,6 +349,8 @@ components:
           description: >-
             Peso bruto total de la carga. SUNAT exige un decimal **positivo** de hasta
             12 enteros y 3 decimales: cero se rechaza con 2523, y sale como aviso previo.
+            El sistema lo guarda con **2 decimales**: el tercero se redondea (34.825 se
+            registra y viaja como 34.83) y la respuesta lo avisa con `REDONDEO_PESO`.
           example: 30
         numero_de_bultos:
           type: number
@@ -388,9 +393,12 @@ components:
           type: string
           format: date
           description: >-
-            Opcional. Fecha de entrega de los bienes al transportista. Con
-            `indicador_vehiculos_conductores_transportista`, `fecha_de_traslado` no puede ser
-            anterior a esta fecha: SUNAT rechaza con 3616, y sale como aviso previo.
+            Opcional. Fecha en que el remitente entrega los bienes al transportista. Si no
+            la envías, en su lugar viaja `fecha_de_traslado`. No puede ser anterior a
+            `fecha_de_emision` (3618) y, con `indicador_vehiculos_conductores_transportista`,
+            `fecha_de_traslado` no puede ser anterior a esta fecha (3616). SUNAT rechaza los
+            dos casos, pero aquí salen **como aviso**: la guía se genera y se firma igual, así
+            que corrígela antes de enviarla.
           example: "2026-07-22"
         indicador_vehiculos_conductores_transportista:
           type: boolean
@@ -438,7 +446,10 @@ components:
               description: >-
                 Opcional. Número de la autorización especial del transportista (por ejemplo,
                 para residuos sólidos o materiales peligrosos). Va con
-                `codigo_entidad_autorizadora`: sin ella no se emite (aviso 4394).
+                `codigo_entidad_autorizadora`: sin ella no se emite (aviso 4394). De 3 a 50
+                caracteres; admite espacios, guiones y barras, pero no tabulaciones ni saltos de
+                línea: si no, SUNAT la observa y la respuesta avisa 4396. A diferencia de la de
+                un vehículo, viaja con o sin el indicador.
               example: "1500002MRP"
             codigo_entidad_autorizadora:
               $ref: '#/components/schemas/EntidadAutorizadora'
@@ -451,7 +462,12 @@ components:
         chofer_secundario:
           type: array
           maxItems: 2
-          description: Opcional, solo con el indicador. Conductores secundarios (máximo 2).
+          description: >-
+            Opcional, solo con el indicador. Conductores secundarios (máximo 2). **No se
+            validan**: cada uno debe traer `codigo_tipo_documento_identidad`,
+            `numero_documento`, `nombres` y `numero_licencia`. Uno a medias se emite con datos
+            vacíos y avisa `SECUNDARIO_INCOMPLETO`; sin tipo de documento, SUNAT lo rechaza con
+            2570, que también sale como aviso.
           items:
             $ref: '#/components/schemas/Chofer'
         vehiculo:
@@ -463,7 +479,10 @@ components:
         vehiculo_secundario:
           type: array
           maxItems: 2
-          description: Opcional, solo con el indicador. Vehículos secundarios (máximo 2).
+          description: >-
+            Opcional, solo con el indicador. Vehículos secundarios (máximo 2). **No se
+            validan**: uno con TUC o autorización especial pero sin `numero_de_placa` se emite
+            con la placa vacía y avisa `SECUNDARIO_INCOMPLETO`.
           items:
             $ref: '#/components/schemas/Vehiculo'
         items:
@@ -474,7 +493,11 @@ components:
             $ref: '#/components/schemas/ItemGuia'
         observaciones:
           type: string
-          description: Opcional.
+          description: >-
+            Opcional. Viajan a SUNAT en el XML (`cbc:Note`); con más de 250 caracteres SUNAT
+            observa 4186. **El PDF A4 no las imprime por defecto** desde el 2026-09-14: para
+            que salgan, enciende el bloque *Observaciones* en la plantilla de la guía
+            ([Plantillas PDF - Guías de remisión](/modulos/configuracion-y-mas/configuracion-globales/Plantillas/Plantillas-pdf-guias)).
           example: ""
         comprobante_de_referencia:
           $ref: '#/components/schemas/ComprobanteDeReferencia'
@@ -564,8 +587,10 @@ components:
         Metropolitana de Lima, "11" MINSA, "12" Gobierno Regional, "13" OSINERGMIN. "6" se
         acepta como "06". No hay entidad por defecto: sin número y entidad válida la
         autorización no se emite y se avisa en `warnings` (4394/4397 y 4395 en el
-        transportista; 4403/4405 y 4407 en un vehículo). Ojo: "76" es un código de documento
-        relacionado (catálogo 61), no una entidad.
+        transportista; 4403/4405 y 4407 en un vehículo). Un número con formato inválido
+        viaja igual y avisa 4396 (transportista) o 4406 (vehículo). Ojo: "76" es un código de documento
+        relacionado (catálogo 61), no una entidad. El "06" (MTC) de los ejemplos es solo un
+        ejemplo: envía el código de la entidad que otorgó cada autorización.
       example: "06"
 
     Chofer:
@@ -629,7 +654,11 @@ components:
           type: string
           description: >-
             Opcional, desde el 2026-09-14. Autorización especial del vehículo. Viaja al XML
-            solo con el indicador y con `codigo_entidad_autorizadora`.
+            solo con el indicador y con `codigo_entidad_autorizadora`. Completa y válida pero
+            sin el indicador, se guarda, no viaja y la respuesta avisa
+            `AUTORIZACION_NO_EMITIDA` (aviso del sistema). De 3 a 50 caracteres; admite
+            espacios, guiones y barras, pero no tabulaciones ni saltos de línea: si no, SUNAT
+            la observa y la respuesta avisa 4406.
           example: "1500003CNG"
         codigo_entidad_autorizadora:
           $ref: '#/components/schemas/EntidadAutorizadora'
@@ -657,10 +686,17 @@ components:
           example: "Inca Kola 250 ml"
         unidad_de_medida:
           type: string
-          description: Catálogo de unidades SUNAT ("NIU" unidad, "ZZ" servicio, etc.).
+          description: >-
+            Catálogo de unidades SUNAT ("NIU" unidad, "KGM" kilogramo, "TNE" tonelada, etc.).
+            Si la envías, es la unidad que viaja en el XML para esa línea **aunque el producto
+            ya exista** con otra; si la omites, se usa la del producto. En el motivo "09"
+            (exportación) la línea viaja siempre con "U".
           example: "NIU"
         cantidad:
           type: number
+          description: >-
+            Se guarda con 4 decimales: si envías más, se redondea y la respuesta avisa
+            `REDONDEO_CANTIDAD`.
           example: 2
         valor_unitario:
           type: number
@@ -751,6 +787,9 @@ components:
           example: "F001-1"
         empresa:
           type: string
+          description: >-
+            Razón social de quien emitió el documento. **Solo se imprime en el PDF**: no viaja
+            en el XML.
           example: "EMPRESA ABC S.A.C."
         ruc:
           type: string
@@ -758,15 +797,23 @@ components:
             RUC de la empresa que emitió el documento. Con códigos distintos de "01", "03",
             "04", "09", "12" y "48" es el que viaja al XML como emisor (`IssuerParty`) si
             tiene 11 dígitos; con esos códigos el emisor es siempre la empresa de la guía.
+            Si en uno de esos otros códigos el `ruc` no tiene 11 dígitos, el XML lleva el RUC
+            de tu empresa como emisor y la respuesta lo avisa con 3409.
           example: "20123456789"
         documento:
           type: object
           properties:
             id:
               type: string
+              description: Código del Catálogo N.° 61.
               example: "01"
             descripcion:
               type: string
+              maxLength: 120
+              description: >-
+                Nombre del tipo de documento. **Recomendada**: sin ella el XML sale con
+                `cbc:DocumentType` vacío y SUNAT observa 4371, que sale como aviso previo.
+                Hasta 120 caracteres y sin saltos de línea ni tabuladores, o SUNAT observa 4372.
               example: "Factura Electrónica"
 
     Leyenda:
@@ -828,7 +875,12 @@ components:
                 ya se emitió. Campo aditivo. Desde el 2026-09-14 incluye los del régimen de
                 vehículos y conductores del transportista (3357, 2566, 3616, 4399) y los de
                 autorizaciones especiales que no se emitirán (4394, 4395, 4397, 4403, 4405,
-                4407), y también llega en las filas de `POST /api/offline/sync-batch`.
+                4407), y también llega en las filas de `POST /api/offline/sync-batch`. Desde el
+                2026-09-15 suma los del documento relacionado (4371, 4372, 3409), el formato del
+                número de autorización (4396, 4406), el conductor secundario sin tipo de
+                documento (2570) y cuatro **avisos del sistema**, con código no numérico porque
+                no vienen de SUNAT: `REDONDEO_PESO`, `REDONDEO_CANTIDAD`,
+                `SECUNDARIO_INCOMPLETO` y `AUTORIZACION_NO_EMITIDA`.
               items:
                 type: object
                 properties:

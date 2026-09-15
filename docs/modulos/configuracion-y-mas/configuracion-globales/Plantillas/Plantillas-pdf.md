@@ -19,3 +19,9 @@ Selecciona el establecimiento y activa la plantilla que utilizará en sus compro
 En caso no visualice las plantillas, selecciona el botón **Actualizar listado** en la parte superior derecha.
 
 :::
+
+:::tip Guías de remisión
+
+El PDF A4 de las guías de remisión tiene su propio editor, con bloques que puedes mover y vista previa. De la plantilla que elijas aquí, la guía solo toma el logo de fondo de **marca_de_agua**. Conoce cómo diseñarla en el artículo **[Plantillas PDF - Guías de remisión](./Plantillas-pdf-guias.md)**.
+
+:::

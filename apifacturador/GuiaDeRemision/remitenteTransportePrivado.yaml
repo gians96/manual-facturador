@@ -249,6 +249,8 @@ components:
           description: >-
             Peso bruto total de la carga. SUNAT exige un decimal **positivo** de hasta
             12 enteros y 3 decimales: cero se rechaza con 2523, y sale como aviso previo.
+            El sistema lo guarda con **2 decimales**: el tercero se redondea (34.825 se
+            registra y viaja como 34.83) y la respuesta lo avisa con `REDONDEO_PESO`.
           example: 30
         numero_de_bultos:
           type: number
@@ -290,7 +292,11 @@ components:
         fecha_entrega_transporte:
           type: string
           format: date
-          description: Opcional. Fecha de entrega de los bienes al transportista.
+          description: >-
+            Opcional. Fecha de entrega de los bienes al transportista. En transporte privado
+            **no viaja al XML**, porque no hay transportista al que entregar: la única fecha
+            del traslado es `fecha_de_traslado`. Si la envías anterior a `fecha_de_emision`,
+            igual sale el aviso 3618.
           example: "2026-07-22"
         direccion_partida:
           $ref: '#/components/schemas/DireccionTraslado'
@@ -303,13 +309,21 @@ components:
         chofer_secundario:
           type: array
           maxItems: 2
-          description: Opcional. Conductores secundarios (máximo 2).
+          description: >-
+            Opcional. Conductores secundarios (máximo 2). **No se validan**: cada uno debe
+            traer `codigo_tipo_documento_identidad`, `numero_documento`, `nombres` y
+            `numero_licencia`. Uno a medias se emite con datos vacíos y avisa
+            `SECUNDARIO_INCOMPLETO`; sin tipo de documento, SUNAT lo rechaza con 2570, que
+            también sale como aviso.
           items:
             $ref: '#/components/schemas/Chofer'
         vehiculo_secundario:
           type: array
           maxItems: 2
-          description: Opcional. Vehículos secundarios (máximo 2).
+          description: >-
+            Opcional. Vehículos secundarios (máximo 2). **No se validan**: uno sin
+            `numero_de_placa` pero con TUC o autorización especial se emite con la placa
+            vacía y avisa `SECUNDARIO_INCOMPLETO`.
           items:
             $ref: '#/components/schemas/Vehiculo'
         items:
@@ -320,7 +334,11 @@ components:
             $ref: '#/components/schemas/ItemGuia'
         observaciones:
           type: string
-          description: Opcional.
+          description: >-
+            Opcional. Viajan a SUNAT en el XML (`cbc:Note`); con más de 250 caracteres SUNAT
+            observa 4186. **El PDF A4 no las imprime por defecto** desde el 2026-09-14: para
+            que salgan, enciende el bloque *Observaciones* en la plantilla de la guía
+            ([Plantillas PDF - Guías de remisión](/modulos/configuracion-y-mas/configuracion-globales/Plantillas/Plantillas-pdf-guias)).
           example: ""
         comprobante_de_referencia:
           $ref: '#/components/schemas/ComprobanteDeReferencia'
@@ -451,6 +469,21 @@ components:
             Por lo mismo, en esta modalidad no se emiten las autorizaciones especiales del
             vehículo (`numero_autorizacion_especial`, `codigo_entidad_autorizadora`).
           example: ""
+        numero_autorizacion_especial:
+          type: string
+          description: >-
+            Opcional. Autorización especial del vehículo. En transporte privado **se guarda
+            pero no viaja al XML**: si llega completa y válida, la respuesta avisa
+            `AUTORIZACION_NO_EMITIDA` (aviso del sistema, no de SUNAT). De 3 a 50 caracteres;
+            admite espacios, guiones y barras, pero no tabulaciones ni saltos de línea (aviso
+            4406).
+          example: "1500003CNG"
+        codigo_entidad_autorizadora:
+          type: string
+          description: >-
+            Opcional. Entidad que otorgó la autorización, catálogo D-37 de SUNAT ("01" a
+            "13"). Va junto con `numero_autorizacion_especial`.
+          example: "06"
 
     ItemGuia:
       type: object
@@ -475,10 +508,17 @@ components:
           example: "Inca Kola 250 ml"
         unidad_de_medida:
           type: string
-          description: Catálogo de unidades SUNAT ("NIU" unidad, "ZZ" servicio, etc.).
+          description: >-
+            Catálogo de unidades SUNAT ("NIU" unidad, "KGM" kilogramo, "TNE" tonelada, etc.).
+            Si la envías, es la unidad que viaja en el XML para esa línea **aunque el producto
+            ya exista** con otra; si la omites, se usa la del producto. En el motivo "09"
+            (exportación) la línea viaja siempre con "U".
           example: "NIU"
         cantidad:
           type: number
+          description: >-
+            Se guarda con 4 decimales: si envías más, se redondea y la respuesta avisa
+            `REDONDEO_CANTIDAD`.
           example: 2
         valor_unitario:
           type: number
@@ -569,18 +609,33 @@ components:
           example: "F001-1"
         empresa:
           type: string
+          description: >-
+            Razón social de quien emitió el documento. **Solo se imprime en el PDF**: no viaja
+            en el XML.
           example: "EMPRESA ABC S.A.C."
         ruc:
           type: string
+          description: >-
+            RUC de la empresa que emitió el documento. Con códigos distintos de "01", "03",
+            "04", "09", "12" y "48" es el que viaja al XML como emisor (`IssuerParty`) si
+            tiene 11 dígitos; con esos códigos el emisor es siempre la empresa de la guía.
+            Si en uno de esos otros códigos el `ruc` no tiene 11 dígitos, el XML lleva el RUC
+            de tu empresa como emisor y la respuesta lo avisa con 3409.
           example: "20123456789"
         documento:
           type: object
           properties:
             id:
               type: string
+              description: Código del Catálogo N.° 61.
               example: "01"
             descripcion:
               type: string
+              maxLength: 120
+              description: >-
+                Nombre del tipo de documento. **Recomendada**: sin ella el XML sale con
+                `cbc:DocumentType` vacío y SUNAT observa 4371, que sale como aviso previo.
+                Hasta 120 caracteres y sin saltos de línea ni tabuladores, o SUNAT observa 4372.
               example: "Factura Electrónica"
 
     Leyenda:
@@ -635,6 +690,29 @@ components:
                 Identificador único de la guía. Guardarlo — se usa en
                 `POST /api/dispatches/send` y `POST /api/dispatches/status_ticket`.
               example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            warnings:
+              type: array
+              description: >-
+                Avisos previos: lo que SUNAT va a observar o rechazar y lo que el sistema va a
+                guardar distinto de como lo enviaste. **No bloquean**: la guía ya se emitió.
+                Campo aditivo. En transporte privado interesan sobre todo 2567 (placa con
+                separadores), 2570 y `SECUNDARIO_INCOMPLETO` (secundarios a medias), y los
+                avisos del sistema `REDONDEO_PESO`, `REDONDEO_CANTIDAD` y
+                `AUTORIZACION_NO_EMITIDA` (autorización de un vehículo que no viaja), con código
+                no numérico porque no vienen de SUNAT. Lista completa en
+                [Avisos antes de emitir](/devs/api/guias-de-remision#avisos-antes-de-emitir).
+              items:
+                type: object
+                properties:
+                  codigo:
+                    type: string
+                    example: "REDONDEO_PESO"
+                  campo:
+                    type: string
+                    example: "peso_total"
+                  mensaje:
+                    type: string
+                    example: "El peso total se guarda con 2 decimales: 34.825 se registrará como 34.83."
       required:
         - success
         - data

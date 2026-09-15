@@ -22,7 +22,7 @@ Completa los siguientes campos para crear un nuevo vehículo:
 
 Además hay dos campos opcionales para la **autorización especial** del vehículo:
 
-- **Autorización especial (N°):** número de la autorización. Solo letras y números, de 3 a 50 caracteres.
+- **Autorización especial (N°):** número de la autorización, de 3 a 50 caracteres; admite espacios, guiones y barras, pero no tabulaciones ni saltos de línea (formato de SUNAT).
 - **Entidad emisora (D-37):** la entidad que la otorgó, elegida del catálogo D-37 de SUNAT.
 
 Los dos van **juntos**: si llenas uno, el sistema pide el otro.
