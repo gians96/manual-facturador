@@ -369,7 +369,7 @@ tener que leer el texto del `message`. Es un campo **añadido**: si tu integraci
 | `INVALID_ENCODING` | El cuerpo no es UTF-8 válido | ❌ No, sin corregir |
 | `VALUE_TOO_LONG` · `VALUE_OUT_OF_RANGE` | Texto o importe fuera del ancho del campo | ❌ No, sin corregir |
 | `CONFLICT_NUMBER` | El correlativo ya lo usó **otra** venta | ⚠️ Renumerar y reemitir |
-| `DATABASE_ERROR` | Fallo SQL que el traductor no reconoce | ⚠️ Uno, y escalar |
+| `DATABASE_ERROR` | Fallo de base de datos **del servidor**, no de tu payload. Desde el 2026-09-15 `errors.tipo` dice cuál (ver abajo) | ⚠️ Según `errors.tipo` |
 | `PROCESSING_ERROR` | Excepción que el servidor no sabe atribuir. **Ya no incluye campos ausentes del payload** | ⚠️ Uno, y escalar con el `offline_id` |
 
 :::warning Si reintentas `PROCESSING_ERROR` sin límite, ponle tope
@@ -387,6 +387,36 @@ Ahora esa familia sale como `MISSING_FIELDS` nombrando el campo. `PROCESSING_ERR
 `DATABASE_ERROR` siguen admitiendo reintento, pero **uno** y luego escalar: un fallo que se
 repite casi nunca se arregla volviendo a enviar lo mismo.
 :::
+
+#### `DATABASE_ERROR`: qué dice `errors.tipo`
+
+:::info Desde el 2026-09-15
+Antes este código llegaba con el texto *«Error de base de datos al procesar el documento. Revise el
+payload e intente nuevamente.»*, aunque el fallo fuera del servidor. Ahora el `message` dice qué
+pasó y el bloque `errors` lo da estructurado. `error_code` no cambia: si solo lees `success` y
+`message`, sigue funcionando igual.
+:::
+
+```json
+{
+  "index": 0,
+  "offline_id": "8F0E2C31-6A4B-4D2E-9B7C-3E5D1A2F4B60",
+  "success": false,
+  "doc_type": "09",
+  "message": "La base de datos del servidor está desactualizada: falta la columna 'seal_number' en la tabla 'dispatches'. No es un problema del payload y reintentar no lo arregla hasta que se actualice el servidor: avisa a soporte técnico.",
+  "error_code": "DATABASE_ERROR",
+  "errors": { "tipo": "esquema_desactualizado", "codigo_mysql": 1054, "tabla": "dispatches", "columna": "seal_number" }
+}
+```
+
+| `errors.tipo` | Qué pasó | ¿Reintentar? |
+|---|---|---|
+| `esquema_desactualizado` | Al servidor le falta una actualización de base de datos. Trae `tabla` y, si aplica, `columna` | ❌ No: avisa a soporte con el `offline_id` y reenvía cuando confirmen |
+| `bloqueo_temporal` | La base de datos estaba ocupada y canceló la operación | ✅ Una vez |
+| `no_clasificado` | Otro fallo de base de datos. Trae `sqlstate` y `codigo_mysql` | ⚠️ Uno, y escalar con el `offline_id` |
+
+La respuesta nunca trae el SQL ni datos internos de la base: soporte encuentra el detalle en el log
+del servidor buscando el `offline_id`.
 
 Los códigos de validación llegan por esta vía exactamente igual que por `/api/documents`:
 ver **[Errores de la API](../../errores-de-la-api.md)** para el catálogo completo, los

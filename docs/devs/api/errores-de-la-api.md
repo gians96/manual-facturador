@@ -326,7 +326,8 @@ Desde el 2026-09-04, **toda** fila fallida trae `error_code`:
 |---|---|
 | `MISSING_FIELDS` · `NO_ITEMS` · `INVALID_PAYLOAD` · `INVALID_REFERENCE` · `NULL_NOT_ALLOWED` · `INVALID_ENCODING` · `VALUE_TOO_LONG` · `VALUE_OUT_OF_RANGE` | Corregir el payload. **No reintentar** sin cambiarlo: el error es permanente |
 | `CONFLICT_NUMBER` | El correlativo ya lo usó otra venta. Renumerar y reemitir |
-| `DATABASE_ERROR` · `PROCESSING_ERROR` | No es tu payload. Reintentar **una vez** y, si persiste, avisar a soporte con el `offline_id` |
+| `DATABASE_ERROR` | No es tu payload: es la base de datos del servidor. Desde el 2026-09-15 `errors.tipo` dice qué pasó: con `esquema_desactualizado` **no reintentes** y avisa a soporte con el `offline_id`; con `bloqueo_temporal` reintenta una vez; con `no_clasificado`, una vez y luego soporte. Detalle en [sync-batch](offline/endpoints/15-sync-batch.md) |
+| `PROCESSING_ERROR` | No es tu payload. Reintentar **una vez** y, si persiste, avisar a soporte con el `offline_id` |
 
 :::warning `PROCESSING_ERROR` era el cajón de sastre — ponle tope a los reintentos
 Hasta el 2026-09-09, **un campo ausente del payload salía con este código**: el servidor lo leía
