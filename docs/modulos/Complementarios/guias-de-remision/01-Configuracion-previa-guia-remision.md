@@ -15,8 +15,15 @@ Deberá completar los siguientes campos:
 * **SOAP Usuario:** el **RUC seguido del usuario secundario**, sin espacios ni guiones. Por ejemplo, si el RUC es `20123456789` y el usuario secundario es `MIUSUARIO`, aquí va `20123456789MIUSUARIO`. SUNAT lo exige así: con el usuario solo, el envío falla con «Error en la autenticación del usuario».
 * **SOAP Password:** la clave SOL de ese usuario secundario.
 
-:::warning Tiene que ser un usuario SECUNDARIO
-El usuario principal entra al portal de SUNAT pero **no sirve** para enviar guías, y el error que devuelve SUNAT es el mismo que el de una clave equivocada. Si no tienes uno, créalo desde el portal con el usuario principal y dale permisos de Guía de Remisión Electrónica.
+:::warning Tiene que ser un usuario SECUNDARIO con permiso de guías
+Que un usuario **entre al portal de SUNAT no garantiza que sirva** para enviar guías, y SUNAT responde con el mismo error que ante una clave equivocada. Caso comprobado en septiembre de 2026: con un usuario que sí entraba al portal, SUNAT contestaba «Error en la autenticación del usuario»; con un usuario secundario nuevo, creado con permisos de guías, entregó el token al instante con el mismo Client ID y la misma CLAVE.
+
+Para crearlo:
+
+1. Entra al portal SOL con el **usuario principal** del RUC y abre la administración de usuarios secundarios.
+2. Crea el usuario y asígnale las opciones de **Guía de Remisión Electrónica**.
+3. Entra una vez al portal con ese usuario: SUNAT pide cambiar la clave inicial.
+4. Escríbelo aquí como RUC + usuario, con su clave nueva, y pulsa **Verificar**.
 :::
 
 :::danger importante

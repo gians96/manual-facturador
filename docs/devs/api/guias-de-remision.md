@@ -438,6 +438,13 @@ En el panel está en el menú ⋮ de la fila. Por API,
 
 Solo el `503` se reintenta: es el único error pasajero de los cuatro.
 
+:::warning Si restauraste la base desde una copia
+El borrado consulta a SUNAT con el ticket **guardado en la guía**. Si la base se restauró desde una
+copia anterior, una guía que ahí figura rechazada pudo haberse corregido y reenviado después, y estar
+**aceptada** en SUNAT con otro ticket. La consulta con el ticket viejo devolvería el rechazo antiguo y
+la borraría. Tras una restauración, comprueba esas guías en el portal de SUNAT antes de borrarlas.
+:::
+
 ### Volver a recrear: cuando la guía quedó sin sus archivos
 
 Genera y firma otra vez el **XML** y el **PDF** con los datos actuales de la guía, igual que el
@@ -676,6 +683,30 @@ Si SUNAT ya la aceptó, el sistema responde `DISPATCH_ALREADY_ACCEPTED`. Para de
 darla de baja en el portal de SUNAT, y eso **solo se puede el mismo día**. Después, el estado se
 puede reflejar a mano desde el menú de tres puntos del listado.
 :::
+
+## Prueba de extremo a extremo
+
+Así se probó el ciclo completo contra SUNAT el 16 de septiembre de 2026, con las series de prueba
+`T999` y `V999`. Sirve de guion para comprobar una instalación.
+
+| Paso | Llamada | Resultado real |
+|---|---|---|
+| 1. Emitir la remitente | `POST /api/dispatches` | `T999-90003`, firmada, `warnings: []` |
+| 2. Emitir la transportista | `POST /api/dispatch-carrier` | `V999-90002`, firmada, `warnings: []` |
+| 3. Enviar las dos | `POST /api/dispatches/send` | Ticket obtenido |
+| 4. Consultar el ticket | `POST /api/dispatches/status_ticket` | `V999-90002` **aceptada**; `T999-90003` **rechazada con 3369** |
+| 5. Corregir la rechazada | `POST /api/dispatches` con su mismo `external_id` | Mismo número: no se quema correlativo |
+| 6. Reenviar y consultar | `send` y `status_ticket` | `T999-90003` **aceptada** |
+| 7. Borrar rechazadas antiguas | `DELETE /api/dispatches/{external_id}` | 12 borradas; 2 conservadas con `503 SUNAT_UNREACHABLE` |
+
+**El 3369 lo provocó un ejemplo de este manual:** la llegada iba con
+`"codigo_del_domicilio_fiscal": null`. Con destinatario con RUC, el XML declara el RUC asociado al punto
+de llegada, y SUNAT exige entonces el código de establecimiento. Desde el 2026-09-16 el sistema trata
+`null` y la cadena vacía igual que no mandar la clave, es decir `"0000"`; en una instalación sin esa
+actualización, envía `"0000"`.
+
+**Los dos 503 son el comportamiento correcto.** Eran guías de enero de 2025 cuyo ticket ya no dio una
+respuesta concluyente, y el sistema no borra lo que SUNAT no confirma.
 
 ## Cinco tropiezos que cuestan una tarde
 

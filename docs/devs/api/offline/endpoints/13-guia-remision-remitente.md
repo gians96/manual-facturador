@@ -66,7 +66,7 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
     "direccion_llegada": {
         "ubigeo": "150132",
         "direccion": "Jr. Los Olivos 456, San Juan de Lurigancho",
-        "codigo_del_domicilio_fiscal": null
+        "codigo_del_domicilio_fiscal": "0000"
     },
     "transportista": {
         "codigo_tipo_documento_identidad": "6",
@@ -97,6 +97,13 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
     ]
 }
 ```
+
+:::warning `codigo_del_domicilio_fiscal` de la llegada: no lo mandes en `null`
+Hasta el 2026-09-16 este ejemplo lo traía en `null`, y así la guía **sale rechazada con 3369** cuando el
+destinatario tiene RUC: el XML declara el RUC asociado al punto de llegada y SUNAT exige entonces el
+código de establecimiento. Envía `"0000"` (domicilio fiscal) o no mandes la clave. Desde esa fecha el
+sistema trata `null` y `""` como `"0000"`, pero una instalación sin actualizar las sigue rechazando.
+:::
 
 ---
 
