@@ -54,9 +54,14 @@ Selecciona el botón **Guardar** y ya puede generar su guía. Conoce como en el 
 
 ## Comprobar las credenciales antes de emitir
 
-En esa misma tarjeta hay un botón **Verificar credenciales**. Pide el token a SUNAT y te dice si lo
-acepta: **no emite ninguna guía** ni guarda nada, así que se puede usar mientras configuras. Prueba lo
-que está escrito en pantalla, y lo que dejes vacío lo toma de lo ya guardado.
+En esa misma tarjeta, junto al botón **Guardar**, hay un botón **Verificar**. Pide el token a SUNAT y te
+dice si lo acepta: **no emite ninguna guía** ni guarda nada, así que se puede usar mientras configuras.
+Prueba lo que está escrito en pantalla, y lo que dejes vacío lo toma de lo ya guardado.
+
+El propio botón indica el estado con su color —gris sin comprobar, verde conectado, rojo o ámbar si
+falla— y, al pasar el ratón, muestra el resultado en una palabra. El icono de información de al lado
+guarda la explicación y el detalle de la última comprobación. Si cambias una credencial, el botón
+vuelve a gris: lo comprobado antes ya no vale.
 
 Qué significa cada respuesta:
 
