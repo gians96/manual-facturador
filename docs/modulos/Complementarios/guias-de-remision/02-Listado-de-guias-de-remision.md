@@ -66,7 +66,8 @@ Los botones de cada fila dependen del estado de la guía:
 | Aceptado | **Opciones** · **Generar comprobante** | **Marcar como anulada** |
 | Rechazado | **Enviar a Sunat** · **Editar** | **Volver a recrear** · **Eliminar** |
 
-Es igual en **G.R Remitente** y en **G.R Transportista**.
+Es igual en **G.R Remitente** y en **G.R Transportista**. Con el tema **Black**, el menú ⋮ se ve
+como **⋯**, con los tres puntos en horizontal.
 
 ## Qué hacer con una guía rechazada
 
