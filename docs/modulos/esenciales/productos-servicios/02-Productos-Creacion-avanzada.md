@@ -62,10 +62,10 @@ Para habilitar la venta con restricción del stock mínimo, se tiene que configu
 Si no cuenta con un código interno en su empresa puede configurar automáticamente desde el módulo **Configuración** en la sección **Avanzado** y la subcategoría **Inventarios.** Posteriormente deberá activar el botón **Generar automáticamente código interno del producto.**
 :::
 
-**18.  Código SUNAT:** Inserta código sunat, este código se lo proporciona la SUNAT.
+**18.  Código SUNAT:** Ingresa el código de producto de **8 dígitos** del catálogo 25 de SUNAT (UNSPSC), solo los números, sin espacios ni guiones. Por ejemplo, `11101906`. Se imprime en el XML de las facturas, boletas y notas que emitas después de guardarlo; los comprobantes ya emitidos no cambian.
 
 :::danger IMPORTANTE:
-Insertar el código si la **SUNAT** lo requiere.
+Ingresa el código si la **SUNAT** lo requiere para tu producto; si no, déjalo vacío. Desde el **1 de enero de 2027** SUNAT rechaza los comprobantes con un código mal escrito o que no exista en su catálogo.
 :::
 
 **19.  Línea de producto:** Inserta la línea de producto, grupo de productos que tienen relación directa entre sí.

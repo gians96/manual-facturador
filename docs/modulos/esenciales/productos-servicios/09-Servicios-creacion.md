@@ -33,7 +33,7 @@ Se encontrará el formulario de servicio y se completarán los siguientes datos.
 Consulte con su contador si tiene dudas sobre que tipo de afectación deberá utilizar.
 :::
 
-**8.  Código Sunat:** Ingresa el código sunat, este código se lo proporciona la **SUNAT** si esta obligado.
+**8.  Código Sunat:** Si la **SUNAT** lo requiere, ingresa el código de producto de **8 dígitos** del catálogo 25 (UNSPSC), solo los números. Se imprime en el XML de las facturas, boletas y notas nuevas. Desde el **1 de enero de 2027** SUNAT rechaza los comprobantes con un código mal escrito o que no exista en su catálogo.
 
 **9.  Linea de producto:** Ingresa la línea de servicio, son los grupos de servicios que tienen relación directa entre sí. 
 

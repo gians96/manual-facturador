@@ -44,7 +44,7 @@ La llave con la que el Facturador identifica un producto es **`codigo_interno`**
 | Situación (según `codigo_interno`) | Comportamiento |
 |---|---|
 | **Código nuevo** (no existe en el catálogo) | **Crea** un producto nuevo con los datos que enviaste (descripción, unidad, precio, afectación IGV, códigos SUNAT/GS1). Stock inicial **0**. |
-| **Código ya existente** | **Reutiliza** ese producto (NO se duplica). Solo actualiza la **descripción** si envías `actualizar_descripcion: true` (valor por defecto). **No** cambia el precio ni los demás datos del catálogo. |
+| **Código ya existente** | **Reutiliza** ese producto (NO se duplica). Solo actualiza la **descripción** si envías `actualizar_descripcion: true` (valor por defecto). **No** cambia el precio ni los demás datos del catálogo. Si la línea trae `codigo_producto_sunat` con 8 dígitos, ese comprobante lo lleva en su XML y el producto conserva el suyo. |
 | **Sin `codigo_interno` o vacío** | El código interno queda como cadena vacía `""` → **todos** los productos sin código colapsan en **un único** item de catálogo. ⚠️ Evítalo siempre. |
 
 ### Con qué datos se crea el producto nuevo
@@ -65,10 +65,17 @@ Al crear un producto por primera vez, el catálogo toma estos campos de la líne
 | Moneda | `codigo_tipo_moneda` del comprobante |
 | Stock inicial | **0** |
 
-:::tip El comprobante siempre usa lo que envías
-El catálogo solo sirve para **vincular** la línea con un producto (`item_id`). Los valores que
-aparecen en el comprobante (descripción, precio, cantidad, impuestos) son **siempre** los que
-mandas en la línea, no los del catálogo. Por eso puedes emitir aunque el producto no exista todavía.
+:::tip Qué sale de la línea y qué del catálogo
+El catálogo sirve para **vincular** la línea con un producto (`item_id`); por eso puedes emitir
+aunque el producto no exista todavía. En el comprobante:
+
+- **Precio, cantidad, unidad de medida e impuestos** son siempre los que mandas en la línea.
+- **`codigo_producto_sunat`** con 8 dígitos va al XML de ese comprobante, aunque el producto ya
+  exista. Si no lo envías, o no tiene 8 dígitos, va el código registrado en el producto.
+- **La descripción** es, por defecto, la del producto en el catálogo. Con
+  `actualizar_descripcion: true` (valor por defecto) el catálogo toma antes la que envías; con
+  `false` se imprime la que ya tenía y la tuya no se usa.
+- **El código GS1** (`codigo_producto_gsl`) es el del producto: solo se toma de la línea al crearlo.
 :::
 
 ### Recomendaciones para integradores
@@ -85,6 +92,14 @@ mandas en la línea, no los del catálogo. Por eso puedes emitir aunque el produ
   comprobante sí usa el precio que envías). Si tú administras los precios, esto no te afecta.
 - Si administras las descripciones en tu sistema y **no** quieres que el catálogo del Facturador cambie,
   envía **`actualizar_descripcion: false`** en la línea.
+- **`codigo_producto_sunat`: 8 dígitos del catálogo 25 de SUNAT, sin espacios ni guiones** (por
+  ejemplo `"11101906"`), o `null` si no lo usas. Con otro formato no sustituye al código del
+  producto: el comprobante lleva el registrado en el producto y la respuesta trae el aviso
+  [`CODIGO_PRODUCTO_SUNAT_IGNORADO`](./errores-de-la-api.md#codigo_producto_sunat_ignorado). Cuando
+  la línea **crea** el producto, el valor se guarda en él tal como llega, aunque no sea válido, y
+  ese es el que sale en el XML: corrígelo en Productos. Desde el
+  **2027-01-01** SUNAT rechaza facturas, boletas y notas con un código que no tenga 8 dígitos o no
+  exista en su catálogo.
 
 ### Ejemplo de línea de item
 

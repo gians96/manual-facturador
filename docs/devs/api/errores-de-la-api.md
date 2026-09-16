@@ -52,7 +52,7 @@ ya funciona leyendo solo `success` y `message`, sigue funcionando igual.
 
 | Código | Significa |
 |---|---|
-| `200` | Comprobante emitido |
+| `200` | Comprobante emitido. Puede traer [avisos](#avisos) en `warnings` |
 | `400` | El cuerpo no se pudo interpretar |
 | `401` | Token ausente o inválido |
 | `403` | Emisión bloqueada por licencia |
@@ -303,6 +303,63 @@ Convierte el cuerpo a UTF-8 antes del `Send`.
 El texto excede el ancho del campo, o el importe no cabe en 12 dígitos con 2 decimales.
 Ambos nombran el campo del payload.
 
+## Avisos: el comprobante se emite igual {#avisos}
+
+Un aviso **no es un error**: el comprobante queda emitido, con `success: true` y su número, y el
+aviso dice qué dato de lo que enviaste no es válido y qué hizo el servidor con él. Llegan en
+`warnings`:
+
+- `POST /api/documents`: en la raíz de la respuesta, junto a `success` y `data`. Sin avisos llega
+  como `[]`.
+- `POST /api/offline/sync-batch`: en `results[].data.warnings` de cada factura, boleta o nota
+  emitida, el mismo sitio donde las guías traen los suyos. Trátalo como opcional: no lo traen las
+  filas con `was_duplicate: true` ni el duplicado que el servidor recupera de un error 1062 de
+  MySQL (misma serie y número ya emitidos), que llega como fila correcta con los datos del
+  comprobante existente.
+
+Cada aviso tiene la misma forma que los [avisos de las guías](./guias-de-remision.md#avisos-antes-de-emitir):
+`codigo`, `campo` y `mensaje`. Un `codigo` no numérico es un aviso del sistema, no un código de
+SUNAT.
+
+### `CODIGO_PRODUCTO_SUNAT_IGNORADO` {#codigo_producto_sunat_ignorado}
+
+```json
+{
+  "codigo": "CODIGO_PRODUCTO_SUNAT_IGNORADO",
+  "campo": "items.1.codigo_producto_sunat",
+  "mensaje": "Ítem #2: 'codigo_producto_sunat' llegó como '1106-059' y no es válido: debe tener 8 dígitos (catálogo 25 de SUNAT), por ejemplo '11101906'. El comprobante lleva el código registrado en el producto; si esta línea creó el producto, quedó registrado con ese mismo valor y conviene corregirlo en Productos."
+}
+```
+
+`campo` señala la línea por su posición en `items[]` **contando desde 0**, como en los avisos de
+guía: `items.1` es la segunda línea. El `mensaje` la numera desde 1 («Ítem #2»), como en
+`MISSING_FIELDS`.
+
+Desde el 2026-09-16, `items[].codigo_producto_sunat` —el código de producto del catálogo 25 de
+SUNAT (UNSPSC)— va al XML de facturas, boletas y notas de crédito y débito así:
+
+| Envías | Qué lleva el XML de ese comprobante | Aviso |
+|---|---|---|
+| 8 dígitos: `"11101906"`, `11101906` o `" 11101906 "` | `11101906`, aunque el producto ya exista. El catálogo de productos no cambia | No |
+| `null`, `""` o sin la clave | El código registrado en el producto | No |
+| Otro formato: `"200020001"`, `"1106-059"`, `"1110190"` | El código registrado en el producto. Si la línea **creó** el producto, ese código es el mismo valor inválido (ver abajo) | Sí |
+
+Antes de esa fecha el código de la línea solo se usaba al **crear** el producto: con un producto
+existente se descartaba sin aviso.
+
+No se rechaza con 422 a propósito: hay puntos de venta que reenvían el código tal como está
+guardado en el producto, que en el panel es texto libre, y bloquear esas ventas no arreglaría el
+dato. Corrige el valor en tu sistema; el comprobante ya emitido no cambia.
+
+:::warning Si la línea crea el producto, el valor inválido se guarda y se imprime
+Con un `codigo_interno` que no existe, el producto se crea con el valor **tal como llegó**, también
+el que genera este aviso; así funcionaba ya antes de este cambio. Como el comprobante lleva el
+código registrado en el producto, ese valor inválido **sale en su XML** y en el de los siguientes
+que usen el código del producto: líneas sin `codigo_producto_sunat` o lo que emitas desde el panel.
+Por eso el `mensaje` termina con «si esta línea creó el producto, quedó registrado con ese mismo
+valor». Corrígelo en **Productos → editar → Código Sunat**.
+:::
+
 ## Sincronización por lotes (`sync-batch`)
 
 `POST /api/offline/sync-batch` **no** devuelve un status de error: responde `200` y cada
@@ -388,9 +445,10 @@ Estos siguen sin dar error y conviene tenerlos presentes:
 
 | Envías | Lo que ocurre |
 |---|---|
-| `items[]` con un `codigo_interno` que **ya existe** | La `descripcion` del payload se descarta: el XML lleva la descripción guardada en tu catálogo de productos, no la que enviaste |
+| `items[]` con un `codigo_interno` que **ya existe** y `actualizar_descripcion: false` | La `descripcion` del payload se descarta: el XML lleva la descripción guardada en tu catálogo de productos, no la que enviaste. Con `actualizar_descripcion: true` (valor por defecto) no se pierde, pero **sobrescribe** la del producto en el catálogo antes de emitir. Ver [ítems y catálogo](./emision-items-y-catalogo.md) |
 | `unidad_de_medida` en un ítem que ya existe | No se revalida contra el catálogo 03: llega tal cual al `unitCode` del XML. Solo se valida al **crear** el ítem |
 | `items[]` **sin** `codigo_interno` | Todas esas líneas se resuelven al mismo producto interno y acaban compartiendo descripción |
+| `codigo_producto_sunat` de 8 dígitos que no existe en el catálogo 25 | Se imprime tal cual: el Facturador solo comprueba el formato ([avisos](#codigo_producto_sunat_ignorado)). SUNAT lo observa hoy (OBS-3496) y desde el **2027-01-01** rechaza el comprobante (ERR-3496) |
 
 ## Cosas que conviene saber
 

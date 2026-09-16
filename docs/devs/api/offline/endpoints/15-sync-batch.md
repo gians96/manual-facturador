@@ -212,11 +212,11 @@ momento.
                     "id": 25,
                     "number": "NV01-25",
                     "external_id": "4611364d-2bc8-482c-9eea-4162216d582b",
-                    "filename": "NV01-25-20260418",
-                    "state_type_id": "01"
+                    "cash_registered": true
                 },
                 "cash_registered": true,
-                "cash_error_code": null
+                "cash_error_code": null,
+                "cash_message": null
             },
             {
                 "index": 1,
@@ -227,9 +227,12 @@ momento.
                     "id": 123,
                     "number": "B001-90",
                     "external_id": "4506ba3e-fd30-44b3-9646-603d8236a02f",
-                    "filename": "20123456789-03-B001-90",
-                    "state_type_id": "01"
-                }
+                    "warnings": [],
+                    "cash_registered": true
+                },
+                "cash_registered": true,
+                "cash_error_code": null,
+                "cash_message": null
             },
             {
                 "index": 2,
@@ -240,8 +243,15 @@ momento.
                     "id": 45,
                     "number": "T001-13",
                     "external_id": "xyz-dispatch-uuid",
-                    "filename": "20123456789-09-T001-13"
-                }
+                    "filename": "20123456789-09-T001-13",
+                    "signed": true,
+                    "sign_message": null,
+                    "warnings": [],
+                    "cash_registered": true
+                },
+                "cash_registered": true,
+                "cash_error_code": null,
+                "cash_message": null
             }
         ],
         "total": 3,
@@ -289,6 +299,58 @@ momento.
     }
 }
 ```
+
+### Avisos de facturas, boletas y notas — `data.warnings`
+
+:::info Desde el 2026-09-16
+Las filas `01`, `03`, `07` y `08` emitidas traen `data.warnings`, como las guías (ver más abajo).
+Es un campo **añadido**: si tu integración no lo lee, sigue funcionando igual.
+:::
+
+Un aviso **no es un fallo**: el comprobante ya está emitido con su número y la fila sigue con
+`success: true`. Márcala como sincronizada y corrige el dato en tu sistema para las próximas
+ventas. **No la reenvíes**: con el mismo `offline_id` volvería como `was_duplicate`, y esas filas
+no traen `warnings`.
+
+**Trata `data.warnings` como opcional.** Falta en dos casos, aunque la fila sea correcta:
+
+- las filas con `was_duplicate: true`, que se arman con el comprobante que ya existía;
+- el duplicado que el servidor recupera de un error 1062 de MySQL (la misma serie y número ya
+  estaban emitidos): la fila llega con `success: true` y los datos del comprobante existente, sin
+  `warnings`.
+
+Hoy el único aviso de estas filas es `CODIGO_PRODUCTO_SUNAT_IGNORADO`: un `codigo_producto_sunat`
+que no tiene 8 dígitos y no sustituye al código registrado en el producto.
+
+```json
+{
+    "index": 0,
+    "success": true,
+    "offline_id": "e5f6a7b8-c9d0-4e12-9f34-56789abcdef0",
+    "doc_type": "01",
+    "data": {
+        "id": 124,
+        "number": "F001-58",
+        "external_id": "8c2d4e6f-1a3b-4c5d-8e7f-9a0b1c2d3e4f",
+        "warnings": [
+            {
+                "codigo": "CODIGO_PRODUCTO_SUNAT_IGNORADO",
+                "campo": "items.0.codigo_producto_sunat",
+                "mensaje": "Ítem #1: 'codigo_producto_sunat' llegó como '200020001' y no es válido: debe tener 8 dígitos (catálogo 25 de SUNAT), por ejemplo '11101906'. El comprobante lleva el código registrado en el producto; si esta línea creó el producto, quedó registrado con ese mismo valor y conviene corregirlo en Productos."
+            }
+        ],
+        "cash_registered": true
+    },
+    "cash_registered": true,
+    "cash_error_code": null,
+    "cash_message": null
+}
+```
+
+Las claves son las mismas que en los avisos de guía: `codigo`, `campo` y `mensaje`. `campo` cuenta
+las líneas desde 0 (`items.0` es la primera) y el `mensaje`, desde 1 («Ítem #1»). Qué hace el
+servidor con cada valor de `codigo_producto_sunat`:
+[Errores de la API → avisos](../../errores-de-la-api.md#codigo_producto_sunat_ignorado).
 
 ---
 

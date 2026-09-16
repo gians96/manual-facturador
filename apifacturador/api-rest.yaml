@@ -371,7 +371,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -857,7 +857,7 @@ paths:
                 items:
                   - codigo_interno: P0150
                     descripcion: Madera caoba xyz
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1001,7 +1001,7 @@ paths:
                 items:
                   - codigo_interno: P0015
                     descripcion: Pepsi 3 lt
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1158,7 +1158,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1243,7 +1243,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1315,7 +1315,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1467,7 +1467,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1617,7 +1617,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1701,7 +1701,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1773,7 +1773,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -1844,7 +1844,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -2118,7 +2118,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -2190,7 +2190,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -2337,8 +2337,8 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
-                    codigo_producto_gsl: '51121703'
+                    codigo_producto_sunat: null
+                    codigo_producto_gsl: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -2565,7 +2565,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50
@@ -2640,7 +2640,7 @@ paths:
                 items:
                   - codigo_interno: P0121
                     descripcion: Inca Kola 250 ml
-                    codigo_producto_sunat: '51121703'
+                    codigo_producto_sunat: null
                     unidad_de_medida: NIU
                     cantidad: 2
                     valor_unitario: 50

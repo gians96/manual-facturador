@@ -77,6 +77,8 @@ Lo que cambia no es solo el payload. **El documento afectado decide por dónde v
 }
 ```
 
+`items[].codigo_producto_sunat` sigue el mismo contrato que en [factura y boleta](09-boleta-factura.md): con 8 dígitos va al XML de esta nota aunque el producto ya exista; `null` u omitido lleva el código registrado en el producto; otro formato no sustituye al código del producto y la respuesta trae el aviso [`CODIGO_PRODUCTO_SUNAT_IGNORADO`](../../errores-de-la-api.md#codigo_producto_sunat_ignorado) (si la línea crea el producto, este se registra con ese mismo valor). La nota **no** hereda el código que llevó la línea del comprobante afectado: si lo necesitas, envíalo otra vez. Una nota emitida desde el panel lleva el código del producto.
+
 ---
 
 ## Campos propios de la nota

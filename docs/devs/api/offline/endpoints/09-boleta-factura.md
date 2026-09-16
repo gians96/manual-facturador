@@ -187,7 +187,7 @@ error dentro de `results[]`), y a los cuatro tipos `01`/`03`/`07`/`08`. El docum
 |-------|------|-----------|-------------|
 | `codigo_interno` | string | **Sí** | `internal_id` del item descargado |
 | `descripcion` | string | **Sí** | Descripción del producto |
-| `codigo_producto_sunat` | string\|null | No | Código producto SUNAT |
+| `codigo_producto_sunat` | string\|int\|null | No | Código de producto SUNAT: 8 dígitos del catálogo 25 (`"11101906"`). Con 8 dígitos va al XML de este comprobante aunque el producto ya exista, sin cambiar el catálogo. `null` u omitido: va el código registrado en el producto. Otro formato: no sustituye al código del producto y la respuesta trae un aviso en `warnings` ([`CODIGO_PRODUCTO_SUNAT_IGNORADO`](../../errores-de-la-api.md#codigo_producto_sunat_ignorado)); si la línea crea el producto, este se registra con ese mismo valor y el XML lo lleva |
 | `unidad_de_medida` | string | **Sí** | `"NIU"` (unidad), `"KGM"` (kg), `"BX"` (caja), etc. |
 | `cantidad` | float | **Sí** | Cantidad vendida |
 | `valor_unitario` | float | **Sí** | Precio sin IGV = `precio_unitario / 1.18` (si gravado) |
@@ -278,7 +278,8 @@ error dentro de `results[]`), y a los cuatro tipos `01`/`03`/`07`/`08`. El docum
         "pdf": "https://demo.nt-suite.pro/downloads/document/pdf/4506ba3e-fd30-44b3-9646-603d8236a02f",
         "cdr": ""
     },
-    "response": []
+    "response": [],
+    "warnings": []
 }
 ```
 
@@ -295,6 +296,7 @@ error dentro de `results[]`), y a los cuatro tipos `01`/`03`/`07`/`08`. El docum
 | `links.pdf` | string | URL para descargar PDF |
 | `links.xml` | string | URL para descargar XML |
 | `links.cdr` | string | URL para descargar CDR (constancia SUNAT) |
+| `warnings` | array | Avisos sobre datos enviados que no son válidos; el comprobante ya está emitido. `[]` si no hay. Ver [avisos](../../errores-de-la-api.md#avisos) |
 
 ---
 
@@ -421,7 +423,7 @@ Cuando `codigo_tipo_operacion` es `"1001"` o `"1004"`, se debe incluir el bloque
         {
             "codigo_interno": "OLV30",
             "descripcion": "ACEITE DE OLIVA COSMETICO FCO X30ML",
-            "codigo_producto_sunat": "51121703",
+            "codigo_producto_sunat": null,
             "unidad_de_medida": "NIU",
             "cantidad": 500,
             "valor_unitario": 84.7457627118644,

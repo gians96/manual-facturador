@@ -76,7 +76,7 @@ Content-Type: application/json
 | `id` | int\|null | No | `null` para crear nuevo, ID para actualizar |
 | `item_type_id` | string | **Sí** | `"01"` = Producto, `"02"` = Servicio |
 | `internal_id` | string | **Sí** | Código interno único del producto |
-| `item_code` | string\|null | No | Código de barras o código adicional |
+| `item_code` | string\|null | No | Código de producto SUNAT (8 dígitos, catálogo 25), por ejemplo `"11101906"`. Va al XML de los comprobantes que usan el código del producto. No se valida el formato: escribe solo los 8 dígitos o `null`. El código de barras va en `barcode` |
 | `item_code_gs1` | string\|null | No | Código GS1 |
 | `description` | string | **Sí** | Descripción del producto |
 | `name` | string | **Sí** | Nombre del producto |
@@ -142,7 +142,7 @@ Mismo formato que registrar, pero con `id` obligatorio:
     "id": 150,
     "item_type_id": "01",
     "internal_id": "PROD001",
-    "item_code": "nuevo_codigo",
+    "item_code": null,
     "description": "Aceite de Oliva Premium 250ml",
     "name": "Aceite de Oliva Premium 250ml",
     "unit_type_id": "NIU",

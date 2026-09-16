@@ -277,7 +277,17 @@ components:
                 example: "Inca Kola 250 ml"
               codigo_producto_sunat:
                 type: string
-                example: "51121703"
+                nullable: true
+                description: >-
+                  Código de producto SUNAT: 8 dígitos del catálogo 25 (UNSPSC), por ejemplo
+                  `"11101906"`. Con 8 dígitos se imprime en el XML de este comprobante aunque el
+                  producto ya exista, sin modificar el catálogo de productos. Si es `null` o se omite,
+                  el comprobante lleva el código registrado en el producto. Con otro formato se
+                  ignora (va el del producto) y la respuesta trae un aviso en `warnings` con
+                  `codigo: "CODIGO_PRODUCTO_SUNAT_IGNORADO"`. El sistema solo comprueba el formato: un
+                  código de 8 dígitos que no exista en el catálogo 25 lo observa SUNAT (3496) y,
+                  desde el 2027-01-01, lo rechaza. Al crear un producto nuevo se guarda tal como llega.
+                example: null
               unidad_de_medida:
                 type: string
                 description: Catálogo de unidades SUNAT ("NIU" unidad, "ZZ" servicio, etc.).
@@ -441,6 +451,32 @@ components:
           type: boolean
           description: '`true` cuando la emisión se deduplicó por `offline_id` (se devolvió un documento ya existente).'
           example: false
+        warnings:
+          type: array
+          description: >-
+            Avisos sobre datos enviados que no son válidos. **No son errores**: el comprobante se
+            emitió igual y `success` es `true`. Llega como `[]` si no hay avisos. Tiene la misma
+            forma que los avisos de las guías de remisión (`codigo`, `campo`, `mensaje`). Hoy el
+            único aviso de facturas, boletas y notas es `CODIGO_PRODUCTO_SUNAT_IGNORADO`: un
+            `codigo_producto_sunat` que no tiene 8 dígitos y no sustituye al código registrado en el producto.
+          items:
+            type: object
+            properties:
+              codigo:
+                type: string
+                description: >-
+                  Código del aviso. Uno no numérico es un aviso del sistema, no un código de SUNAT.
+                example: "CODIGO_PRODUCTO_SUNAT_IGNORADO"
+              campo:
+                type: string
+                description: >-
+                  Campo del payload al que se refiere. Las líneas de `items` se cuentan desde 0:
+                  `items.0` es la primera.
+                example: "items.0.codigo_producto_sunat"
+              mensaje:
+                type: string
+                description: Texto en español para mostrar o registrar. Numera las líneas desde 1.
+                example: "Ítem #1: 'codigo_producto_sunat' llegó como '200020001' y no es válido: debe tener 8 dígitos (catálogo 25 de SUNAT), por ejemplo '11101906'. El comprobante lleva el código registrado en el producto; si esta línea creó el producto, quedó registrado con ese mismo valor y conviene corregirlo en Productos."
       required:
         - success
         - data

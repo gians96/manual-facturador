@@ -79,6 +79,8 @@ La nota de débito **incrementa** el importe de una factura o boleta ya emitida:
 
 Los items y totales son **el importe adicional a cobrar**, no el total del documento original.
 
+`items[].codigo_producto_sunat` sigue el mismo contrato que en [factura y boleta](09-boleta-factura.md) y en la [nota de crédito](10-nota-credito.md): 8 dígitos van al XML de esta nota; `null` u omitido, el código del producto; otro formato no sustituye al código del producto y trae el aviso [`CODIGO_PRODUCTO_SUNAT_IGNORADO`](../../errores-de-la-api.md#codigo_producto_sunat_ignorado).
+
 ---
 
 ## Campos propios de la nota
