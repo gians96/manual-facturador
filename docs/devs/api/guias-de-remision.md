@@ -727,6 +727,19 @@ Error al obtener token - Error en la autenticacion del usuario. (codigo access_d
 no hubo respuesta del servidor (Operation timed out after 2000 milliseconds)
 ```
 
+**Quién es el culpable, según el código**
+
+SUNAT valida **primero el usuario** y después el cliente, así que el código reparte la culpa sin
+ambigüedad (comprobado el 2026-09-15 repitiendo la petición con un `client_secret` inventado):
+
+| Código | De quién es | Qué revisar |
+|---|---|---|
+| `access_denied` | Del **usuario SOL** | Que sea un usuario **secundario** con perfil de guía de remisión, escrito como RUC + usuario, con su clave del portal. Que entre al portal no basta: el portal también admite al usuario principal |
+| `unauthorized_client` | Del **Client ID o la CLAVE** | Que se hayan copiado bien y pertenezcan a ese RUC |
+
+Desde el panel esto se comprueba sin emitir nada con el botón **Verificar credenciales** de
+Configuración → Empresa → Guías electrónicas.
+
 **Las causas más frecuentes**
 
 - **RUC incorrecto, debe ser de 11 dígitos.** En demo el usuario se arma con el RUC de la

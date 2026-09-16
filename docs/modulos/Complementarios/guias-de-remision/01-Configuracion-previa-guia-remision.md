@@ -12,8 +12,12 @@ Deberá completar los siguientes campos:
 
 ![Alt text](img/nuevaguia4.jpg)
 
-* **SOAP Usuario:** Para completar este campo, coloque el usuario secundario creado al configurar su cuenta por primera vez.
-* **SOAP Password:**  Para completar este campo,  coloque la contraseña del usuario secundario creado al configurar su cuenta por primera vez.
+* **SOAP Usuario:** el **RUC seguido del usuario secundario**, sin espacios ni guiones. Por ejemplo, si el RUC es `20123456789` y el usuario secundario es `MIUSUARIO`, aquí va `20123456789MIUSUARIO`. SUNAT lo exige así: con el usuario solo, el envío falla con «Error en la autenticación del usuario».
+* **SOAP Password:** la clave SOL de ese usuario secundario.
+
+:::warning Tiene que ser un usuario SECUNDARIO
+El usuario principal entra al portal de SUNAT pero **no sirve** para enviar guías, y el error que devuelve SUNAT es el mismo que el de una clave equivocada. Si no tienes uno, créalo desde el portal con el usuario principal y dale permisos de Guía de Remisión Electrónica.
+:::
 
 :::danger importante
 
@@ -47,6 +51,32 @@ Copiamos esos accesos y lo pegamos en:
 ![Alt text](img/nuevaguia.jpg)
 
 Selecciona el botón **Guardar** y ya puede generar su guía. Conoce como en el siguiente **[artículo](./05-Generar-guias-de-remision.md)**.
+
+## Comprobar las credenciales antes de emitir
+
+En esa misma tarjeta hay un botón **Verificar credenciales**. Pide el token a SUNAT y te dice si lo
+acepta: **no emite ninguna guía** ni guarda nada, así que se puede usar mientras configuras. Prueba lo
+que está escrito en pantalla, y lo que dejes vacío lo toma de lo ya guardado.
+
+Qué significa cada respuesta:
+
+| Respuesta | Qué revisar |
+|---|---|
+| «SUNAT aceptó las credenciales» | Nada: ya puedes emitir |
+| Error del **usuario SOL** | El usuario secundario: que exista, que tenga permiso de guías y que esté escrito como RUC + usuario |
+| Error del **Client ID o la CLAVE** | Vuelve a copiarlos de *Credenciales de API SUNAT* |
+| «No se llegó a SUNAT» | La salida a internet del servidor (proxy o cortafuegos) |
+
+:::warning No lo repitas a ciegas
+Varios intentos fallidos seguidos pueden hacer que SUNAT bloquee el usuario SOL. Corrige el dato antes de volver a probar.
+:::
+
+:::info Si tu empresa está en Demo
+En Demo el sistema no habla con SUNAT, sino con un emulador de pruebas, y el botón lo indica. Ahí
+comprueba que el servidor llega al emulador y que el RUC esté bien escrito, pero **no** valida tus
+credenciales reales. Para eso, marca la casilla **«probar también las de producción»**: hace la consulta
+contra SUNAT sin cambiar el entorno de tu empresa.
+:::
 
 ## Diseño del PDF de la guía (A4)
 
