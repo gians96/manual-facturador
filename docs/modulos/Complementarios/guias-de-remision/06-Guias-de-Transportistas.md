@@ -49,7 +49,7 @@ Tendrá que rellenar los siguientes campos:
 
 2. Una vez completado, selecciona el botón **Agregar** y luego **Generar**.
 
-## Corregir, recrear o eliminar una guía de transportista
+## Corregir, recrear, eliminar o anular una guía de transportista
 
 Desde el listado de **G.R Transportista**, una guía *Registrada* o *Rechazada* ofrece:
 
@@ -60,6 +60,17 @@ Desde el listado de **G.R Transportista**, una guía *Registrada* o *Rechazada* 
   sin sus archivos. Necesita el permiso de usuario **Recrear documentos**.
 - **Eliminar** (menú ⋮): antes de borrarla, el sistema le pregunta a SUNAT. Si SUNAT la tiene, o
   no responde, no se borra.
+
+Y una guía ya *Aceptada* ofrece **Marcar como anulada** (menú ⋮), igual que en G.R Remitente:
+deja el estado del sistema igual al de SUNAT después de haber dado la guía de baja **en el
+portal de SUNAT**, que es el único sitio donde se anula de verdad y solo el mismo día de la
+emisión. La guía anulada conserva su **XML**, su **PDF**, su **CDR** y el botón **Opciones**.
+Ver [Marcar una guía como anulada](./02-Listado-de-guias-de-remision.md#marcar-una-guía-como-anulada).
+
+:::danger SUNAT no anula las guías del transportista
+Tampoco las del remitente: no existe comunicación de baja para las guías de remisión. Marcarla
+como anulada aquí **solo actualiza el estado en el sistema**, no en SUNAT.
+:::
 
 :::info Guías emitidas por API
 Si la guía la creó otra aplicación por API, al editarla puede que el remitente, el destinatario o
