@@ -425,3 +425,30 @@ En servidores antiguos recuperados con el subdominio directo de nginx-proxy, el 
 curl -I http://localhost:8080/api/offline/business-turns
 curl -I http://localhost:8080/api/pro8/catalogs/ubigeo
 ```
+
+## WhatsApp: worker y Evolution propio (desde 2026-09-17)
+
+El script de actualización deja listo el envío de comprobantes por WhatsApp, sin cambiar por dónde
+salen los que ya funcionaban:
+
+- agrega al `supervisor.conf` el programa `laravel-whatsapp-worker` (cola `whatsapp`) si falta;
+- levanta el contenedor `evolution_<prefijo>` (Evolution API) usando la MariaDB y el Redis del stack,
+  y deja `EVOLUTION_SELFHOSTED_URL` y `EVOLUTION_SELFHOSTED_KEY` en el `.env`.
+
+Para pasar los WhatsApp del proxy externo al Evolution de este servidor (más rápido: de ~10 s a
+~1 s por comprobante):
+
+1. `/configurations` → **Servidor Evolution** → **Probar conexión** → **«Usar el Evolution de este
+   servidor»**.
+2. Cada negocio: **Configuración → WhatsApp → «Envío de comprobantes» → Renovar** y escanear el QR.
+   Las sesiones no se trasladan entre servidores.
+
+Comprobar:
+
+```bash
+docker exec supervisor_<prefijo> supervisorctl status | grep laravel-whatsapp-worker   # RUNNING
+docker ps --filter name=evolution_<prefijo>
+```
+
+- **No instalarlo en este servidor:** `EVOLUTION_SELF_HOSTED=false` en el `.env` antes de actualizar.
+- Cuesta ~275 MB de RAM y su base entra en el backup pre-update.

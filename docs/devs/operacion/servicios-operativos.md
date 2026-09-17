@@ -101,6 +101,26 @@ ejecuta esta comprobación al terminar, devolviendo error si algo no se alcanza.
 | `nubetec:sync-tenants --limit=200` | Federa empresas hacia la plataforma | diaria 03:30 | `tail storage/logs/nubetec_sync_tenants.log` | `nubetec_sync_tenants.log` |
 | `nubetec:seed-subscriptions` | Refleja el plan de cada empresa al día | diaria 03:45 | `tail storage/logs/nubetec_seed_subscriptions.log` | `nubetec_seed_subscriptions.log` |
 
+## Colas y WhatsApp (contenedor `supervisor_*`)
+
+Supervisor mantiene vivos los procesos que vacían las colas. Si ese contenedor está parado, los
+trabajos en cola —incluidos los WhatsApp de comprobantes— se quedan esperando sin avisar.
+
+| Programa | Qué hace | Cómo verificar que está vivo |
+|---|---|---|
+| `laravel-worker` (2 procesos) | Cola `default`: correos, webhooks y demás trabajos | `docker exec supervisor_nt-suite_pro supervisorctl status` |
+| `laravel-whatsapp-worker` (1 proceso) | Cola `whatsapp`: envía los comprobantes por el WhatsApp conectado (arma el PDF, y el XML si se pidió) | `docker exec supervisor_nt-suite_pro supervisorctl status` → `laravel-whatsapp-worker … RUNNING` |
+| `evolution_<prefijo>` (contenedor aparte) | El WhatsApp en sí (Evolution API), cuando el servidor usa el suyo propio en vez del proxy externo | `docker ps --filter name=evolution_nt-suite_pro` |
+
+- **Un solo intento por envío:** reintentar mandaría el comprobante dos veces. Un envío sin respuesta
+  queda como «no confirmado» y lo decide el cajero.
+- **Si las entregas se quedan en cola:** comprueba que ese programa esté `RUNNING` y que el `.env`
+  tenga `QUEUE_CONNECTION=redis`. El script de actualización agrega el programa si falta.
+- **Qué servidor de WhatsApp se usa:** se elige en **Configuraciones → Servidor Evolution** del panel
+  del superadmin. Al cambiar de servidor, cada negocio debe volver a escanear su QR.
+- La API del envío está en
+  [38 — Envío de comprobantes por WhatsApp](../api/offline/endpoints/38-envio-de-comprobantes-por-whatsapp.md).
+
 ## Servicios del host (fuera de Docker)
 
 Estos **no** pueden vivir en el contenedor: `restic` está instalado en el host, el volcado

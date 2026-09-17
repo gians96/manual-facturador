@@ -276,6 +276,19 @@ Misma estructura que Boleta/Factura (campos en español):
 }
 ```
 
+:::tip Envío automático por WhatsApp
+Si el negocio tiene activo el envío automático por WhatsApp, la respuesta trae además
+`whatsapp_delivery` con la entrega que quedó en cola:
+
+```json
+"whatsapp_delivery": { "delivery_id": 41, "status": "queued", "attachments": ["pdf"] }
+```
+
+Va en `null` cuando no aplica (opción apagada, cliente sin celular, sin número conectado o sin cupo).
+Detalle y seguimiento en
+[38 — Envío de comprobantes por WhatsApp](38-envio-de-comprobantes-por-whatsapp.md).
+:::
+
 ---
 
 ## Notas para Offline
