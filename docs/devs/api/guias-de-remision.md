@@ -554,6 +554,7 @@ no los conoce, pero te dicen que la guía no va a quedar exactamente como la env
 | `3616` | `fecha_de_traslado` | Con el indicador, el traslado empieza antes de la entrega al transportista |
 | `3618` | `fecha_entrega_transporte` | Anterior a la de emisión |
 | `4186` | `observaciones` | Más de 250 caracteres |
+| `4190` | `descripcion_motivo_traslado` | Motivo `13` con una descripción de menos de 3 letras |
 | `4371` | `documento_relacionado.N.documento.descripcion` | Documento relacionado con código y sin descripción: el XML sale con `cbc:DocumentType` vacío |
 | `4372` | `documento_relacionado.N.documento.descripcion` | Descripción de más de 120 caracteres o con saltos de línea |
 | `4391` | `transportista.numero_mtc` | Sin registro del Ministerio de Transportes |
@@ -566,6 +567,7 @@ no los conoce, pero te dicen que la guía no va a quedar exactamente como la env
 | `4407` | `vehiculo.codigo_entidad_autorizadora` | Entidad del vehículo fuera del D-37: **no se emite** |
 | `REDONDEO_PESO` | `peso_total` | El peso se guarda con 2 decimales: el tercero se redondea (`34.825` queda en `34.83`) |
 | `REDONDEO_CANTIDAD` | `items.N.cantidad` | La cantidad de un bien se guarda con 4 decimales y se redondea |
+| `RECORTE_DESCRIPCION_MOTIVO` | `descripcion_motivo_traslado` | La descripción del motivo pasa de 100 caracteres: viaja cortada en `cbc:HandlingInstructions`. En la guía de transportista no aplica |
 | `SECUNDARIO_INCOMPLETO` | `chofer_secundario.N` · `vehiculo_secundario.N.numero_de_placa` | Conductor secundario a medias (sale con datos vacíos), o vehículo secundario con TUC o autorización y sin placa (sale con la placa vacía). Mismas condiciones que `2570` |
 | `AUTORIZACION_NO_EMITIDA` | `vehiculo.numero_autorizacion_especial` · `vehiculo_secundario.N.numero_autorizacion_especial` | Autorización de un vehículo completa y válida, pero en una guía sin el régimen: transporte privado (`02`), o público (`01`) sin `indicador_vehiculos_conductores_transportista`. Se guarda, pero **no viaja en el XML**. La del transportista sí viaja en cualquier caso |
 
@@ -577,9 +579,11 @@ autorización, porque el sistema nunca inventa la entidad que falta ni emite lo 
 admite; con `4396` y `4406` la autorización sí viaja, y SUNAT la observa. Los de un vehículo
 secundario nombran su posición: `vehiculo_secundario.0.…`.
 
-Los códigos **no numéricos** (`REDONDEO_PESO`, `REDONDEO_CANTIDAD`, `SECUNDARIO_INCOMPLETO` y
-`AUTORIZACION_NO_EMITIDA`) son avisos del sistema, no de SUNAT. Estos cuatro, `2570`, `3409`,
-`4371`, `4372`, `4396` y `4406` existen desde el 2026-09-15.
+Los códigos **no numéricos** (`REDONDEO_PESO`, `REDONDEO_CANTIDAD`, `SECUNDARIO_INCOMPLETO`,
+`AUTORIZACION_NO_EMITIDA` y `RECORTE_DESCRIPCION_MOTIVO`) son avisos del sistema, no de SUNAT. Los
+cuatro primeros, `2570`, `3409`, `4371`, `4372`, `4396` y `4406` existen desde el 2026-09-15;
+`4190` y `RECORTE_DESCRIPCION_MOTIVO`, desde el 2026-09-16, cuando la descripción del motivo empezó
+a viajar en el XML.
 
 Por API, `3357` y `2566` casi no se ven como aviso: con
 `indicador_vehiculos_conductores_transportista` en `true`, la emisión ya responde

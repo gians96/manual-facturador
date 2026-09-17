@@ -484,7 +484,12 @@ components:
           example: "TOYOTA"
         certificado_habilitacion_vehicular:
           type: string
-          description: Opcional. TUC / certificado de habilitación vehicular.
+          description: >-
+            Opcional. Número de la **Constancia de Inscripción Vehicular, Certificado de
+            Habilitación Vehicular o TUC** (física o electrónica) de **este** vehículo; en otros
+            sistemas, «Constancia Insc. MTC» o «TUCE». El tracto y el remolque tienen cada uno la
+            suya, y en la guía de transportista cada vehículo envía la propia. SUNAT exige de 10 a
+            15 caracteres, solo mayúsculas y números, o rechaza con 3355; sin él observa 4399.
           example: ""
 
     ItemGuia:

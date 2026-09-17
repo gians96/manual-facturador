@@ -989,7 +989,10 @@ components:
                 número de autorización (4396, 4406), el conductor secundario sin tipo de
                 documento (2570) y cuatro **avisos del sistema**, con código no numérico porque
                 no vienen de SUNAT: `REDONDEO_PESO`, `REDONDEO_CANTIDAD`,
-                `SECUNDARIO_INCOMPLETO` y `AUTORIZACION_NO_EMITIDA`.
+                `SECUNDARIO_INCOMPLETO` y `AUTORIZACION_NO_EMITIDA`. Desde el 2026-09-16 suma
+                los de la descripción del motivo: `RECORTE_DESCRIPCION_MOTIVO` (más de 100
+                caracteres, viaja cortada) y 4190 (motivo "13" con menos de 3 letras). Lista
+                completa en [Avisos antes de emitir](/devs/api/guias-de-remision#avisos-antes-de-emitir).
               items:
                 type: object
                 properties:

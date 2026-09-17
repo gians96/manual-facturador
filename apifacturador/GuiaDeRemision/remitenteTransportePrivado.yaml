@@ -703,8 +703,9 @@ components:
                 guardar distinto de como lo enviaste. **No bloquean**: la guía ya se emitió.
                 Campo aditivo. En transporte privado interesan sobre todo 2567 (placa con
                 separadores), 2570 y `SECUNDARIO_INCOMPLETO` (secundarios a medias), y los
-                avisos del sistema `REDONDEO_PESO`, `REDONDEO_CANTIDAD` y
-                `AUTORIZACION_NO_EMITIDA` (autorización de un vehículo que no viaja), con código
+                avisos del sistema `REDONDEO_PESO`, `REDONDEO_CANTIDAD`,
+                `AUTORIZACION_NO_EMITIDA` (autorización de un vehículo que no viaja) y
+                `RECORTE_DESCRIPCION_MOTIVO` (descripción del motivo de más de 100 caracteres), con código
                 no numérico porque no vienen de SUNAT. Lista completa en
                 [Avisos antes de emitir](/devs/api/guias-de-remision#avisos-antes-de-emitir).
               items:
