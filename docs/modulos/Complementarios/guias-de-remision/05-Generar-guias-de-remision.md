@@ -63,6 +63,10 @@ Si el punto de llegada no carga correctamente, usa el botón **+Nuevo** y selecc
 - **Datos del conductor:** Selecciona uno o varios conductores, también puedes crear un nuevo conductor con el botón **+Nuevo**.
 - **Datos del vehículo:** Selecciona uno o varios vehículos y sus números de placas correspondientes, o crea un nuevo vehículo con el botón **+Nuevo**.
 
+:::warning El campo «N° placa semirremolque» no se envía a SUNAT
+Solo sale impreso en el PDF, sin constancia. Para que SUNAT reciba el remolque o semirremolque, regístralo en [Creación de vehículos](./09-Creacion-de-Vehiculos.md) con su placa y su constancia (TUC), y agrégalo como **segundo vehículo** en **Datos del vehículo**.
+:::
+
 ## Datos del Modo de Traslado: Transporte Público
 
 ![Alt text](img/guiactualizada3.jpg)
@@ -75,6 +79,8 @@ Marca la casilla **Registrar vehículos y conductores del transportista** cuando
 
 - **Conductor principal y placa son obligatorios para SUNAT.** Sin ellos rechaza la guía.
 - La tabla de vehículos muestra el **TUC** y la **Aut. especial** (número y entidad) de cada vehículo, tal como están en [Creación de vehículos](./09-Creacion-de-Vehiculos.md).
+- **Tracto y remolque:** el tracto es el primer vehículo y el remolque o semirremolque, el segundo; cada uno con **su propia** constancia (TUC). Aquí no hay campo de semirremolque: el remolque se declara siempre como segundo vehículo, y así sale en el XML y en el PDF (fila *Secundario*).
+- **Materiales o residuos peligrosos:** la guía no tiene una casilla de «material peligroso». Se declara el permiso como **autorización especial** del transportista ([Creación de transportistas](./07-Creacion-de-transportistas.md)), de cada vehículo o de ambos, según a quién se otorgó.
 - Si el vehículo principal **no tiene TUC**, aparece un aviso: SUNAT aceptará la guía pero la observará. La guía se guarda igual.
 - La **fecha de traslado** no puede ser anterior a la **fecha de entrega al transportista**: SUNAT la rechaza.
 

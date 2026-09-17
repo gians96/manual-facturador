@@ -18,7 +18,7 @@ Completa los siguientes campos para crear un nuevo vehículo:
 
 **4. Predeterminado**: Activa si el vehículo es de manera frecuente.
 
-**5. Certificado de habilitación vehicular:** Campo donde se debe ingresar el número del certificado que acredita la habilitación del vehículo para operar (TUC), de 10 a 15 caracteres.
+**5. Certificado de habilitación vehicular:** Campo donde se debe ingresar el número del certificado que acredita la habilitación del vehículo para operar (TUC), de 10 a 15 caracteres. Es el mismo número que otros sistemas llaman **Constancia de Inscripción MTC** o **TUCE** (por ejemplo `15MRP24004544E`). Un remolque o semirremolque se registra como un vehículo más, con **su propia** constancia.
 
 Además hay dos campos opcionales para la **autorización especial** del vehículo:
 

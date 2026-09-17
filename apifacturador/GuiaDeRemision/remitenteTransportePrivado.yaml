@@ -220,7 +220,13 @@ components:
           example: "04"
         descripcion_motivo_traslado:
           type: string
-          description: Obligatoria cuando `codigo_motivo_traslado` es "13" Otros; opcional en el resto.
+          description: >-
+            Obligatoria cuando `codigo_motivo_traslado` es "13" Otros; opcional en el resto.
+            Desde el 2026-09-16 **viaja a SUNAT** en `cbc:HandlingInstructions` con cualquier
+            motivo (antes se enviaba siempre el texto del catálogo). Se envía sin saltos de línea
+            ni tabuladores y cortada a 100 caracteres (aviso `RECORTE_DESCRIPCION_MOTIVO`); en el
+            "13", con menos de 3 letras SUNAT observa 4190 y la respuesta lo avisa. Sin descripción
+            viaja el texto del catálogo.
           example: "Traslado entre almacenes"
         codigo_modo_transporte:
           type: string

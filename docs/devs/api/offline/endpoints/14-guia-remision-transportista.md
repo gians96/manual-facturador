@@ -64,10 +64,10 @@ La guía de remisión del transportista la emite la **empresa de transporte** qu
         "telefono": "999888777"
     },
     "vehiculo": {
-        "numero_de_placa": "ABC-123",
+        "numero_de_placa": "ABC123",
         "modelo": "HINO 500",
         "marca": "HINO",
-        "certificado_habilitacion_vehicular": "HAB-001"
+        "certificado_habilitacion_vehicular": "15M24000001E"
     },
     "vehiculo_secundario": [
         {

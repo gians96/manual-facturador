@@ -29,7 +29,7 @@ También puedes llegar desde **Configuración → Empresa → Avanzado → pesta
 - **Restaurar:** vuelve atrás (ver más abajo).
 - **Guardar:** se activa cuando hay cambios. Arriba a la derecha verás **Cambios sin guardar** o la fecha en que se guardó.
 - **Estilo general:** letra, espaciado, colores y bordes de toda la plantilla.
-- **Ver con:** **Guía de ejemplo** (datos ficticios que llenan todos los bloques) o **Guía real** (busca una guía tuya por serie-número).
+- **Ver con:** **Guía de ejemplo** (datos ficticios que llenan todos los bloques: en la guía remitente, un retorno a almacén con motivo 13, tracto y remolque con su constancia, autorización especial del transportista y 297 bultos) o **Guía real** (busca una guía tuya por serie-número, como `T001-209`, o solo por el número, como `209`).
 
 No tienes que crear nada: abres la página y editas directamente.
 

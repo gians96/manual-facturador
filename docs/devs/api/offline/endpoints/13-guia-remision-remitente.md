@@ -77,12 +77,12 @@ La guía de remisión del remitente documenta el **traslado de bienes** desde un
     "chofer": {
         "codigo_tipo_documento_identidad": "1",
         "numero_documento": "12345678",
-        "nombres": "JUAN PEREZ GARCIA",
+        "nombres": "PEREZ GARCIA, JUAN",
         "numero_licencia": "Q12345678",
         "telefono": "999888777"
     },
     "vehiculo": {
-        "numero_de_placa": "ABC-123",
+        "numero_de_placa": "ABC123",
         "modelo": "HINO 500",
         "marca": "HINO",
         "certificado_habilitacion_vehicular": null
@@ -124,7 +124,7 @@ sistema trata `null` y `""` como `"0000"`, pero una instalación sin actualizar 
 | `observaciones` | string | No | Viajan a SUNAT en el XML; con más de 250 caracteres SUNAT observa `4186`. **Desde el 2026-09-14 el PDF A4 no las imprime por defecto**: se activan en la [plantilla de la guía](../../../../modulos/configuracion-y-mas/configuracion-globales/Plantillas/Plantillas-pdf-guias.md) |
 | `codigo_modo_transporte` | string | **Sí** | `"01"` Transporte público, `"02"` Transporte privado |
 | `codigo_motivo_traslado` | string | **Sí** | Ver tabla de motivos |
-| `descripcion_motivo_traslado` | string | No | Descripción del motivo |
+| `descripcion_motivo_traslado` | string | No | Descripción del motivo. **Obligatoria con el motivo `13`.** Desde el 2026-09-16 viaja a SUNAT en `cbc:HandlingInstructions` con cualquier motivo (antes viajaba siempre el texto del catálogo y esta solo salía en el PDF). Se envía sin saltos de línea ni tabuladores y cortada a 100 caracteres (aviso `RECORTE_DESCRIPCION_MOTIVO`); en el `13`, con menos de 3 letras SUNAT observa y la respuesta avisa `4190`. Sin descripción viaja el texto del catálogo |
 | `fecha_de_traslado` | string | **Sí** | Fecha inicio del traslado `YYYY-MM-DD` |
 | `fecha_entrega_transporte` | string | No | Solo transporte público (`01`): fecha en que entregas los bienes al transportista, `YYYY-MM-DD`. Si no la envías, viaja `fecha_de_traslado` en su lugar. Anterior a `fecha_de_emision`: aviso `3618` (SUNAT la rechaza, pero la guía se genera y se firma igual) |
 | `indicador_de_transbordo` | bool | No | Si hay transbordo. Desde el 2026-09-09 también se acepta como texto (`"true"` / `"false"`); ausente cuenta como `false`. Antes, un `"FALSE"` de texto se rechazaba nombrando una columna interna |
@@ -139,11 +139,13 @@ sistema trata `null` y `""` como `"0000"`, pero una instalación sin actualizar 
 |-------|------|-----------|-------------|
 | `ubigeo` | string | **Sí** | Código ubigeo (6 dígitos) |
 | `direccion` | string | **Sí** | Dirección completa (máx. 100 caracteres) |
-| `codigo_del_domicilio_fiscal` | string\|null | No | Código establecimiento SUNAT. Opcional **de verdad desde el 2026-09-09**: antes, omitir la clave devolvía un 500 aunque aquí figurase como opcional. Si no aplica, omítela o envía `null`; el servidor usa `"0000"` |
+| `codigo_del_domicilio_fiscal` | string\|null | No | Código establecimiento SUNAT. Opcional **de verdad desde el 2026-09-09**: antes, omitir la clave devolvía un 500 aunque aquí figurase como opcional. Si no aplica, omítela o envía `null`; el servidor usa `"0000"`. **En la partida hoy el XML emite siempre `"0000"` con el RUC de tu empresa**, aunque envíes otro código |
 
 ### `direccion_llegada` (destino)
 
-Misma estructura que `direccion_partida`.
+Misma estructura que `direccion_partida`. El código de establecimiento de la llegada viaja asociado
+al **RUC del destinatario** (solo si el destinatario tiene RUC y el motivo no es `18`): uno
+distinto de `"0000"` tiene que estar declarado en SUNAT para ese RUC y con el mismo ubigeo.
 
 ### `transportista`
 
@@ -192,12 +194,13 @@ vacíos y avisa `SECUNDARIO_INCOMPLETO`; sin `codigo_tipo_documento_identidad`, 
 | `numero_de_placa` | string | **Sí** | Placa del vehículo, sin guiones ni espacios |
 | `modelo` | string | No | Modelo del vehículo |
 | `marca` | string | No | Marca del vehículo |
-| `certificado_habilitacion_vehicular` | string\|null | No | TUC. Solo viaja al XML en transporte público con el indicador |
+| `certificado_habilitacion_vehicular` | string\|null | No | Número de la **Constancia de Inscripción Vehicular, Certificado de Habilitación Vehicular o TUC** (física o electrónica) de **este** vehículo; en otros sistemas, «Constancia Insc. MTC» o «TUCE». De 10 a 15 caracteres, solo mayúsculas y números, o SUNAT rechaza con `3355`. Solo viaja al XML en transporte público con el indicador; ahí, sin él, SUNAT observa `4399` |
 | `numero_autorizacion_especial` | string | No | Desde el 2026-09-14. Autorización especial del vehículo. Mismo formato que la del transportista (aviso `4406`). **Solo viaja al XML con el indicador**: completa y sin él, se guarda y avisa `AUTORIZACION_NO_EMITIDA` |
 | `codigo_entidad_autorizadora` | string | No | Desde el 2026-09-14. Catálogo D-37 |
 
-`vehiculo_secundario` es un arreglo opcional con la misma estructura, de máximo 2 vehículos.
-Tampoco se valida: un vehículo secundario con TUC o autorización especial pero sin
+`vehiculo_secundario` es un arreglo opcional con la misma estructura, de máximo 2 vehículos (desde
+el tercero se descartan). **Aquí va el remolque o semirremolque**: ver
+[Tracto y remolque](#tracto-y-remolque). Tampoco se valida: un vehículo secundario con TUC o autorización especial pero sin
 `numero_de_placa` sale con la placa vacía y avisa `SECUNDARIO_INCOMPLETO`.
 
 ### Vehículos y conductores del transportista
@@ -333,6 +336,105 @@ relacionado (catálogo 61), no de la entidad.
 | `06` | MTC | `13` | OSINERGMIN |
 | `07` | PRODUCE | | |
 
+### Tracto y remolque
+
+SUNAT no tiene un campo de semirremolque. Un tracto con remolque o semirremolque se declara como
+**dos vehículos**, cada uno con su placa y **su propia** constancia de inscripción:
+
+| En tu sistema | Clave | En el XML | En el PDF |
+|---|---|---|---|
+| Placa del tracto y su «Constancia Insc. MTC» | `vehiculo.numero_de_placa` + `vehiculo.certificado_habilitacion_vehicular` | `cac:TransportEquipment` | Fila *Principal* |
+| Placa del remolque y su «Constancia Insc. MTC. R.» | `vehiculo_secundario[0].numero_de_placa` + `vehiculo_secundario[0].certificado_habilitacion_vehicular` | `cac:AttachedTransportEquipment` | Fila *Secundario* |
+
+Las dos constancias viajan al XML y salen en la columna *TUC / Cert. de habilitación* del PDF, que
+es el mismo dato. El campo «N° placa semirremolque» del panel es otra cosa: solo guarda la placa,
+solo se imprime y **no viaja a SUNAT**.
+
+### Materiales o residuos peligrosos
+
+La guía **no tiene una marca de «material peligroso»**: el pliego de SUNAT no trae ningún
+indicador ni campo para eso. Lo que se declara es el **permiso**, como autorización especial:
+
+| Permiso | Dónde va | Cuándo viaja |
+|---|---|---|
+| Autorización del transportista | `transportista.numero_autorizacion_especial` + `transportista.codigo_entidad_autorizadora` | Con o sin indicador |
+| Autorización de un vehículo | `vehiculo` / `vehiculo_secundario[]`: `numero_autorizacion_especial` + `codigo_entidad_autorizadora` | Solo con el indicador |
+| Constancia o TUC de cada vehículo | `certificado_habilitacion_vehicular` | Solo con el indicador |
+| El permiso como documento (opcional) | `documento_relacionado[]` con `documento.id` `"76"` (residuos sólidos) y el `ruc` del transportista | Siempre |
+
+La entidad va del catálogo D-37 de arriba (por ejemplo `06` MTC), **no** el `76`. Envía cada
+autorización donde corresponde según a quién se otorgó: al transportista, a cada vehículo o a
+ambos.
+
+### Ejemplo: retorno a almacén con tracto y remolque (motivo `13`)
+
+Tu empresa devuelve la carga a su almacén después de pesarla en una balanza: es remitente y
+destinataria a la vez, lo que SUNAT permite en el motivo `13` (lo prohíbe en `01`, `03`, `05`,
+`06`, `09`, `14` y `17`, regla `2555`, y lo exige en `02`, `04`, `07` y `18`, regla `2554`). Datos
+ficticios:
+
+```json
+{
+    "serie_documento": "T001",
+    "numero_documento": "#",
+    "fecha_de_emision": "2026-09-16",
+    "hora_de_emision": "17:57:13",
+    "codigo_tipo_documento": "09",
+    "datos_del_cliente_o_receptor": {
+        "codigo_tipo_documento_identidad": "6",
+        "numero_documento": "20000000001",
+        "apellidos_y_nombres_o_razon_social": "MI EMPRESA DEMO S.A.C."
+    },
+    "codigo_motivo_traslado": "13",
+    "descripcion_motivo_traslado": "RETORNO A NUESTRO ALMACEN POR PESAJE EN BALANZA",
+    "codigo_modo_transporte": "01",
+    "fecha_de_traslado": "2026-09-16",
+    "fecha_entrega_transporte": "2026-09-16",
+    "indicador_de_transbordo": false,
+    "indicador_vehiculos_conductores_transportista": true,
+    "unidad_peso_total": "TNE",
+    "peso_total": 30.35,
+    "numero_de_bultos": 297,
+    "observaciones": "RETORNO A NUESTRO ALMACEN POR PESAJE EN BALANZA",
+    "direccion_partida": { "ubigeo": "040104", "direccion": "Av. Balanza Demo Km 4.5 - Cerro Colorado", "codigo_del_domicilio_fiscal": "0000" },
+    "direccion_llegada": { "ubigeo": "040104", "direccion": "Cal. Almacén Demo 13 - Cerro Colorado", "codigo_del_domicilio_fiscal": "0000" },
+    "transportista": {
+        "codigo_tipo_documento_identidad": "6",
+        "numero_documento": "20000000002",
+        "apellidos_y_nombres_o_razon_social": "TRANSPORTES DEMO S.R.L.",
+        "numero_mtc": "1500001CNG",
+        "numero_autorizacion_especial": "1500002MRP",
+        "codigo_entidad_autorizadora": "06"
+    },
+    "chofer": {
+        "codigo_tipo_documento_identidad": "1",
+        "numero_documento": "12345678",
+        "nombres": "PEREZ GARCIA, JUAN",
+        "numero_licencia": "Q12345678"
+    },
+    "vehiculo": { "numero_de_placa": "TRC123", "certificado_habilitacion_vehicular": "15MRP00000001E" },
+    "vehiculo_secundario": [
+        { "numero_de_placa": "REM456", "certificado_habilitacion_vehicular": "15MRP00000002E" }
+    ],
+    "documento_relacionado": [
+        { "numero": "1500002MRP", "empresa": "TRANSPORTES DEMO S.R.L.", "ruc": "20000000002",
+          "documento": { "id": "76", "descripcion": "Autorización para manejo y recojo de residuos sólidos peligrosos y no peligrosos" } }
+    ],
+    "items": [
+        { "codigo_interno": "M0001", "descripcion": "MINERAL MOLIDO", "unidad_de_medida": "TNE", "cantidad": 30.35 }
+    ]
+}
+```
+
+Qué mirar en este ejemplo:
+
+- `descripcion_motivo_traslado` lleva el **motivo real**: es lo que SUNAT recibe en el `13`. Un
+  texto genérico como «Otros» no explica el traslado.
+- El remolque (`REM456`) va en `vehiculo_secundario` con **su** constancia, no la del tracto.
+- Los vehículos no llevan autorización propia: el permiso para residuos peligrosos es del
+  transportista, y además se cita como documento `76`.
+- El destinatario no lleva `direccion`: el PDF no imprime la línea vacía.
+
 ### `documento_relacionado`: quién lo emitió
 
 | Campo | Qué hace |
@@ -366,7 +468,7 @@ anterior. Son catorce códigos:
 | `07` | Recojo de bienes transformados |
 | `08` | Importación |
 | `09` | Exportación |
-| `13` | Otros no comprendidos en ningún código del presente catálogo |
+| `13` | Otros no comprendidos en ningún código del presente catálogo. Exige `descripcion_motivo_traslado` |
 | `14` | Venta sujeta a confirmación del comprador |
 | `17` | Traslado de bienes para transformación |
 | `18` | Traslado por emisor itinerante de comprobantes de pago |

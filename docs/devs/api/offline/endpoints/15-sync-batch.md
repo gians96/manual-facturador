@@ -146,8 +146,8 @@ Authorization: Bearer {token}
                 "unidad_peso_total": "KGM",
                 "direccion_partida": { "ubigeo": "150101", "direccion": "Av. Principal 123" },
                 "direccion_llegada": { "ubigeo": "150132", "direccion": "Jr. Los Olivos 456" },
-                "chofer": { "codigo_tipo_documento_identidad": "1", "numero_documento": "12345678", "nombres": "JUAN PEREZ", "numero_licencia": "Q12345678" },
-                "vehiculo": { "numero_de_placa": "ABC-123" },
+                "chofer": { "codigo_tipo_documento_identidad": "1", "numero_documento": "12345678", "nombres": "PEREZ, JUAN", "numero_licencia": "Q12345678" },
+                "vehiculo": { "numero_de_placa": "ABC123" },
                 "datos_del_cliente_o_receptor": { "codigo_tipo_documento_identidad": "6", "numero_documento": "20123456789", "apellidos_y_nombres_o_razon_social": "EMPRESA DEMO S.A.C." },
                 "items": [
                     { "codigo_interno": "ASD", "descripcion": "Mercadería trasladada", "unidad_de_medida": "NIU", "cantidad": 10 }
