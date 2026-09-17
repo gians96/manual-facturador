@@ -10,6 +10,13 @@ Aplica a `POST /api/documents` (facturas, boletas y notas) y a
 `POST /api/offline/sync-batch`, que comparte el mismo pipeline de validación:
 los mismos códigos llegan por las dos vías, con distinto sobre.
 
+:::tip ¿No sabes qué código te llegó?
+Esta página está organizada por `error_code`. Si lo que tienes es un **síntoma** —«manda campos
+que sí envié», «ayer funcionaba», «se emite y no dice lo que envié», «el lote se reenvía sin
+fin»— empieza por [Solución de problemas](./solucion-de-problemas.md), que va del síntoma a la
+causa.
+:::
+
 ## Antes que nada: la cabecera
 
 ```

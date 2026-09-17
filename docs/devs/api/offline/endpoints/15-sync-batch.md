@@ -415,6 +415,10 @@ Si los datos no pasan la validación (serie incorrecta, cliente no encontrado, e
 
 ### Códigos de error — `error_code`
 
+> Si lo que tienes es un síntoma y no un código —«todo el lote falla igual desde ayer», «se
+> reenvía sin fin», «SUNAT rechaza lo que la API aceptó»— empieza por
+> [Solución de problemas](../../solucion-de-problemas.md).
+
 :::info Desde el 2026-09-04
 **Toda** fila fallida de `results[]` trae `error_code`, un código estable para ramificar sin
 tener que leer el texto del `message`. Es un campo **añadido**: si tu integración solo lee
