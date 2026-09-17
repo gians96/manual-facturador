@@ -147,6 +147,21 @@ Misma estructura que `direccion_partida`. El código de establecimiento de la ll
 al **RUC del destinatario** (solo si el destinatario tiene RUC y el motivo no es `18`): uno
 distinto de `"0000"` tiene que estar declarado en SUNAT para ese RUC y con el mismo ubigeo.
 
+:::info La dirección de llegada se guarda en la ficha del destinatario
+Desde el **2026-09-17**, la primera guía que use una dirección de llegada la registra en las
+direcciones del destinatario, igual que si la hubieras añadido desde el panel. Las siguientes
+guías con la misma dirección y el mismo ubigeo **reutilizan** esa ficha, no la duplican, y una
+dirección que ya existía no se modifica.
+
+Se guarda para que la guía se pueda abrir y editar en el panel con su dirección de llegada ya
+seleccionada. No afecta a lo que ve SUNAT: el XML siempre lleva el ubigeo, la dirección y el
+código de establecimiento **tal como los enviaste en esta guía**.
+
+Antes de esa fecha, una guía en modalidad de transporte `01` podía fallar aquí con
+`DATABASE_ERROR` (MySQL 1452) sin que hubiera nada mal en el payload, y el reintento no lo
+arreglaba.
+:::
+
 ### `transportista`
 
 | Campo | Tipo | Requerido | Descripción |

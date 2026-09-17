@@ -475,7 +475,30 @@ pasó y el bloque `errors` lo da estructurado. `error_code` no cambia: si solo l
 |---|---|---|
 | `esquema_desactualizado` | Al servidor le falta una actualización de base de datos. Trae `tabla` y, si aplica, `columna` | ❌ No: avisa a soporte con el `offline_id` y reenvía cuando confirmen |
 | `bloqueo_temporal` | La base de datos estaba ocupada y canceló la operación | ✅ Una vez |
+| `restriccion_no_atribuible` | Un dato que **pone el servidor**, no tu payload, no cumple una restricción de la base. Trae `restriccion` y `tabla` | ❌ No: se repetirá igual. Avisa a soporte con el `offline_id` y el nombre de la `restriccion` |
 | `no_clasificado` | Otro fallo de base de datos. Trae `sqlstate` y `codigo_mysql` | ⚠️ Uno, y escalar con el `offline_id` |
+
+:::warning `restriccion_no_atribuible` no se arregla reintentando
+Desde el **2026-09-17**. Antes este caso llegaba como `no_clasificado`, que la tabla publica como
+«reintenta una vez», y el nombre de la restricción —lo único que permite localizar el fallo— solo
+existía en el log del servidor.
+
+No hay nada que corregir en tu payload: el valor que la base rechaza lo escribe el servidor, así
+que reenviar lo mismo dará el mismo error. Manda a soporte el `offline_id` y el `restriccion` que
+viene en `errors`.
+
+```json
+{
+  "message": "El servidor intentó guardar un dato que no cumple la restricción 'dispatch_addresses_person_id_foreign' de la tabla 'dispatch_addresses' (MySQL 1452). No es un problema del payload y reintentar no lo arregla: avisa a soporte técnico.",
+  "error_code": "DATABASE_ERROR",
+  "errors": { "tipo": "restriccion_no_atribuible", "codigo_mysql": 1452, "tabla": "dispatch_addresses", "restriccion": "dispatch_addresses_person_id_foreign" }
+}
+```
+
+Ojo con la diferencia: cuando el valor rechazado **sí** viene de tu payload, el error no es este,
+sino `INVALID_REFERENCE`, que nombra el campo que enviaste y, si el catálogo es del propio
+sistema, lista los valores válidos.
+:::
 
 La respuesta nunca trae el SQL ni datos internos de la base: soporte encuentra el detalle en el log
 del servidor buscando el `offline_id`.
