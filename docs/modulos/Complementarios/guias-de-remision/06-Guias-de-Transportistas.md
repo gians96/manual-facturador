@@ -10,21 +10,26 @@ Tendrá que rellenar los siguientes campos:
 
 ![Alt text](img/guiatransportista2.jpg)
 
-- **1. Establecimiento:** Selecciona el establecimiento.
-- **2. Serie:** Selecciona la serie.
+:::note Las capturas son de la versión anterior del formulario
+Desde el 2026-09-18 el formulario se ordena en **secciones**, cada una con su título. Los campos
+son los mismos.
+:::
+
+### Datos de la guía
+
+**Establecimiento**, **serie**, **fecha de emisión**, **fecha de traslado**, **unidad de medida**,
+**peso total** y **observaciones** (hasta 250 caracteres; el contador lo muestra).
 
 :::info IMPORTANTE
  La serie previamente configurada en el módulo **Configuraciones y mas**, categoría **Locales y series**, la series inicia **V001**.
 :::
 
-- **3. Fecha de emisión:** Ingresa la fecha de emisión.
-- **4. Fecha de traslado:** Ingresa la fecha de traslado.
-- **5. Unidad de medida:** Selecciona la unidad de medida que más se acomode a sus requerimientos.
-- **6. Peso total:** Ingresa el peso total del producto.
-- **7. Remitente:** Selecciona al remitente, también puede crear un nuevo punto de llegada seleccionando el botón +Nuevo.
-- **8. Punto de partida:** Selecciona el punto de partida correspondiente, también puede crear un nuevo punto de partida seleccionando el botón +Nuevo.
-- **9. Destinatario:** Selecciona el destinatario correspondiente, también puede crear un nuevo punto de partida seleccionando el botón +Nuevo.
-- **10 . Punto de llegada:** Selecciona el punto de llegada, también puede crear un nuevo punto de llegada seleccionando el botón +Nuevo.
+### Remitente y destinatario
+
+- **Remitente** y su **punto de partida**.
+- **Destinatario** y su **punto de llegada**.
+
+Cada uno se puede crear con **+ Nuevo**.
 
 :::info IMPORTANTE
 
@@ -34,30 +39,52 @@ Tendrá que rellenar los siguientes campos:
 
 :::
 
-- **Datos del vehículo:** Selecciona uno o varios vehículos y sus números de placas correspondientes, o crea un nuevo vehículo con el botón **+Nuevo** (entra directo en la tabla). El primero es el **principal**; los demás, hasta dos, son secundarios (por ejemplo, el remolque). La tabla muestra el **TUC** y la **Aut. especial** de cada vehículo, tal como están en [Creación de vehículos](./09-Creacion-de-Vehiculos.md): en esta guía los dos viajan siempre a SUNAT. Un vehículo sin TUC muestra un aviso: SUNAT aceptará la guía pero la observará.
-- **Datos del conductor:** Selecciona uno o varios conductores, también puedes crear un nuevo conductor con el botón **+Nuevo**.
-
 :::warning El remitente no puede ser tu empresa
 En esta guía tu empresa es el **transportista**, y SUNAT rechaza una guía cuyo remitente es el
 propio transportista. El sistema no te deja emitirla. Si trasladas tu propia carga, emite una
 [guía de remisión remitente](./05-Generar-guias-de-remision.md) en transporte privado.
 :::
 
-## Autorización especial de la empresa (materiales o residuos peligrosos)
+### Vehículos y conductores
+
+- **Vehículos:** selecciona uno o varios, o crea uno con **+ Nuevo** (entra directo en la tabla).
+  El primero es el **principal**; los demás, hasta dos, son secundarios (por ejemplo, el remolque).
+  La tabla muestra el **TUC** y la **Aut. especial** de cada vehículo, tal como están en
+  [Creación de vehículos](./09-Creacion-de-Vehiculos.md): en esta guía los dos viajan siempre a
+  SUNAT. Un vehículo sin TUC muestra un aviso: SUNAT aceptará la guía pero la observará.
+- **Conductores:** selecciona uno o varios, o crea uno con **+ Nuevo**. El primero es el principal.
+
+### Autorización especial de la empresa (materiales o residuos peligrosos)
 
 La guía **no tiene una casilla de «material peligroso»**. Lo que se declara es el **permiso**:
 la autorización especial de tu empresa de transporte, con la entidad que la otorgó (catálogo D-37).
 
-Debajo de los vehículos y conductores aparece el bloque **Autorización especial de la empresa**:
+La sección se activa con la casilla **Declarar autorización especial**, como el pagador de flete:
 
-- **Registro MTC:** el de tu empresa, tal como está en [Empresa](../../configuracion-y-mas/configuracion-globales/Empresa/empresa.md). Si dice «sin registrar», SUNAT aceptará la guía pero la observará: regístralo en Empresa.
-- **N° de autorización** y **Entidad emisora (D-37):** vienen ya con la autorización registrada en Empresa. Puedes cambiarlas **solo para esta guía**, o usar **Quitar de esta guía** si este traslado no la lleva. Van juntas: con una sola, el sistema no deja guardar.
+- Viene **marcada** si tu empresa tiene una autorización registrada en
+  [Empresa](../../configuracion-y-mas/configuracion-globales/Empresa/empresa.md), con el
+  **N° de autorización** y la **Entidad emisora (D-37)** ya puestos. Puedes cambiarlos **solo para
+  esta guía**; **Usar la de la empresa** los repone.
+- **Desmárcala** si este traslado no lleva la autorización: la guía se emite sin ella. Si vuelves a
+  marcarla, recupera lo que habías escrito.
+- Si tu empresa no tiene ninguna, viene desmarcada; al marcarla escribes el número y eliges la
+  entidad. Marcada, el número y la entidad son obligatorios.
+
+En la cabecera de la sección se ve siempre el **registro MTC** de tu empresa, porque viaja en todas
+las guías de transportista. Si dice «sin registrar», SUNAT aceptará la guía pero la observará: el
+enlace **Registrarlo en Empresa** lleva a la ficha.
 
 Si los vehículos también tienen su propia autorización, se registra en cada vehículo y viaja con él.
 
-### El permiso como documento relacionado
+### Pagador del flete
 
-Con **Documento relacionado** puedes citar, además de la guía de remisión remitente, los permisos
+Se activa con la casilla **Agregar pagador de flete**: quién paga el transporte (el remitente, un
+subcontratador u otro), con su documento y nombre. Sin pagador, SUNAT aceptará la guía pero la
+observará.
+
+### Documentos relacionados
+
+Con **+ Agregar documento** puedes citar, además de la guía de remisión remitente, los permisos
 del transportista: el **`67`** (permiso de operación especial MATPEL del MTC), el **`65`**
 (circulación MATPEL en el Callao) y el `66`, `68`, `69` y `82`.
 
@@ -71,9 +98,15 @@ El `76` es un documento **solo de la guía remitente**: en una guía de transpor
 rechaza. Por eso no aparece en esta lista.
 :::
 
-Al guardar, el sistema muestra los **avisos de SUNAT** para esa guía (lo que va a observar o
-rechazar), sin bloquearla.
+### Antes de emitir
 
+Junto al botón **Generar**, la sección **Antes de emitir** resume lo que SUNAT va a rechazar u
+observar con los datos de la guía, mientras la llenas: el remitente igual a tu empresa, el registro
+MTC que falta o con otro formato, los vehículos sin TUC, la falta de pagador de flete o una
+autorización a medias. No bloquea (salvo lo que el formulario ya exige), pero conviene revisarla:
+**al generar, la guía se envía a SUNAT**.
+
+Al guardar, el sistema muestra además los **avisos de SUNAT** que calcula el servidor para esa guía.
 
 ## Agregar Producto:
 

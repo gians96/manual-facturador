@@ -17,6 +17,12 @@ Tendrás que rellenar los siguientes campos necesarios:
 
 ![Alt text](img/guiactualizada2.jpg)
 
+:::note El formulario va por secciones desde el 2026-09-18
+**Datos de la guía**, **Motivo y modalidad**, **Destinatario y direcciones**, **Transporte**,
+**Documentos relacionados**, **Bienes a trasladar** y **Antes de emitir**. Los campos son los
+mismos que se describen aquí; las capturas son de la versión anterior.
+:::
+
 - **1. Establecimiento:** Selecciona el establecimiento.
 - **2. Serie:** Selecciona la serie correspondiente.
 - **3. Fecha de emisión:** Ingresa la fecha de emisión.
@@ -71,7 +77,7 @@ Solo sale impreso en el PDF, sin constancia. Para que SUNAT reciba el remolque o
 
 ![Alt text](img/guiactualizada3.jpg)
 
-- **Datos del transportista:** Selecciona el transportista o crea uno nuevo con el botón **+Nuevo**. Si el transportista tiene **autorización especial** registrada (ver [Creación de transportistas](./07-Creacion-de-transportistas.md)), viaja con la guía.
+- **Datos del transportista:** Selecciona el transportista o crea uno nuevo con el botón **+Nuevo**. Si el transportista tiene **autorización especial** registrada (ver [Creación de transportistas](./07-Creacion-de-transportistas.md)), viaja con la guía. Al elegirlo, debajo se ve lo que viajará de él: su **RUC**, su **registro MTC** (o que no lo tiene: SUNAT observará la guía) y su **autorización especial**.
 
 ### Registrar vehículos y conductores del transportista
 
@@ -118,6 +124,20 @@ Al usar **Editar** en una guía registrada o rechazada, el formulario muestra el
    - **2. Cantidad:** Ingresa la cantidad del producto.
 
 2. Una vez completado, selecciona el botón **Agregar** y luego **Generar**.
+
+## Antes de emitir
+
+Junto al botón **Generar**, la sección **Antes de emitir** resume lo que SUNAT va a rechazar u
+observar con los datos de la guía, mientras la llenas:
+
+- el transportista sin registro MTC, o con un registro que no tiene el formato de SUNAT;
+- con **Registrar vehículos y conductores del transportista**, los vehículos sin TUC y una fecha de
+  traslado anterior a la de entrega al transportista;
+- una fecha de entrega al transportista anterior a la de emisión;
+- el motivo **Otros** (`13`) sin descripción.
+
+No bloquea, pero conviene revisarla: **al generar, la guía se envía a SUNAT**. Al guardar, el
+sistema muestra además los avisos que calcula el servidor.
 
 ---
 
