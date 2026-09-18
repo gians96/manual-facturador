@@ -109,7 +109,8 @@ puede emitir, en tres grupos:
 - **Por completar o corregir** (en rojo), que **impide generar la guía**: lo que falta y sin lo cual
   SUNAT la rechaza (remitente y punto de partida, destinatario y punto de llegada, un peso mayor que
   0, el vehículo, el conductor con documento, nombre y licencia) y lo que SUNAT rechaza seguro (el
-  remitente igual a tu empresa, una placa con guion).
+  remitente igual a tu empresa, una placa que no tenga de 6 a 8 letras y números). Una placa
+  registrada con guion no bloquea: viaja sin él, y el formulario lo avisa.
 - **SUNAT la aceptará con observaciones** (en ámbar), que **no impide generarla**: el registro MTC
   que falta o con otro formato, los vehículos sin TUC, la falta de pagador de flete o un pagador
   sin documento o nombre.

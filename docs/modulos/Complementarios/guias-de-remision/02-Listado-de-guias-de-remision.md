@@ -66,6 +66,7 @@ Los botones de cada fila dependen del estado de la guía:
 | Enviado | **Consultar ticket** | — |
 | Aceptado | **Opciones** · **Generar comprobante** | **Marcar como anulada** |
 | Rechazado | **Enviar a Sunat** · **Editar** | **Volver a recrear** · **Eliminar** |
+| Rechazado, con **Número ya usado en SUNAT** | **Emitir con otro número** | **Marcar como anulada** |
 | Anulado | **Opciones** | — |
 
 Es igual en **G.R Remitente** y en **G.R Transportista**. Con el tema **Black**, el menú ⋮ se ve
@@ -81,14 +82,35 @@ Una guía rechazada **no queda registrada en SUNAT**, así que tienes dos salida
 - **Corregirla y reenviarla con el mismo número.** Pulsa **Editar**, corrige lo que indica el
   rechazo (el motivo aparece al consultar el ticket), guarda y pulsa **Enviar a Sunat**. La guía
   conserva su serie y su número.
+
+  Antes de abrirla, el sistema le pregunta a SUNAT por ella. Si SUNAT ya la tiene **aceptada**
+  (pasa, por ejemplo, si el sistema se restauró de una copia antigua), la guía se actualiza a
+  *Aceptado* con su CDR, y el formulario se abre como una **guía nueva**, con otro número: reenviar
+  el mismo número con otros datos haría que SUNAT la rechace.
 - **Eliminarla**, desde el menú ⋮. Antes de borrarla, el sistema le pregunta a SUNAT; si SUNAT sí
   la tuviera, o no se pudiera consultar, no se borra nada.
 
 :::info Si la guía la emitió una aplicación por API
-Al **Editar** una guía de transportista creada por API, el remitente, el destinatario y el vehículo
-pueden aparecer vacíos: la API guarda sus datos, pero no los vincula a las personas y vehículos
-registrados. Elígelos otra vez en el formulario antes de guardar.
+La API guarda los datos de la guía, pero no siempre los vincula a las personas y direcciones
+registradas. Al **Editar**, el formulario busca el remitente, el destinatario y sus direcciones
+entre los registrados; lo que no encuentra lo muestra bajo su campo, con un enlace **Registrarlo**
+que abre el alta ya rellenada.
 :::
+
+### Número ya usado en SUNAT (1033 o 1032)
+
+Si al consultar el ticket SUNAT responde **1033** («el comprobante fue registrado previamente con
+otros datos») o **1032** («ya está informado, con estado anulado o rechazado»), **ese número ya
+está ocupado en SUNAT** por otra guía, y lo que enviaste **no quedó registrado**. Reenviarlo con el
+mismo número fallaría siempre, así que la guía queda *Rechazada* con la marca **Número ya usado en
+SUNAT**, y sin **Editar** ni **Enviar a Sunat**. Tienes dos salidas:
+
+- **Emitir con otro número:** abre el formulario con los mismos datos como una **guía nueva**, con
+  el siguiente número de la serie y la fecha de hoy.
+- **Marcar como anulada** (menú ⋮): si diste de baja ese número en el portal de SUNAT, deja la
+  fila como *Anulado* para que el sistema coincida con SUNAT.
+
+La baja en el portal **no libera el número**: después de darla, SUNAT respondería 1032.
 
 ## Marcar una guía como anulada
 
@@ -97,7 +119,8 @@ remisión —ni la del remitente ni la del transportista—: la baja se hace **e
 **solo el mismo día de la emisión**. Lo que hace esta opción es dejar el estado del sistema
 igual al que ya tiene SUNAT, para que los dos digan lo mismo.
 
-Está en el menú ⋮ y **solo aparece en una guía *Aceptada***. Antes de hacer nada te pregunta:
+Está en el menú ⋮ y aparece en una guía *Aceptada* y en una *Rechazada* con el **número ya usado en
+SUNAT**. Antes de hacer nada te pregunta:
 
 > **¿Ya diste de baja esta guía en SUNAT?**
 > La baja se hace en el portal de SUNAT, y solo el mismo día de la emisión. Esto marca la guía

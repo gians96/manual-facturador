@@ -110,7 +110,9 @@ Al usar **Editar** en una guía registrada o rechazada, el formulario muestra el
 - El sistema usa por defecto la dirección del cliente seleccionado, pero puedes agregar una nueva dirección desde el módulo de clientes.
 - Para registrar una empresa de transportistas, es obligatorio contar con el MTC, que puedes solicitar en el siguiente link:
   **[https://www.mtc.gob.pe/tramitesenlinea/tweb_tLinea/tw_consultadgtt/Frm_rep_intra_mercancia.aspx](https://www.mtc.gob.pe/tramitesenlinea/tweb_tLinea/tw_consultadgtt/Frm_rep_intra_mercancia.aspx)**.
-- La placa del vehículo no puede contener guiones ni minúsculas.
+- SUNAT no admite la placa con guiones, espacios ni minúsculas: el sistema la envía en mayúsculas y
+  sin separadores (`ABC-123` viaja como `ABC123`). Solo impide generar la guía una placa que ni así
+  tenga de 6 a 8 letras y números.
 - En caso de elegir esta opción, tendrá que especificar la fecha de entrega al transportista.
 :::
 

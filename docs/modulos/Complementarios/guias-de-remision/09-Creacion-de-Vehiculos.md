@@ -10,7 +10,11 @@ Completa los siguientes campos para crear un nuevo vehículo:
 
 ![Alt text](img/modulovehihiculos2.jpg)
 
-**1. Nro. de Placa:** Inserta el nro. de la placa.
+**1. Nro. de Placa:** Inserta el nro. de la placa. Puedes escribirla como se lee, con guion
+(`ABC-123`): el sistema la guarda en el formato que exige SUNAT, **en mayúsculas y sin guiones ni
+espacios** (`ABC123`), y te lo muestra debajo del campo. Debe tener **de 6 a 8 letras y números**;
+si no, no se guarda, porque SUNAT rechazaría la guía (código 2567). Al buscar un vehículo, `ABC-123`
+y `ABC123` lo encuentran igual.
 
 **2. Modelo:** Inserta el modelo del vehículo.
 
