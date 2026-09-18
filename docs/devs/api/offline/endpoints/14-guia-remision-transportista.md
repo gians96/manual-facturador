@@ -34,15 +34,15 @@ La guía de remisión del transportista la emite la **empresa de transporte** qu
     "unidad_peso_total": "KGM",
     "peso_total": 50.0,
     "numero_de_bultos": 5,
-    "direccion_partida": {
-        "ubigeo": "150101",
-        "direccion": "Av. Principal 123, Lima",
-        "codigo_del_domicilio_fiscal": "0000"
-    },
-    "direccion_llegada": {
-        "ubigeo": "040101",
-        "direccion": "Jr. Mercaderes 456, Arequipa",
-        "codigo_del_domicilio_fiscal": null
+    "direcciones_proveedores": {
+        "remitente": {
+            "ubigeo": "150101",
+            "direccion": "Av. Principal 123, Lima"
+        },
+        "destinatario": {
+            "ubigeo": "040101",
+            "direccion": "Jr. Mercaderes 456, Arequipa"
+        }
     },
     "datos_remitente": {
         "codigo_tipo_documento_identidad": "6",
