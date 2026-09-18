@@ -11,6 +11,11 @@
 
 El endpoint principal de sincronización. Recibe un array de comprobantes creados offline y los procesa secuencialmente. Cada comprobante se intenta crear; si falla, el error se registra individualmente sin afectar a los demás.
 
+:::tip ¿Una guía rechazada que no cambia al reenviarla?
+Si la reenvías con su mismo `offline_id`, el lote no lee el `data` y la corrección no se aplica.
+Cómo hacerlo: [corregir una guía rechazada por el lote](#corregir-una-guía-rechazada-por-el-lote).
+:::
+
 ---
 
 ## Request
@@ -564,6 +569,10 @@ servidor nunca iba a aceptar.
 `data` sigue siendo obligatorio para una venta que **no** está sincronizada todavía; en ese
 caso el error es `MISSING_FIELDS`.
 
+**Esto incluye las correcciones.** Si reenvías una guía rechazada con su mismo `offline_id` y el
+JSON corregido, vuelve como `was_duplicate` y la corrección no se aplica →
+[corregir una guía rechazada por el lote](#corregir-una-guía-rechazada-por-el-lote).
+
 ### `cash_summary` — el recuento del lote
 
 `data.cash_summary` trae cuántas ventas cayeron en cada desenlace, para ver de un vistazo si
@@ -897,8 +906,116 @@ La fila vuelve con `success: true`, firmada, y con los dos avisos en `data.warni
 
 Ninguno de los dos convierte la fila en fallo: la guía ya está emitida con el número `T001-14`. El
 peso quedó en `34.83` y la cantidad, que admite 4 decimales, en `34.825`. Para que SUNAT no la
-observe, corrige la descripción con el `external_id` antes de enviarla, como se explica en
+observe, corrige la descripción con el `external_id` antes de enviarla. Por el lote se hace como
+se explica justo abajo; fuera del lote, como en
 [corregir una guía rechazada](../../guias-de-remision.md#corregir-una-guía-rechazada).
+
+### Corregir una guía rechazada por el lote
+
+Una guía que SUNAT rechaza **se corrige, no se vuelve a emitir**: conserva su serie, su número y
+su `external_id`. Por el lote se puede, pero no reenviando la fila tal cual.
+
+:::danger Con el mismo `offline_id`, la guía no se corrige
+El `offline_id` se comprueba **antes** de leer el `data`
+([ver arriba](#la-idempotencia-se-comprueba-antes-que-el-payload)). Si la guía ya está
+sincronizada con ese `offline_id`, la fila vuelve con `success: true` y `was_duplicate: true`, y
+**el JSON corregido no se aplica**: la guía sigue con los datos de la primera vez. Si luego la
+envías a SUNAT, le llega el mismo XML de antes y la vuelve a rechazar.
+
+Le pasó a un integrador real. Una guía de transportista rechazada con `2775` se reenvió por el
+lote más de 320 veces, siempre con el mismo `offline_id`. Todas las respuestas decían
+`success: true` y SUNAT la rechazó todas las veces.
+:::
+
+Para corregirla por el lote, la fila lleva:
+
+1. **Un `offline_id` nuevo.** Con el de siempre, el `data` no se lee.
+2. **El `external_id` de la guía dentro de `data`.** Es el que volvió en `data.external_id` al
+   emitirla, y también viene en las filas `was_duplicate`.
+3. **El JSON completo y corregido**, no solo lo que cambia. Reemplaza todo lo que tenía la guía,
+   ítems incluidos.
+4. **Las fechas de hoy** en `fecha_de_emision`, `hora_de_emision` y `fecha_de_traslado`. Con la
+   emisión de hace días, SUNAT rechaza con `2108` (presentación fuera de fecha); y un traslado
+   anterior a la emisión, con `3343`.
+
+```json
+{
+    "sales": [
+        {
+            "doc_type": "31",
+            "offline_id": "5b0c7e2a-3f14-4c8e-9a61-2d7f0b9e4c13",
+            "data": {
+                "external_id": "0f6e2d8c-7a3b-4e51-b9c4-1a2d3e4f5a6b",
+                "serie_documento": "V001",
+                "numero_documento": "1",
+                "fecha_de_emision": "2026-09-18",
+                "hora_de_emision": "10:00:00",
+                "fecha_de_traslado": "2026-09-18",
+                "...": "resto del payload ya corregido"
+            }
+        }
+    ]
+}
+```
+
+La fila vuelve con `success: true`, **el mismo `number` y el mismo `external_id`**, sin
+`was_duplicate` y con los `warnings` del JSON nuevo. La guía se vuelve a firmar, se rehace el
+PDF y queda en **Registrado** (`01`). Si la empresa tiene activo el envío automático por correo,
+el cliente vuelve a recibir la guía.
+
+**El lote no la envía a SUNAT.** Después hay que llamar a `POST /api/dispatches/send` con su
+`external_id` y consultar el ticket con `POST /api/dispatches/status_ticket`. Hasta que la
+reenvíes, la consulta del ticket devuelve el rechazo anterior.
+
+Qué hace cada forma de reenviar la guía:
+
+| Lo que mandas en la fila | Qué pasa |
+|---|---|
+| El mismo `offline_id`, con o sin `external_id` | `was_duplicate: true`. El `data` no se lee y la guía no cambia |
+| Un `offline_id` nuevo sin `external_id`, con el número de la guía | `CONFLICT_NUMBER`. El número ya está registrado con otro `offline_id` y, sin el `external_id`, el servidor no sabe que es la misma guía |
+| Un `offline_id` nuevo + el `external_id` de la guía | **Corrige esa guía**, con el mismo número y el mismo `external_id` |
+| Un `offline_id` nuevo + un `external_id` que no existe | `DISPATCH_NOT_FOUND`. No registra otra guía en su lugar |
+| Un `offline_id` nuevo + el `external_id` de una guía aceptada | `DISPATCH_ALREADY_ACCEPTED`. La baja se hace en el portal de SUNAT |
+
+:::warning La guía se queda con el `offline_id` nuevo
+Al corregirla por el lote, el servidor guarda en la guía el `offline_id` de esa fila. **Guárdalo
+en tu registro en lugar del viejo**, porque el viejo ya no la reconoce: un reenvío con él ya no
+vuelve como `was_duplicate`. Sin `external_id` choca con `CONFLICT_NUMBER`; con él, la corrige
+otra vez.
+:::
+
+**Si prefieres no tocar el `offline_id`**, corrige la guía fuera del lote. Manda el mismo JSON,
+con su `external_id`, a `POST /api/dispatch-carrier` (transportista) o a `POST /api/dispatches`
+(remitente). La corrección es la misma y **la guía conserva su `offline_id`**, así que tu registro
+no cambia → [corregir una guía rechazada](../../guias-de-remision.md#corregir-una-guía-rechazada).
+
+:::caution Corrige solo guías Registradas (`01`) o Rechazadas (`09`)
+El servidor solo impide corregir las **aceptadas**. Una guía **enviada** (`03`), con el ticket
+todavía en proceso, se deja sobrescribir, y el sistema se queda con datos que SUNAT nunca
+recibió → [por qué](../../guias-de-remision.md#registrar-o-actualizar-lo-decide-el-external_id).
+:::
+
+#### Desde SQL Server
+
+Si el lote lo arma un procedimiento almacenado, la corrección son cinco `JSON_MODIFY` sobre la
+fila, más guardar el `offline_id` nuevo. Hazlo **solo** con las guías que SUNAT rechazó y de las
+que tienes el `external_id`. Para un reintento normal (se cortó la red, no sabes si llegó),
+reenvía con el mismo `offline_id`: ahí `was_duplicate` es justo lo que quieres.
+
+```sql
+-- @Json: una fila de sales[] (doc_type, offline_id, data) ya corregida.
+-- @ExternalId: el external_id que devolvió la API al emitir la guía.
+DECLARE @OfflineId UNIQUEIDENTIFIER = NEWID();   -- nuevo: con el de siempre no se lee el data
+
+SET @Json = JSON_MODIFY(@Json, '$.offline_id',             CONVERT(VARCHAR(36), @OfflineId));
+SET @Json = JSON_MODIFY(@Json, '$.data.external_id',       LOWER(@ExternalId));
+SET @Json = JSON_MODIFY(@Json, '$.data.fecha_de_emision',  CONVERT(CHAR(10), GETDATE(), 23));  -- AAAA-MM-DD
+SET @Json = JSON_MODIFY(@Json, '$.data.hora_de_emision',   CONVERT(CHAR(8),  GETDATE(), 108)); -- hh:mm:ss
+SET @Json = JSON_MODIFY(@Json, '$.data.fecha_de_traslado', CONVERT(CHAR(10), GETDATE(), 23));
+
+-- La guía se queda con el offline_id nuevo: guárdalo en tu tabla.
+UPDATE dbo.MisGuias SET OFFLINE_ID = @OfflineId WHERE Id = @Id;
+```
 
 Ver también [13 — Guía Remitente](13-guia-remision-remitente.md),
 [14 — Guía Transportista](14-guia-remision-transportista.md) y
@@ -922,7 +1039,9 @@ Ver también [13 — Guía Remitente](13-guia-remision-remitente.md),
 ### Retry logic
 
 - Si un comprobante falla con error de red → reintentar todo el batch
-- Si un comprobante tiene `was_duplicate: true` → marcarlo como sincronizado exitosamente
+- Si un comprobante tiene `was_duplicate: true` → marcarlo como sincronizado exitosamente. En una
+  guía que corregiste, significa lo contrario de lo que esperas: **no cambió nada** →
+  [corregir una guía rechazada por el lote](#corregir-una-guía-rechazada-por-el-lote)
 - Exponential backoff: 1s, 2s, 4s, 8s, 16s (máx. 5 intentos)
 
 :::danger Nunca reencoles una venta por `cash_registered: false`

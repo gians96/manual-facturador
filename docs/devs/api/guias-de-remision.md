@@ -719,6 +719,13 @@ Basta con incluir el `external_id` que recibiste al emitirla, junto con el paylo
 Se conservan la serie, el número y el propio `external_id`. Después hay que volver a llamar al
 envío y a la consulta del ticket: corregir no envía nada a SUNAT.
 
+:::tip ¿La emitiste por el lote?
+También se corrige por `POST /api/offline/sync-batch`, pero con un `offline_id` **nuevo** y el
+`external_id` dentro de `data`. Con el `offline_id` de siempre, el lote devuelve `was_duplicate`
+sin leer el JSON, y la guía no cambia →
+[corregir una guía rechazada por el lote](./offline/endpoints/15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
+:::
+
 **¿Y el error `1032`?** El pliego de SUNAT lo define como *«El comprobante ya esta informado y se
 encuentra con estado anulado o rechazado»*, y parecía impedir reenviar con el mismo número. Se
 comprobó emitiendo contra SUNAT producción: una guía remitente rechazada con `3443` y una de
@@ -785,6 +792,10 @@ reconoce. Con él, la decisión es esta:
         03 Enviado                   → status_ticket; con 98, esperar y volver a consultar
         05 Aceptado                  → nada: la baja va por el portal de SUNAT
 ```
+
+Si emites por el lote, el «POST con external_id» puede ser una fila de `sync-batch` con un
+`offline_id` nuevo y el `external_id` dentro de `data`, o la llamada directa a este endpoint
+→ [corregir una guía rechazada por el lote](./offline/endpoints/15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 
 :::note Desde el 2026-09-11
 En un servidor anterior, el `external_id` del payload no se tiene en cuenta y la llamada se trata

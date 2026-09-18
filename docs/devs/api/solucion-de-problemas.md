@@ -52,6 +52,7 @@ Reintenta solo `bloqueo_temporal` y los fallos de red. Todo lo demás: corrige o
 | El stock no baja al vender | [Se emite y no significa lo que envié](#se-emite-y-no-significa-lo-que-envie) |
 | El lote se reenvía sin fin, aunque las filas vuelven bien | [El lote se reenvía sin fin](#el-lote-se-reenvia-sin-fin) |
 | La API aceptó la guía y SUNAT la rechazó | [SUNAT rechaza lo que la API aceptó](#sunat-rechaza-lo-que-la-api-acepto) |
+| Corregí la guía, la reenvié por el lote y SUNAT la rechaza igual | [La guía corregida no cambia](#la-guia-corregida-no-cambia) |
 | La ficha del cliente aparece vaciada tras emitir | [La ficha del cliente se vacía](#la-ficha-del-cliente-se-vacia) |
 | La guía salió, pero sin PDF ni XML | [La guía sale sin firmar](#la-guia-sale-sin-firmar) |
 | Se cortó la conexión y no sé si se emitió | [No sé si se emitió](#no-se-si-se-emitio) |
@@ -200,6 +201,27 @@ mismo identificador externo: no quemas un correlativo por cada rechazo
 Para interpretar un código de SUNAT: [rechazos (2000-3999)](../../sunat-errores/errores-rechazo.md)
 y [observaciones (4000+)](../../sunat-errores/observaciones.md), que **no** impiden la
 aceptación.
+
+## La guía corregida no cambia {#la-guia-corregida-no-cambia}
+
+**Síntoma.** Corriges en tu sistema una guía rechazada y la reenvías por el lote. La fila vuelve
+con `success: true`, la mandas a SUNAT y SUNAT la rechaza con el mismo código. Y así cada vez.
+
+**Causa.** La reenviaste con su mismo `offline_id`. El lote comprueba el `offline_id` antes de
+leer el `data`, así que la fila vuelve con `was_duplicate: true` y el JSON corregido no se aplica.
+La guía sigue con los datos de la primera vez, y `send` manda el XML que se firmó entonces. En un
+caso real, la misma guía se reenvió más de 320 veces.
+
+Tampoco basta con cambiar los datos directamente en la base: `send` manda el XML firmado que ya
+está guardado, sin volver a generarlo.
+
+**Qué hacer.** Mira `was_duplicate`: si viene en `true`, no se corrigió nada. Tienes dos caminos:
+
+- Reenvía la guía por el lote con un `offline_id` nuevo y su `external_id` dentro de `data`.
+- Corrígela con `POST /api/dispatch-carrier` o `POST /api/dispatches`, mandando su `external_id`.
+
+Después, `send` y `status_ticket` →
+[corregir una guía rechazada por el lote](offline/endpoints/15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 
 ## La ficha del cliente se vacía {#la-ficha-del-cliente-se-vacia}
 
