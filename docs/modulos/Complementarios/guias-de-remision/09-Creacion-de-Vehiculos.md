@@ -28,7 +28,7 @@ Además hay dos campos opcionales para la **autorización especial** del vehícu
 Los dos van **juntos**: si llenas uno, el sistema pide el otro.
 
 :::info Cuándo viajan el TUC y la autorización a SUNAT
-En la guía de remisión remitente, el TUC y la autorización del vehículo se envían a SUNAT cuando la guía es de **transporte público** con la casilla **Registrar vehículos y conductores del transportista** marcada. Si en ese caso el vehículo no tiene TUC, SUNAT acepta la guía pero la observa, y el sistema lo avisa antes. En la guía de transportista, cada vehículo secundario envía **su propio** TUC.
+En la guía de remisión remitente, el TUC y la autorización del vehículo se envían a SUNAT cuando la guía es de **transporte público** con la casilla **Registrar vehículos y conductores del transportista** marcada. Si en ese caso el vehículo no tiene TUC, SUNAT acepta la guía pero la observa, y el sistema lo avisa antes. En la guía de transportista, el TUC y la autorización de **cada** vehículo viajan **siempre** (desde el 2026-09-18 también la autorización, que antes se guardaba y no se enviaba).
 :::
 
 Seguido seleccione el botón **Guardar**. Y podrá visualizar el vehículo creado.

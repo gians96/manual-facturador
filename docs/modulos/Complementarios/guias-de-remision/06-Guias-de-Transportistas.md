@@ -34,8 +34,45 @@ Tendrá que rellenar los siguientes campos:
 
 :::
 
-- **Datos del vehículo:** Selecciona uno o varios vehículos y sus números de placas correspondientes, o crea un nuevo vehículo con el botón **+Nuevo**.
+- **Datos del vehículo:** Selecciona uno o varios vehículos y sus números de placas correspondientes, o crea un nuevo vehículo con el botón **+Nuevo** (entra directo en la tabla). El primero es el **principal**; los demás, hasta dos, son secundarios (por ejemplo, el remolque). La tabla muestra el **TUC** y la **Aut. especial** de cada vehículo, tal como están en [Creación de vehículos](./09-Creacion-de-Vehiculos.md): en esta guía los dos viajan siempre a SUNAT. Un vehículo sin TUC muestra un aviso: SUNAT aceptará la guía pero la observará.
 - **Datos del conductor:** Selecciona uno o varios conductores, también puedes crear un nuevo conductor con el botón **+Nuevo**.
+
+:::warning El remitente no puede ser tu empresa
+En esta guía tu empresa es el **transportista**, y SUNAT rechaza una guía cuyo remitente es el
+propio transportista. El sistema no te deja emitirla. Si trasladas tu propia carga, emite una
+[guía de remisión remitente](./05-Generar-guias-de-remision.md) en transporte privado.
+:::
+
+## Autorización especial de la empresa (materiales o residuos peligrosos)
+
+La guía **no tiene una casilla de «material peligroso»**. Lo que se declara es el **permiso**:
+la autorización especial de tu empresa de transporte, con la entidad que la otorgó (catálogo D-37).
+
+Debajo de los vehículos y conductores aparece el bloque **Autorización especial de la empresa**:
+
+- **Registro MTC:** el de tu empresa, tal como está en [Empresa](../../configuracion-y-mas/configuracion-globales/Empresa/empresa.md). Si dice «sin registrar», SUNAT aceptará la guía pero la observará: regístralo en Empresa.
+- **N° de autorización** y **Entidad emisora (D-37):** vienen ya con la autorización registrada en Empresa. Puedes cambiarlas **solo para esta guía**, o usar **Quitar de esta guía** si este traslado no la lleva. Van juntas: con una sola, el sistema no deja guardar.
+
+Si los vehículos también tienen su propia autorización, se registra en cada vehículo y viaja con él.
+
+### El permiso como documento relacionado
+
+Con **Documento relacionado** puedes citar, además de la guía de remisión remitente, los permisos
+del transportista: el **`67`** (permiso de operación especial MATPEL del MTC), el **`65`**
+(circulación MATPEL en el Callao) y el `66`, `68`, `69` y `82`.
+
+- Un permiso tiene **un solo número** (por ejemplo `1500005MRP`): hasta 100 caracteres y sin espacios.
+- El RUC se precarga con el de tu empresa; es opcional.
+- Caben **dos** documentos si uno es un permiso (por ejemplo, la guía remitente y el permiso MATPEL);
+  el sistema no deja agregar más de los que SUNAT admite.
+
+:::danger La autorización de residuos (`76`) no es de esta guía
+El `76` es un documento **solo de la guía remitente**: en una guía de transportista SUNAT la
+rechaza. Por eso no aparece en esta lista.
+:::
+
+Al guardar, el sistema muestra los **avisos de SUNAT** para esa guía (lo que va a observar o
+rechazar), sin bloquearla.
 
 
 ## Agregar Producto:
@@ -54,8 +91,9 @@ Tendrá que rellenar los siguientes campos:
 Desde el listado de **G.R Transportista**, una guía *Registrada* o *Rechazada* ofrece:
 
 - **Editar:** abre el formulario con los datos de la guía (remitente, destinatario, sus
-  direcciones, vehículos, conductores y carga). Corrige, guarda y pulsa **Enviar a Sunat**. La
-  guía conserva su serie y su número.
+  direcciones, vehículos, conductores y carga). Los vehículos y conductores vuelven con su TUC y su
+  autorización aunque ya no estén activos en el catálogo, y la autorización de la empresa es la que
+  llevó esa guía. Corrige, guarda y pulsa **Enviar a Sunat**. La guía conserva su serie y su número.
 - **Volver a recrear** (menú ⋮): vuelve a generar el XML y el PDF, para cuando la guía se guardó
   sin sus archivos. Necesita el permiso de usuario **Recrear documentos**.
 - **Eliminar** (menú ⋮): antes de borrarla, el sistema le pregunta a SUNAT. Si SUNAT la tiene, o

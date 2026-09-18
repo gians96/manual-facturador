@@ -140,13 +140,44 @@ descripción y código de producto. Mismo criterio que la guía remitente: ver
 Opcional. Si no lo envías se usa el establecimiento del usuario del token, igual que en
 `POST /api/documents`.
 
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `codigo_del_domicilio_fiscal` | string | No | Código del establecimiento emisor |
+| `numero_autorizacion_especial` | string\|null | No | Desde el 2026-09-18. Autorización especial de **tu empresa** como transportista **en esta guía**. De 3 a 50 caracteres, sin tabulaciones ni saltos de línea (aviso `4396`) |
+| `codigo_entidad_autorizadora` | string\|null | No | Desde el 2026-09-18. Entidad que la otorgó, catálogo D-37 (ver [13 — Catálogo D-37](13-guia-remision-remitente.md#vehículos-y-conductores-del-transportista)). `"6"` se acepta como `"06"` |
+
+En la guía de transportista **el transportista es tu empresa**. Su **registro MTC** y su
+**autorización especial** viajan a SUNAT en el XML (`CarrierParty`), y salen de la ficha de la
+empresa (**Empresa → Registro MTC** y **Autorización especial**). Con las dos claves de arriba
+se cambia la autorización **solo en esta guía**:
+
+| Lo que envías | Lo que viaja |
+|---|---|
+| Ninguna de las dos claves | La autorización de la ficha de la empresa |
+| Las dos con valor | Esa autorización, en lugar de la de la ficha |
+| Las dos en `null` | Ninguna autorización en esta guía |
+| Solo una | Se guarda, pero **no se emite**: la respuesta avisa `4394` o `4397` |
+
+El registro MTC no se cambia por guía: sale siempre de la ficha. Sin él, SUNAT acepta la guía
+pero la observa con `4391` (hasta el 2026-09-18 **toda** guía de transportista salía así,
+porque el XML no lo enviaba), y la respuesta lo avisa en el campo `empresa.registro_mtc`.
+
 ### `datos_destinatario` — Quien recibe la mercadería
 
 Misma estructura que `datos_remitente`.
 
-### `vehiculo_secundario[]` (máx. 2)
+### `vehiculo` y `vehiculo_secundario[]` (máx. 2)
 
-Misma estructura que `vehiculo`. Para vehículos adicionales (semirremolques, carretas).
+`vehiculo_secundario` tiene la misma estructura que `vehiculo`. Es para los vehículos
+adicionales (semirremolques, carretas).
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `numero_de_placa` | string | **Sí** en `vehiculo` | Sin guiones ni espacios (`2567`). Sin la del principal, SUNAT rechaza con `2566` |
+| `modelo` · `marca` | string | No | Solo para el PDF |
+| `certificado_habilitacion_vehicular` | string\|null | No | TUC o constancia de **este** vehículo, de 10 a 15 mayúsculas y números (`3355`). En la guía de transportista viaja siempre; sin él, SUNAT observa `4399` y la respuesta lo avisa |
+| `numero_autorizacion_especial` | string | No | Autorización especial de **este** vehículo. En la guía de transportista **viaja siempre** desde el 2026-09-18; antes se guardaba y no llegaba al XML, sin ningún aviso |
+| `codigo_entidad_autorizadora` | string | No | Catálogo D-37. Va junto con el número: con uno solo no se emite y se avisa `4403` o `4405` |
 
 ### `chofer_secundario[]` (máx. 2)
 
@@ -168,7 +199,7 @@ Misma estructura que `chofer`. Para choferes adicionales.
 |---------|---------------|-------------------|
 | Serie | T001 | V001 |
 | `datos_del_cliente_o_receptor` | **Sí** (el destinatario) | No (usa `datos_destinatario`) |
-| `transportista` | **Sí** (empresa de transporte) | No (es la propia empresa) |
+| `transportista` | **Sí** (empresa de transporte) | No: es la propia empresa. Si lo envías se descarta y la respuesta avisa `TRANSPORTISTA_IGNORADO` |
 | `datos_remitente` | No | **Sí** (quien envía) |
 | `datos_destinatario` | No | **Sí** (quien recibe) |
 | `vehiculo_secundario` | No | **Sí** (máx. 2) |
@@ -183,6 +214,121 @@ el servidor las acepta sin quejarse y **las descarta**: las direcciones de este 
 `direcciones_proveedores` (con `remitente` y `destinatario`, cada uno con `ubigeo` y
 `direccion`) o, si ya están registradas, en `direccion_remitente_id` /
 `direccion_destinatario_id`.
+:::
+
+---
+
+## Materiales o residuos peligrosos
+
+Igual que en la [guía remitente](13-guia-remision-remitente.md#materiales-o-residuos-peligrosos), la
+guía **no tiene una marca de «material peligroso»**. Lo que se declara es el **permiso**: la
+autorización especial, con la entidad que la otorgó (catálogo D-37). En la guía de transportista
+todo viaja **siempre**, sin ningún indicador:
+
+| Permiso | Dónde va |
+|---|---|
+| Autorización de tu empresa | Ficha de la empresa, o `datos_del_emisor.numero_autorizacion_especial` + `codigo_entidad_autorizadora` para esta guía |
+| Autorización de un vehículo | `vehiculo` / `vehiculo_secundario[]`: `numero_autorizacion_especial` + `codigo_entidad_autorizadora` |
+| TUC o constancia de cada vehículo | `certificado_habilitacion_vehicular` |
+| El permiso como documento (opcional) | `documento_relacionado[]` con `documento.id` `"67"` (permiso MATPEL del MTC) o `"65"` (circulación MATPEL en el Callao) |
+
+:::danger El `76` no vale en la guía de transportista
+La autorización de residuos sólidos (`76`) que cita la guía remitente es, según el catálogo 61 de
+SUNAT, **solo del remitente**. En una guía de transportista SUNAT la **rechaza** con `2692`
+(comprobado contra producción el 2026-09-18), y la respuesta lo avisa antes de enviar. Los
+permisos del transportista son el `65`, `66`, `67`, `68`, `69` y `82`.
+:::
+
+Reglas del documento relacionado en esta guía:
+
+- **Cuántos caben:** con un permiso (`65` a `69`) o una guía de transportista (`31`), hasta **2**
+  (`3345`); sin ninguno, **1**, salvo que uno sea una guía remitente electrónica (`3346`). Citar la
+  guía remitente y el permiso MATPEL es justo el caso de dos.
+- **Quién lo emitió (`ruc`):** una guía remitente electrónica (`09`) viaja con el RUC del
+  **remitente de esta guía**, aunque la fila traiga otro (regla `3381`); un permiso sin `ruc`, con
+  el de tu empresa. Una factura o boleta sin RUC válido sale sin emisor y SUNAT la rechaza (`3380`,
+  se avisa antes).
+- **La guía remitente tiene que existir** en SUNAT para ese remitente (`3433`).
+
+:::warning El remitente no puede ser tu empresa
+En esta guía tu empresa es el transportista, y SUNAT rechaza una guía cuyo remitente es el propio
+transportista (`2560`). Si trasladas tu propia carga, emite una
+[guía remitente](13-guia-remision-remitente.md) en transporte privado. La respuesta lo avisa y el
+panel no la deja emitir.
+:::
+
+Ejemplo con datos ficticios: un permiso MATPEL relacionado y dos vehículos con su TUC y su
+autorización. La autorización de la empresa sale de su ficha (no se envía `datos_del_emisor`):
+
+```json
+{
+    "serie_documento": "V001",
+    "numero_documento": "#",
+    "fecha_de_emision": "2026-09-18",
+    "hora_de_emision": "10:00:00",
+    "codigo_tipo_documento": "31",
+    "fecha_de_traslado": "2026-09-18",
+    "unidad_peso_total": "TNE",
+    "peso_total": 28.5,
+    "direcciones_proveedores": {
+        "remitente": { "ubigeo": "150101", "direccion": "Av. Almacén 456 - Lima" },
+        "destinatario": { "ubigeo": "070101", "direccion": "Jr. Destino 789 - Callao" }
+    },
+    "datos_remitente": {
+        "codigo_tipo_documento_identidad": "6",
+        "numero_documento": "20000000001",
+        "apellidos_y_nombres_o_razon_social": "QUIMICA DEMO S.A.C."
+    },
+    "datos_destinatario": {
+        "codigo_tipo_documento_identidad": "6",
+        "numero_documento": "20000000003",
+        "apellidos_y_nombres_o_razon_social": "INDUSTRIAS DEMO S.A.C."
+    },
+    "chofer": {
+        "codigo_tipo_documento_identidad": "1",
+        "numero_documento": "12345678",
+        "nombres": "PEREZ GARCIA, JUAN",
+        "numero_licencia": "Q12345678"
+    },
+    "vehiculo": {
+        "numero_de_placa": "TRC123",
+        "certificado_habilitacion_vehicular": "15MRP00000001E",
+        "numero_autorizacion_especial": "1500003CNG",
+        "codigo_entidad_autorizadora": "06"
+    },
+    "vehiculo_secundario": [
+        { "numero_de_placa": "REM456", "certificado_habilitacion_vehicular": "15MRP00000002E",
+          "numero_autorizacion_especial": "1500004CNG", "codigo_entidad_autorizadora": "06" }
+    ],
+    "pagador_flete": {
+        "indicador_pagador_flete": "Remitente",
+        "codigo_tipo_documento_identidad": "6",
+        "numero": "20000000001",
+        "nombres": "QUIMICA DEMO S.A.C."
+    },
+    "documento_relacionado": [
+        { "numero": "1500005MRP",
+          "documento": { "id": "67", "descripcion": "Permiso de Operación Especial para el servicio de transporte de MATPEL - MTC" } }
+    ],
+    "items": [
+        { "codigo_interno": "Q0001", "descripcion": "ACIDO SULFURICO", "unidad_de_medida": "TNE", "cantidad": 28.5 }
+    ]
+}
+```
+
+Para usar otra autorización de tu empresa solo en esta guía, añade:
+
+```json
+"datos_del_emisor": {
+    "numero_autorizacion_especial": "MATPEL-2026-001",
+    "codigo_entidad_autorizadora": "13"
+}
+```
+
+:::info Probado contra SUNAT producción (2026-09-18)
+Guías aceptadas con la autorización de la empresa y de cada vehículo, el TUC de cada vehículo y el
+permiso `67` relacionado, por la API y por el panel. La entidad `06` (MTC) de los ejemplos es solo
+eso, un ejemplo: en cada autorización va el código D-37 de la entidad que la otorgó.
 :::
 
 ---

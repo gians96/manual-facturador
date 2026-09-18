@@ -316,6 +316,14 @@ components:
             y **el régimen depende del motivo**, o SUNAT rechaza con 3441:
             "10" en importación, "40" en exportación (DS: "18" y "48"). En el motivo
             "19" la DAM admite "10", "20", "21", "30", "36", "70" y "80".
+            **Permisos del transportista** (materiales o residuos peligrosos): "67"
+            (permiso MATPEL del MTC), "65" (circulación MATPEL en el Callao), "66", "68",
+            "69" y "82", con un solo número sin espacios. El "76" (residuos sólidos) es solo
+            de la guía remitente: en esta guía SUNAT lo rechaza con 2692. Con un permiso o
+            una "31" caben hasta 2 documentos (3345); sin ninguno, 1, salvo una guía
+            remitente electrónica (3346). Una guía remitente ("09") viaja con el RUC del
+            remitente de esta guía como emisor (3381), y un permiso sin `ruc`, con el de tu
+            empresa.
           items:
             $ref: '#/components/schemas/DocumentoRelacionado'
         leyendas:
@@ -338,6 +346,25 @@ components:
         codigo_del_domicilio_fiscal:
           type: string
           example: "0000"
+        numero_autorizacion_especial:
+          type: string
+          nullable: true
+          description: >-
+            Opcional, desde el 2026-09-18. Autorización especial de **tu empresa** como
+            transportista en **esta** guía: así se declara un traslado de materiales o residuos
+            peligrosos. Sin esta clave ni `codigo_entidad_autorizadora` viaja la de la ficha de la
+            empresa; las dos en `null` quitan la autorización de esta guía. De 3 a 50 caracteres,
+            sin tabulaciones ni saltos de línea (4396). Viaja en `CarrierParty/AgentParty`, junto
+            al registro MTC de la empresa, que sale siempre de su ficha (sin él, SUNAT observa 4391).
+          example: "1500002MRP"
+        codigo_entidad_autorizadora:
+          type: string
+          nullable: true
+          description: >-
+            Opcional, desde el 2026-09-18. Entidad que otorgó la autorización, catálogo D-37 de
+            SUNAT ("01" a "13"; "6" se acepta como "06"). Va junto con el número: con uno solo no
+            se emite y la respuesta avisa 4394 o 4397.
+          example: "06"
 
     ParteTraslado:
       type: object
@@ -473,6 +500,20 @@ components:
             suya, y en la guía de transportista cada vehículo envía la propia. SUNAT exige de 10 a
             15 caracteres, solo mayúsculas y números, o rechaza con 3355; sin él observa 4399.
           example: ""
+        numero_autorizacion_especial:
+          type: string
+          description: >-
+            Opcional. Autorización especial de **este** vehículo (materiales o residuos
+            peligrosos, carga regulada). En la guía de transportista viaja **siempre**, en
+            `ShipmentDocumentReference`, desde el 2026-09-18; antes se guardaba y no llegaba al
+            XML. De 3 a 50 caracteres (4406).
+          example: "1500003CNG"
+        codigo_entidad_autorizadora:
+          type: string
+          description: >-
+            Opcional. Entidad que otorgó la autorización del vehículo, catálogo D-37 ("01" a
+            "13"). Va junto con el número: con uno solo no se emite y se avisa 4403 o 4405.
+          example: "06"
 
     ItemGuia:
       type: object

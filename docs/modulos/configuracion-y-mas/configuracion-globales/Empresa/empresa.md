@@ -28,6 +28,17 @@ Completa los siguientes campos:
 - **Título (Nombre Web):** Define el nombre que aparecerá en la pestaña del navegador al acceder a la plataforma.
 - **Logo APP:** Sube un logo específico para la aplicación, utilizando el botón azul. Se recomienda un color de fondo blanco.
 
+**Si emites guías de remisión transportista** (campos adicionales):
+
+- **Registro MTC:** el número de registro de tu empresa en el Ministerio de Transportes. Viaja en
+  cada [guía de transportista](../../../Complementarios/guias-de-remision/06-Guias-de-Transportistas.md);
+  sin él, SUNAT la acepta pero la observa. Solo letras y números, hasta 20 (sin guiones): el
+  sistema lo guarda sin espacios y en mayúsculas, y te avisa si no tiene el formato de SUNAT.
+- **Autorización especial (N°)** y **Entidad emisora (D-37):** el permiso de tu empresa para
+  trasladar materiales o residuos peligrosos (u otra carga regulada) y la entidad que lo otorgó.
+  Cada guía de transportista la lleva por defecto, y se puede cambiar o quitar en la guía. Van
+  juntos: si llenas uno, el sistema pide el otro.
+
 **Entorno del Sistema**
 
 - **SOAP Tipo:** Cambia este valor de "Demo" a "Producción" para habilitar tu sistema.

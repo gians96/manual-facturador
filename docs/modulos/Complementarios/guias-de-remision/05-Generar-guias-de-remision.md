@@ -80,9 +80,20 @@ Marca la casilla **Registrar vehículos y conductores del transportista** cuando
 - **Conductor principal y placa son obligatorios para SUNAT.** Sin ellos rechaza la guía.
 - La tabla de vehículos muestra el **TUC** y la **Aut. especial** (número y entidad) de cada vehículo, tal como están en [Creación de vehículos](./09-Creacion-de-Vehiculos.md).
 - **Tracto y remolque:** el tracto es el primer vehículo y el remolque o semirremolque, el segundo; cada uno con **su propia** constancia (TUC). Aquí no hay campo de semirremolque: el remolque se declara siempre como segundo vehículo, y así sale en el XML y en el PDF (fila *Secundario*).
-- **Materiales o residuos peligrosos:** la guía no tiene una casilla de «material peligroso». Se declara el permiso como **autorización especial** del transportista ([Creación de transportistas](./07-Creacion-de-transportistas.md)), de cada vehículo o de ambos, según a quién se otorgó.
+- **Materiales o residuos peligrosos:** la guía no tiene una casilla de «material peligroso». Se declara el permiso como **autorización especial** del transportista ([Creación de transportistas](./07-Creacion-de-transportistas.md)), de cada vehículo o de ambos, según a quién se otorgó. Si además quieres citar el permiso como documento, usa **Documento relacionado** (ver abajo).
 - Si el vehículo principal **no tiene TUC**, aparece un aviso: SUNAT aceptará la guía pero la observará. La guía se guarda igual.
 - La **fecha de traslado** no puede ser anterior a la **fecha de entrega al transportista**: SUNAT la rechaza.
+
+### Documento relacionado
+
+El botón **Documento relacionado** ofrece, además de **Factura** y **Boleta**, los documentos del
+catálogo 61 de SUNAT que solo admite la guía remitente (`71` a `78`). Entre ellos está la
+**autorización para manejo y recojo de residuos sólidos (`76`)**:
+
+- Un permiso tiene **un solo número** (por ejemplo `1502607MRP`), sin serie. Hasta 100 caracteres y
+  **sin espacios**, o SUNAT lo rechaza.
+- El RUC se precarga con el del **transportista elegido**, que es quien tiene la autorización de
+  residuos. Se puede corregir.
 
 :::tip Editar una guía conserva su transporte
 Al usar **Editar** en una guía registrada o rechazada, el formulario muestra el transportista, los conductores y los vehículos que tenía la guía, aunque alguno ya no esté activo en el catálogo. Antes los reemplazaba por los predeterminados.

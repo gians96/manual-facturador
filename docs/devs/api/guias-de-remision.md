@@ -585,10 +585,14 @@ no los conoce, pero te dicen que la guía no va a quedar exactamente como la env
 | `2523` | `unidad_de_medida` del peso | Solo se admite `KGM` o `TNE`. La API acepta las 68 del catálogo y las vuelca al XML |
 | `2523` | `peso_bruto_total` | SUNAT exige un decimal **positivo**: cero se rechaza |
 | `2567` | `vehiculo.numero_de_placa` | Una placa con guiones o espacios se rechaza |
-| `2570` | `chofer_secundario.N` | Conductor secundario con datos pero sin tipo de documento. Solo cuando la guía lleva los secundarios al XML: transporte privado, o público con el indicador |
+| `2560` | `datos_remitente` | Guía de transportista cuyo remitente es tu propia empresa, que ahí es el transportista. Rechazo seguro (comprobado contra producción); el panel no deja emitirla |
+| `2570` | `chofer_secundario.N` | Conductor secundario con datos pero sin tipo de documento. Solo cuando la guía lleva los secundarios al XML: transporte privado, público con el indicador, o guía de transportista |
+| `2692` | `documento_relacionado.N.documento.id` | Código del catálogo 61 que ese tipo de guía no admite. El caso típico: el `76` (residuos) en una guía de transportista, que es solo del remitente |
 | `2775` | `direccion_partida.ubigeo` | Seis dígitos exactos, en partida y en llegada |
 | `2775` | direcciones | Se descartan en la guía de transportista |
-| `2566` | `vehiculo.numero_de_placa` | Con el indicador de vehículos y conductores del transportista, falta la placa del vehículo principal |
+| `2566` | `vehiculo.numero_de_placa` | Con el indicador de vehículos y conductores del transportista, o en una guía de transportista, falta la placa del vehículo principal |
+| `3345` · `3346` | `documento_relacionado` | Guía de transportista con más documentos relacionados de los que admite: hasta 2 si uno es un permiso (`65` a `69`) o una `31`; si no, 1, salvo una guía remitente electrónica |
+| `3380` | `documento_relacionado.N.ruc` | Guía de transportista con una factura, boleta o guía relacionada sin un RUC de emisor de 11 dígitos: sale sin emisor y SUNAT la rechaza |
 | `3357` | `chofer` | Con el indicador, el conductor principal no trae tipo, número, nombres o licencia |
 | `3364` | `direccion_partida.ubigeo` | Debe coincidir con el ubigeo del puerto informado |
 | `3409` | `documento_relacionado.N.ruc` | En un código que no es del remitente (`76`, `92`…) el `ruc` no tiene 11 dígitos: el XML lleva el RUC de tu empresa como emisor |
@@ -597,16 +601,17 @@ no los conoce, pero te dicen que la guía no va a quedar exactamente como la env
 | `3483` | `codigo_de_puerto` | El motivo `19` lo exige |
 | `3493` | `documento_relacionado` | El motivo `19` exige `50`, `52`, `91` o `92` |
 | `3616` | `fecha_de_traslado` | Con el indicador, el traslado empieza antes de la entrega al transportista |
-| `3618` | `fecha_entrega_transporte` | Anterior a la de emisión |
+| `3618` | `fecha_entrega_transporte` | Anterior a la de emisión. No aplica a la guía de transportista, que no tiene esa fecha |
 | `4186` | `observaciones` | Más de 250 caracteres |
 | `4190` | `descripcion_motivo_traslado` | Motivo `13` con una descripción de menos de 3 letras |
 | `4371` | `documento_relacionado.N.documento.descripcion` | Documento relacionado con código y sin descripción: el XML sale con `cbc:DocumentType` vacío |
 | `4372` | `documento_relacionado.N.documento.descripcion` | Descripción de más de 120 caracteres o con saltos de línea |
-| `4391` | `transportista.numero_mtc` | Sin registro del Ministerio de Transportes |
-| `4394` · `4397` | `transportista.codigo_entidad_autorizadora` · `transportista.numero_autorizacion_especial` | Autorización especial del transportista sin entidad o sin número: **no se emite** |
-| `4395` | `transportista.codigo_entidad_autorizadora` | Entidad fuera del catálogo D-37: la autorización **no se emite** |
+| `4391` | `transportista.numero_mtc` · `empresa.registro_mtc` | Sin registro del Ministerio de Transportes. En la guía de transportista es el de **tu empresa** (ficha de la empresa) |
+| `4392` | `transportista.numero_mtc` · `empresa.registro_mtc` | Registro MTC con otro formato que el de SUNAT: hasta 20 letras mayúsculas y números, sin espacios ni guiones |
+| `4394` · `4397` | `transportista.codigo_entidad_autorizadora` · `transportista.numero_autorizacion_especial` | Autorización especial del transportista sin entidad o sin número: **no se emite**. En la guía de transportista, en `datos_del_emisor.…` |
+| `4395` | `transportista.codigo_entidad_autorizadora` | Entidad fuera del catálogo D-37: la autorización **no se emite**. En la guía de transportista, en `datos_del_emisor.…` |
 | `4396` | `transportista.numero_autorizacion_especial` | Número de la autorización del transportista con menos de 3 o más de 50 caracteres, o con tabulaciones o saltos de línea. Viaja igual y SUNAT la observa |
-| `4399` | `vehiculo.certificado_habilitacion_vehicular` | Con el indicador, un vehículo con placa y sin TUC. Un aviso por vehículo, principal o secundario |
+| `4399` | `vehiculo.certificado_habilitacion_vehicular` | Con el indicador, o en una guía de transportista, un vehículo con placa y sin TUC. Un aviso por vehículo, principal o secundario |
 | `4403` · `4405` | `vehiculo.codigo_entidad_autorizadora` · `vehiculo.numero_autorizacion_especial` | Lo mismo para la autorización de un vehículo: **no se emite** |
 | `4406` | `vehiculo.numero_autorizacion_especial` | Lo mismo que `4396`, para el número de la autorización de un vehículo |
 | `4407` | `vehiculo.codigo_entidad_autorizadora` | Entidad del vehículo fuera del D-37: **no se emite** |
@@ -614,7 +619,9 @@ no los conoce, pero te dicen que la guía no va a quedar exactamente como la env
 | `REDONDEO_CANTIDAD` | `items.N.cantidad` | La cantidad de un bien se guarda con 4 decimales y se redondea |
 | `RECORTE_DESCRIPCION_MOTIVO` | `descripcion_motivo_traslado` | La descripción del motivo pasa de 100 caracteres: viaja cortada en `cbc:HandlingInstructions`. En la guía de transportista no aplica |
 | `SECUNDARIO_INCOMPLETO` | `chofer_secundario.N` · `vehiculo_secundario.N.numero_de_placa` | Conductor secundario a medias (sale con datos vacíos), o vehículo secundario con TUC o autorización y sin placa (sale con la placa vacía). Mismas condiciones que `2570` |
-| `AUTORIZACION_NO_EMITIDA` | `vehiculo.numero_autorizacion_especial` · `vehiculo_secundario.N.numero_autorizacion_especial` | Autorización de un vehículo completa y válida, pero en una guía sin el régimen: transporte privado (`02`), o público (`01`) sin `indicador_vehiculos_conductores_transportista`. Se guarda, pero **no viaja en el XML**. La del transportista sí viaja en cualquier caso |
+| `AUTORIZACION_NO_EMITIDA` | `vehiculo.numero_autorizacion_especial` · `vehiculo_secundario.N.numero_autorizacion_especial` | Autorización de un vehículo completa y válida, pero en una guía remitente sin el régimen: transporte privado (`02`), o público (`01`) sin `indicador_vehiculos_conductores_transportista`. Se guarda, pero **no viaja en el XML**. La del transportista sí viaja en cualquier caso, y en la guía de transportista viajan todas |
+| `AUTORIZACION_NO_EMITIDA` | `datos_del_emisor.numero_autorizacion_especial` | Autorización de `datos_del_emisor` en una guía remitente: solo existe en la de transportista |
+| `TRANSPORTISTA_IGNORADO` | `transportista` | Bloque `transportista` en una guía de transportista: ahí el transportista es tu empresa y el bloque se descarta. El MTC sale de la ficha y la autorización va en `datos_del_emisor` |
 
 Como en el pliego de SUNAT, los códigos que empiezan por `2` o `3` son rechazos y los que empiezan
 por `4`, observaciones. `3409` es la excepción: SUNAT no llega a verlo, porque el XML pone el RUC de
@@ -625,10 +632,15 @@ admite; con `4396` y `4406` la autorización sí viaja, y SUNAT la observa. Los 
 secundario nombran su posición: `vehiculo_secundario.0.…`.
 
 Los códigos **no numéricos** (`REDONDEO_PESO`, `REDONDEO_CANTIDAD`, `SECUNDARIO_INCOMPLETO`,
-`AUTORIZACION_NO_EMITIDA` y `RECORTE_DESCRIPCION_MOTIVO`) son avisos del sistema, no de SUNAT. Los
-cuatro primeros, `2570`, `3409`, `4371`, `4372`, `4396` y `4406` existen desde el 2026-09-15;
-`4190` y `RECORTE_DESCRIPCION_MOTIVO`, desde el 2026-09-16, cuando la descripción del motivo empezó
-a viajar en el XML.
+`AUTORIZACION_NO_EMITIDA`, `RECORTE_DESCRIPCION_MOTIVO` y `TRANSPORTISTA_IGNORADO`) son avisos del
+sistema, no de SUNAT. Los cuatro primeros, `2570`, `3409`, `4371`, `4372`, `4396` y `4406` existen
+desde el 2026-09-15; `4190` y `RECORTE_DESCRIPCION_MOTIVO`, desde el 2026-09-16, cuando la
+descripción del motivo empezó a viajar en el XML.
+
+Desde el 2026-09-18 la **guía de transportista** avisa como la remitente: antes callaba porque no
+enviaba ni el registro MTC ni ninguna autorización, y lo que llegaba se guardaba y se perdía. Son
+de esa fecha `2560`, `2692`, `3345`, `3346`, `3380`, `4392` y `TRANSPORTISTA_IGNORADO`. El panel
+de la guía de transportista muestra los mismos avisos al guardar.
 
 Por API, `3357` y `2566` casi no se ven como aviso: con
 `indicador_vehiculos_conductores_transportista` en `true`, la emisión ya responde
@@ -636,6 +648,7 @@ Por API, `3357` y `2566` casi no se ven como aviso: con
 como el panel.
 
 → [Vehículos y conductores del transportista](./offline/endpoints/13-guia-remision-remitente.md#vehículos-y-conductores-del-transportista)
+· [Guía de transportista: materiales o residuos peligrosos](./offline/endpoints/14-guia-remision-transportista.md#materiales-o-residuos-peligrosos)
 
 :::danger El ubigeo de partida se truncaba
 Hasta el 11 de septiembre de 2026, el `ubigeo` de `direccion_partida` se cortaba a **un solo

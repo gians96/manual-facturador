@@ -381,6 +381,13 @@ La entidad va del catálogo D-37 de arriba (por ejemplo `06` MTC), **no** el `76
 autorización donde corresponde según a quién se otorgó: al transportista, a cada vehículo o a
 ambos.
 
+:::tip ¿Emites como empresa de transporte?
+Esta sección es de la guía **remitente**. En la guía de transportista (`31`) la autorización es
+la de tu empresa y la de tus vehículos, viaja siempre, y el `76` **no vale**: el catálogo 61 lo
+reserva al remitente y SUNAT lo rechaza con `2692`. Ahí los permisos son el `65` y el `67`
+(MATPEL). Ver [14 — Materiales o residuos peligrosos](14-guia-remision-transportista.md#materiales-o-residuos-peligrosos).
+:::
+
 ### Ejemplo: retorno a almacén con tracto y remolque (motivo `13`)
 
 Tu empresa devuelve la carga a su almacén después de pesarla en una balanza: es remitente y
