@@ -381,6 +381,6 @@ que la regenera siempre.
 
 - Mismas consideraciones que la guía remitente: firma digital y envío SUNAT se procesan al sincronizar.
 - Por lote (`sync-batch`) funciona igual que el `09`: ver [15 — Guías de remisión por lote](15-sync-batch.md#guías-de-remisión-por-lote--09-y-31).
-- Para corregir por el lote una guía rechazada, mándala con un `offline_id` nuevo y su `external_id`: con el mismo `offline_id` la corrección no se aplica → [15 — Corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
+- Para corregir por el lote una guía rechazada, mándala con su `external_id` dentro de `data`: sin él, con el mismo `offline_id` la corrección no se aplica. Desde el 2026-09-18 basta con eso; en un servidor anterior, además con un `offline_id` nuevo → [15 — Corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 - Los datos de remitente y destinatario se pueden llenar offline usando el catálogo de clientes descargado.
 - Los vehículos secundarios son opcionales (para semirremolques).

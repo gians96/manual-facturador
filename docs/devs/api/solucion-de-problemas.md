@@ -207,17 +207,22 @@ aceptación.
 **Síntoma.** Corriges en tu sistema una guía rechazada y la reenvías por el lote. La fila vuelve
 con `success: true`, la mandas a SUNAT y SUNAT la rechaza con el mismo código. Y así cada vez.
 
-**Causa.** La reenviaste con su mismo `offline_id`. El lote comprueba el `offline_id` antes de
-leer el `data`, así que la fila vuelve con `was_duplicate: true` y el JSON corregido no se aplica.
+**Causa.** La reenviaste con su mismo `offline_id` y sin su `external_id`. El lote comprueba el
+`offline_id` antes de leer el `data`, así que la fila vuelve con `was_duplicate: true` y el JSON
+corregido no se aplica.
 La guía sigue con los datos de la primera vez, y `send` manda el XML que se firmó entonces. En un
 caso real, la misma guía se reenvió más de 320 veces.
 
 Tampoco basta con cambiar los datos directamente en la base: `send` manda el XML firmado que ya
 está guardado, sin volver a generarlo.
 
-**Qué hacer.** Mira `was_duplicate`: si viene en `true`, no se corrigió nada. Tienes dos caminos:
+**Qué hacer.** Mira `was_duplicate`: si viene en `true`, no se corrigió nada. Desde el
+2026-09-18 esa fila trae además el estado de la guía y, si está rechazada, el aviso
+`GUIA_RECHAZADA_SIN_CORREGIR` con el `external_id` que falta. Tienes dos caminos:
 
-- Reenvía la guía por el lote con un `offline_id` nuevo y su `external_id` dentro de `data`.
+- Reenvía la guía por el lote con su `external_id` dentro de `data`. Desde el 2026-09-18 vale con
+  el mismo `offline_id` y la fila vuelve con `was_corrected: true`; en un servidor anterior, usa
+  un `offline_id` nuevo.
 - Corrígela con `POST /api/dispatch-carrier` o `POST /api/dispatches`, mandando su `external_id`.
 
 Después, `send` y `status_ticket` →
@@ -330,6 +335,7 @@ el síntoma viejo en servidores anteriores.
 | 2026-09-15 | `DATABASE_ERROR` trae `errors.tipo` y deja de culpar al payload |
 | 2026-09-16 | `codigo_del_domicilio_fiscal` en `null` ya no provoca el rechazo 3369; el código de producto SUNAT por línea llega al XML |
 | 2026-09-17 | La dirección de llegada de la guía `09` deja de fallar con MySQL 1452; el ubigeo enviado como número es un 422 antes de emitir, en vez de viajar crudo al XML; nace `restriccion_no_atribuible` |
+| 2026-09-18 | Una guía se corrige por el lote con su mismo `offline_id` si trae su `external_id` (`was_corrected: true`); el `was_duplicate` de una guía trae su estado y, si está rechazada, lo avisa |
 
 ## Ver también
 

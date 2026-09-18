@@ -733,9 +733,10 @@ Se conservan la serie, el número y el propio `external_id`. Después hay que vo
 envío y a la consulta del ticket: corregir no envía nada a SUNAT.
 
 :::tip ¿La emitiste por el lote?
-También se corrige por `POST /api/offline/sync-batch`, pero con un `offline_id` **nuevo** y el
-`external_id` dentro de `data`. Con el `offline_id` de siempre, el lote devuelve `was_duplicate`
-sin leer el JSON, y la guía no cambia →
+También se corrige por `POST /api/offline/sync-batch`, con el `external_id` dentro de `data`.
+Desde el 2026-09-18 vale con el `offline_id` de siempre. En un servidor anterior hace falta uno
+**nuevo**: con el de siempre, el lote devuelve `was_duplicate` sin leer el JSON y la guía no
+cambia →
 [corregir una guía rechazada por el lote](./offline/endpoints/15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 :::
 
@@ -806,8 +807,9 @@ reconoce. Con él, la decisión es esta:
         05 Aceptado                  → nada: la baja va por el portal de SUNAT
 ```
 
-Si emites por el lote, el «POST con external_id» puede ser una fila de `sync-batch` con un
-`offline_id` nuevo y el `external_id` dentro de `data`, o la llamada directa a este endpoint
+Si emites por el lote, el «POST con external_id» puede ser una fila de `sync-batch` con el
+`external_id` dentro de `data` (desde el 2026-09-18, con el mismo `offline_id`; antes, con uno
+nuevo), o la llamada directa a este endpoint
 → [corregir una guía rechazada por el lote](./offline/endpoints/15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 
 :::note Desde el 2026-09-11

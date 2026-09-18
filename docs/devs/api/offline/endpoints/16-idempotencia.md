@@ -280,7 +280,8 @@ Flutter: procesar response
 :::note `was_duplicate` no aplica el `data`
 Como el `offline_id` se comprueba antes que el payload, un reenvío con el mismo `offline_id`
 devuelve el comprobante tal como quedó la primera vez. En una guía rechazada eso significa que el
-JSON corregido **no se aplicó** →
+JSON corregido **no se aplicó**. Para que se aplique, la fila tiene que traer el `external_id` de
+la guía, y entonces vuelve con `was_corrected: true` en vez de `was_duplicate` →
 [corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 :::
 
@@ -289,6 +290,6 @@ JSON corregido **no se aplicó** →
 ## Notas
 
 - El `offline_id` es **inmutable**: una vez asignado, nunca cambia. Aunque Flutter reintente N veces, siempre envía el mismo UUID para el mismo comprobante.
-- **La excepción es una guía corregida por el lote.** Para corregir por `sync-batch` una guía rechazada se manda un `offline_id` nuevo junto con su `external_id`, y la guía se queda con el nuevo. El viejo deja de reconocerla → [corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
+- **La excepción es una guía corregida por el lote con un `offline_id` nuevo**: la guía se queda con el nuevo y el viejo deja de reconocerla. Desde el 2026-09-18 no hace falta: con el mismo `offline_id` y su `external_id` en `data`, la guía se corrige y conserva el suyo → [corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 - El campo es `VARCHAR(36)` para UUID estándar: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`.
 - Los comprobantes creados por la web (sin offline) tendrán `offline_id = NULL`.

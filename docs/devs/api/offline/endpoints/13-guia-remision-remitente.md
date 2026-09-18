@@ -596,4 +596,4 @@ ese paso.
 - Las direcciones de partida/llegada usan ubigeo del catálogo descargado (ver [05-ubigeo.md](05-ubigeo.md)).
 - Validaciones estrictas del backend: `direccion_llegada.direccion` y `direccion_partida.direccion` son **requeridos** y máx. 100 caracteres. (Hasta el 2026-09-09 el error los nombraba como `delivery.address` y `origin.address`, que son los nombres internos y no existen en tu payload.)
 - Para offline, enviar `numero_documento` con número concreto basado en `series-numbering`.
-- Para corregir por el lote una guía rechazada, mándala con un `offline_id` nuevo y su `external_id`: con el mismo `offline_id` la corrección no se aplica → [15 — Corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
+- Para corregir por el lote una guía rechazada, mándala con su `external_id` dentro de `data`: sin él, con el mismo `offline_id` la corrección no se aplica. Desde el 2026-09-18 basta con eso; en un servidor anterior, además con un `offline_id` nuevo → [15 — Corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
