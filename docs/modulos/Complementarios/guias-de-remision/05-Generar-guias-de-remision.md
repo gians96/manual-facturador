@@ -127,17 +127,33 @@ Al usar **Editar** en una guía registrada o rechazada, el formulario muestra el
 
 ## Antes de emitir
 
-Junto al botón **Generar**, la sección **Antes de emitir** resume lo que SUNAT va a rechazar u
-observar con los datos de la guía, mientras la llenas:
+Junto al botón **Generar**, la sección **Antes de emitir** dice, mientras llenas la guía, si ya se
+puede emitir. Arriba muestra el estado (**No se puede emitir todavía**, **Se puede emitir** con
+observaciones de SUNAT o **Lista para emitir**) y debajo, en tres grupos:
 
-- el transportista sin registro MTC, o con un registro que no tiene el formato de SUNAT;
-- con **Registrar vehículos y conductores del transportista**, los vehículos sin TUC y una fecha de
-  traslado anterior a la de entrega al transportista;
-- una fecha de entrega al transportista anterior a la de emisión;
-- el motivo **Otros** (`13`) sin descripción.
+- **Por completar o corregir** (en rojo): lo que falta y sin lo cual SUNAT **rechaza** la guía
+  (cliente, punto de partida y de llegada, fecha de entrega al transportista en transporte público,
+  conductor con documento, nombre y licencia, vehículo, el documento aduanero de los motivos 08, 09
+  y 19...) y lo que SUNAT rechaza seguro (la fecha de entrega anterior a la de emisión, una placa
+  con guion, el destinatario igual a tu empresa en una venta...). **Esto sí impide generar la guía.**
+- **SUNAT la aceptará con observaciones** (en ámbar): el transportista sin registro MTC, los
+  vehículos sin TUC, la venta con entrega a terceros (`03`) sin comprador... **No impiden generar**:
+  SUNAT acepta la guía y la observa.
+- **Avisos** (en azul): consejos, como describir el traslado en el motivo **Otros** (`13`).
 
-No bloquea, pero conviene revisarla: **al generar, la guía se envía a SUNAT**. Al guardar, el
-sistema muestra además los avisos que calcula el servidor.
+Cada punto es un enlace que te lleva al campo. Si pulsas **Generar** con algo por completar, el
+formulario no envía la guía: marca en rojo los campos, te lleva al primero y lo dice en un mensaje.
+Cada sección muestra además cuántas cosas le faltan, y junto al botón aparece un enlace con el total.
+
+**Al generar, la guía se envía a SUNAT.** Después, el sistema muestra los avisos de SUNAT que
+calcula el servidor para esa guía.
+
+:::tip Generar una guía desde otra creada por API
+Una guía emitida por la API no guarda el punto de partida ni el de llegada como direcciones
+registradas. Al generar otra a partir de ella, el formulario los busca entre las direcciones; si no
+están, deja el campo vacío (no elige otra sin avisar) y muestra la dirección original con un enlace
+**Registrarlo**, que abre el alta ya rellenada.
+:::
 
 ---
 

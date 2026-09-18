@@ -68,7 +68,10 @@ La sección se activa con la casilla **Declarar autorización especial**, como e
 - **Desmárcala** si este traslado no lleva la autorización: la guía se emite sin ella. Si vuelves a
   marcarla, recupera lo que habías escrito.
 - Si tu empresa no tiene ninguna, viene desmarcada; al marcarla escribes el número y eliges la
-  entidad. Marcada, el número y la entidad son obligatorios.
+  entidad.
+- La autorización viaja **completa o no viaja**: si la casilla queda marcada pero vacía, o falta el
+  número o la entidad, **Antes de emitir** lo avisa y la guía se emite sin autorización. No
+  impide generarla.
 
 En la cabecera de la sección se ve siempre el **registro MTC** de tu empresa, porque viaja en todas
 las guías de transportista. Si dice «sin registrar», SUNAT aceptará la guía pero la observará: el
@@ -100,13 +103,25 @@ rechaza. Por eso no aparece en esta lista.
 
 ### Antes de emitir
 
-Junto al botón **Generar**, la sección **Antes de emitir** resume lo que SUNAT va a rechazar u
-observar con los datos de la guía, mientras la llenas: el remitente igual a tu empresa, el registro
-MTC que falta o con otro formato, los vehículos sin TUC, la falta de pagador de flete o una
-autorización a medias. No bloquea (salvo lo que el formulario ya exige), pero conviene revisarla:
-**al generar, la guía se envía a SUNAT**.
+Junto al botón **Generar**, la sección **Antes de emitir** dice, mientras llenas la guía, si ya se
+puede emitir, en tres grupos:
 
-Al guardar, el sistema muestra además los **avisos de SUNAT** que calcula el servidor para esa guía.
+- **Por completar o corregir** (en rojo), que **impide generar la guía**: lo que falta y sin lo cual
+  SUNAT la rechaza (remitente y punto de partida, destinatario y punto de llegada, un peso mayor que
+  0, el vehículo, el conductor con documento, nombre y licencia) y lo que SUNAT rechaza seguro (el
+  remitente igual a tu empresa, una placa con guion).
+- **SUNAT la aceptará con observaciones** (en ámbar), que **no impide generarla**: el registro MTC
+  que falta o con otro formato, los vehículos sin TUC, la falta de pagador de flete o un pagador
+  sin documento o nombre.
+- **Avisos** (en azul): por ejemplo, una autorización especial incompleta, que no viajará.
+
+Cada punto lleva a su campo. Si pulsas **Generar** con algo por completar, la guía no se envía: los
+campos se marcan en rojo, el formulario te lleva al primero y un mensaje dice qué falta. **Al generar,
+la guía se envía a SUNAT**; después se muestran los **avisos de SUNAT** que calcula el servidor.
+
+Al generar una guía a partir de otra creada por **API**, el formulario busca el remitente, el
+destinatario y sus direcciones entre los registrados. Lo que no encuentra lo muestra bajo su campo,
+con un enlace **Registrarlo** que abre el alta ya rellenada.
 
 ## Agregar Producto:
 
