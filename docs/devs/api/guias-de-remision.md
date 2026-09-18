@@ -388,8 +388,9 @@ la credencial GRE real, que se saca en SUNAT SOL marcando *GREE Emisión de Comp
 
 ## El estado manda qué se puede hacer
 
-Una guía pasa por estos estados, y cada uno permite cosas distintas. No es un detalle de
-pantalla: el servidor lo hace cumplir.
+Una guía pasa por estos estados, y cada uno permite cosas distintas. Eliminar, recrear y marcar
+como anulada lo comprueba también el servidor, no solo la pantalla. Corregir por API, no del
+todo: lo explica el aviso de abajo.
 
 | Estado | Qué se puede hacer | Por qué |
 |---|---|---|
@@ -401,7 +402,9 @@ pantalla: el servidor lo hace cumplir.
 
 :::warning Una guía enviada no se edita
 Aunque siga sin respuesta. Tocarla mientras SUNAT la procesa deja el sistema diciendo una cosa y
-SUNAT otra.
+SUNAT otra. El panel solo ofrece **Editar** en una guía Registrada o Rechazada, pero al corregir
+por API el servidor **solo frena las aceptadas**, así que esa comprobación te toca a ti →
+[registrar o actualizar](#registrar-o-actualizar-lo-decide-el-external_id).
 :::
 
 ### Eliminar: nunca lo que SUNAT tiene, y siempre preguntando antes
@@ -700,7 +703,8 @@ de carga. Los avisos previos te dirán lo que falta, pero hoy la guía no llega 
 ## Corregir una guía rechazada
 
 Cuando SUNAT rechaza una guía, **no hace falta emitir otra**. Se corrige y se reenvía con el
-mismo número.
+mismo número, por el **mismo endpoint** con el que se emitió: `POST /api/dispatches` o
+`POST /api/dispatch-carrier`.
 
 Basta con incluir el `external_id` que recibiste al emitirla, junto con el payload corregido:
 
@@ -712,8 +716,8 @@ Basta con incluir el `external_id` que recibiste al emitirla, junto con el paylo
 }
 ```
 
-Se conservan la serie, el número y el propio `external_id`. Después basta con volver a llamar al
-envío.
+Se conservan la serie, el número y el propio `external_id`. Después hay que volver a llamar al
+envío y a la consulta del ticket: corregir no envía nada a SUNAT.
 
 **¿Y el error `1032`?** El pliego de SUNAT lo define como *«El comprobante ya esta informado y se
 encuentra con estado anulado o rechazado»*, y parecía impedir reenviar con el mismo número. Se
@@ -728,6 +732,64 @@ Si no la vas a corregir, también se puede [eliminar](#eliminar-nunca-lo-que-sun
 Si SUNAT ya la aceptó, el sistema responde `DISPATCH_ALREADY_ACCEPTED`. Para deshacerla hay que
 darla de baja en el portal de SUNAT, y eso **solo se puede el mismo día**. Después, el estado se
 puede reflejar a mano desde el menú de tres puntos del listado.
+:::
+
+### Registrar o actualizar: lo decide el `external_id`
+
+El mismo endpoint registra y actualiza, pero **no busca la guía por serie y número**: la reconoce
+solo por el `external_id`. Que registre o actualice depende de si lo mandas:
+
+| Lo que envías | Qué hace | Respuesta |
+|---|---|---|
+| Sin `external_id`, con `numero_documento: "#"` | Registra una guía **nueva** con el siguiente número. La rechazada se queda como estaba | 200, con otro `external_id` |
+| Sin `external_id`, con el número de la rechazada | Nada: ese número ya está registrado | 409 `DUPLICATE_DOCUMENT` |
+| Con el `external_id` de una guía en cualquier estado salvo Aceptado (`05`) | **Actualiza** esa guía | 200, con el mismo número y el mismo `external_id` |
+| Con un `external_id` que no existe | Nada: no registra otra en su lugar | 422 `DISPATCH_NOT_FOUND` |
+| Con el `external_id` de una guía aceptada | Nada | 422 `DISPATCH_ALREADY_ACCEPTED` |
+
+Un `external_id` vacío o `null` cuenta como no enviado.
+
+Al actualizar:
+
+- **Manda el JSON completo**, no solo lo que cambia. Reemplaza todo lo que tenía la guía, ítems
+  incluidos, y los campos obligatorios se validan igual que al emitir.
+- **La serie y el número del JSON no se usan**: mandan los de la guía. Así un descuido no mueve
+  el correlativo de un documento que ya pasó por SUNAT.
+- La guía **se vuelve a firmar**, se rehace el PDF y queda en **Registrado** (`01`). La respuesta
+  trae los `warnings` del JSON nuevo.
+- **No se envía a SUNAT.** Hasta que vuelvas a llamar a `send`, consultar el ticket devuelve la
+  respuesta del envío anterior: el rechazo.
+- Si la empresa tiene activo el envío automático por correo, el cliente **vuelve a recibir** la
+  guía.
+- Si la corriges otro día, actualiza también `fecha_de_emision`. Con la fecha vieja, SUNAT puede
+  rechazarla con `2108` («Presentación fuera de fecha»).
+
+:::warning Actualiza solo guías Registradas o Rechazadas
+Hoy el servidor solo frena las **aceptadas**. Una guía **enviada** (`03`), con el ticket todavía en
+proceso, se deja sobrescribir: vuelve a Registrado y conserva el ticket anterior. Si después SUNAT
+acepta ese primer envío, el sistema se queda con unos datos que SUNAT nunca recibió. Con `98` en el
+ticket, espera la respuesta definitiva y decide con ella. Tampoco toques una **anulada** (`11`):
+SUNAT ya la tiene.
+:::
+
+### El flujo en tu integración
+
+Guarda el `external_id` de cada guía junto a tu propio registro: es la única llave que el sistema
+reconoce. Con él, la decisión es esta:
+
+```
+¿Tienes el external_id de esa guía?
+├─ No → POST sin external_id → registra
+└─ Sí → según el último estado que te devolvió la API:
+        01 Registrado o 09 Rechazado → POST con external_id → send → status_ticket
+        03 Enviado                   → status_ticket; con 98, esperar y volver a consultar
+        05 Aceptado                  → nada: la baja va por el portal de SUNAT
+```
+
+:::note Desde el 2026-09-11
+En un servidor anterior, el `external_id` del payload no se tiene en cuenta y la llamada se trata
+como una guía nueva: con `"#"` gasta un número por intento, y con el número de la rechazada falla
+por duplicado. Si no sabes de qué fecha es tu instalación, pregúntale a soporte.
 :::
 
 ## Prueba de extremo a extremo

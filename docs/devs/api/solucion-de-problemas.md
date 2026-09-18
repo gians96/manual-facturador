@@ -304,6 +304,7 @@ el síntoma viejo en servidores anteriores.
 | 2026-09-07 | Notas de crédito y débito validan lo suyo antes de emitir; `facturador_item_id` resuelve el producto por id |
 | 2026-09-08 | El destino de pago en efectivo (`'cash'`) vuelve a aceptarse (regresión del 05-sep) |
 | 2026-09-09 | `PROCESSING_ERROR` deja de ser el cajón de sastre; `cash_error_code` y `signed`/`sign_message` en la respuesta del lote |
+| 2026-09-11 | Una guía rechazada se corrige por API con su mismo número, mandando su `external_id`; antes cada llamada se trataba como una guía nueva |
 | 2026-09-15 | `DATABASE_ERROR` trae `errors.tipo` y deja de culpar al payload |
 | 2026-09-16 | `codigo_del_domicilio_fiscal` en `null` ya no provoca el rechazo 3369; el código de producto SUNAT por línea llega al XML |
 | 2026-09-17 | La dirección de llegada de la guía `09` deja de fallar con MySQL 1452; el ubigeo enviado como número es un 422 antes de emitir, en vez de viajar crudo al XML; nace `restriccion_no_atribuible` |
