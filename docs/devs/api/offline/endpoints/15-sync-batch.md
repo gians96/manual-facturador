@@ -267,6 +267,44 @@ momento.
 }
 ```
 
+### La fila de un comprobante no trae el estado
+
+Lo que ves arriba es todo lo que devuelve una fila de boleta, factura o nota: `id`, `number`,
+`external_id` y `warnings`. **No hay `state_type_id`, ni `links`, ni la respuesta de SUNAT.**
+
+Eso no significa que el comprobante no se haya enviado. `sync-batch` reutiliza por dentro el
+mismo motor que `POST /api/documents`, así que si el negocio tiene el envío automático activo,
+la boleta sale hacia SUNAT y puede quedar **aceptada** en el mismo lote — solo que la fila no
+te lo cuenta.
+
+Para saber en qué estado quedó, con el `external_id` que acabas de recibir:
+
+```
+GET /api/document_check_server/{external_id}
+```
+
+→ [26 — Consultar el estado de un comprobante](26-envio-diferido-update-estado.md#3-consultar-el-estado-de-un-comprobante)
+
+:::warning El `doc_type` de la fila no es el estado
+
+En la fila de una boleta, `doc_type` vale `"03"`, y en la tabla de estados el `03` es
+**Enviado**. Son dos catálogos distintos que coinciden en el texto:
+
+- **`doc_type`** — el tipo de comprobante: `01` Factura · `03` Boleta · `07` NC · `08` ND ·
+  `09` GRE remitente · `31` GRE transportista · `20` Retención · `80` Nota de venta.
+- **`state_type_id`** — el estado ante SUNAT: `01` Registrado · `03` Enviado · `05` Aceptado ·
+  `07` Observado · `09` Rechazado · `11` Anulado · `13` Por anular.
+
+Una fila con `doc_type: "03"` es una **boleta**, en el estado que sea.
+:::
+
+:::info Las guías sí traen `state_type_id`, pero solo a veces
+
+En las filas `09` y `31` aparece **únicamente cuando `was_duplicate` es `true`** — es el estado
+de la guía que ya estaba. Ver [`signed` y `sign_message`](#signed-y-sign_message). En boletas y
+facturas no aparece nunca.
+:::
+
 ### Response con errores parciales
 
 ```json

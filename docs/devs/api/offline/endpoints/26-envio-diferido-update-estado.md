@@ -1,8 +1,9 @@
-# 26 — Envío Diferido y Actualización de Estado
+# 26 — Envío Diferido, Consulta y Actualización de Estado
 
 > **Endpoints:**  
 > `POST /api/documents/send`  
 > `POST /api/documents/updatedocumentstatus`  
+> `GET /api/document_check_server/{external_id}`  
 > **Auth:** `Bearer {token}`
 
 ---
@@ -146,6 +147,80 @@ Content-Type: application/json
 
 ---
 
+## 3. Consultar el Estado de un Comprobante
+
+```
+GET /api/document_check_server/{external_id}
+Authorization: Bearer {token}
+```
+
+Devuelve el estado actual de un comprobante ya emitido, a partir del `external_id`. Es la forma
+de enterarse de la respuesta de SUNAT cuando el comprobante se emitió por
+[`sync-batch`](15-sync-batch.md), que **no la devuelve**: su fila trae `id`, `number` y
+`external_id`, y nada del estado.
+
+No confundir con el punto 2: aquel **escribe** el estado que tú le digas; este solo **lee** el
+que hay.
+
+### Response (200 OK)
+
+```json
+{
+    "success": true,
+    "state_type_id": "05",
+    "file_cdr": "UEsDBBQAAAAIAMGKGFsc2h..."
+}
+```
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `state_type_id` | string | Estado actual. Los códigos, en la tabla de [Estados disponibles](#estados-disponibles) |
+| `file_cdr` | string \| null | El **ZIP del CDR en base64** — no el XML suelto. Casi siempre `null`; ver abajo |
+
+### `file_cdr` casi siempre llega en `null`
+
+Trae contenido solo si se cumplen **las dos** condiciones:
+
+1. `state_type_id` es `05` (Aceptado), **y**
+2. el comprobante es del **grupo `01`** — facturas y sus notas.
+
+:::warning Con una boleta es `null` aunque esté aceptada
+
+Las boletas son grupo `02`, así que este endpoint nunca les devuelve el CDR: solo el
+`state_type_id`. Para el archivo hay dos vías, las dos válidas para boletas:
+
+- `GET /downloads/document/cdr/{external_id}` — descarga directa.
+- El `links.cdr` que devuelve `POST /api/documents` al emitirla, si emites en línea. Ver
+  [09 — Boleta y Factura](09-boleta-factura.md#campos-clave-del-response).
+
+Y recuerda que una boleta solo tiene CDR si llegó a `05`, lo que depende de cómo esté
+configurado el envío: [37 — Envío automático a SUNAT](37-envio-automatico-a-sunat.md).
+:::
+
+### Un `external_id` que no existe responde `500`
+
+No hay `404` ni `error_code`. El comprobante inexistente —un UUID mal copiado, o uno de otro
+tenant— revienta con un error interno de PHP:
+
+```json
+{
+    "success": false,
+    "message": "Attempt to read property \"state_type_id\" on null"
+}
+```
+
+**No lo reintentes:** es permanente, no un fallo pasajero del servidor. Un `500` de este
+endpoint significa «ese `external_id` no existe aquí». El mensaje es feo porque el endpoint no
+comprueba el caso; se documenta tal cual para que puedas distinguirlo de una caída real.
+
+:::info Este endpoint no está en el explorador de API
+
+Nació para el flujo `documents_server` y quedó sin ficha OpenAPI. Funciona igual para cualquier
+comprobante del tenant, se emitiera como se emitiera.
+:::
+
+---
+
 ## Flujo Completo de Envío Diferido
 
 ```
@@ -197,21 +272,32 @@ Content-Type: application/json
 
 ### Flujo recomendado post-sync
 
+La fila que devuelve `sync-batch` para una boleta o una factura **no trae el estado**, así que
+el primer paso no es leerlo: es preguntarlo.
+
 ```
 sync-batch → para cada documento creado:
-  1. Si external_id existe y state_type_id === "01":
-     → Flutter puede llamar POST /api/documents/send para enviar a SUNAT
-  2. Después de enviar, verificar el estado con la respuesta
-  3. Si hay error de SUNAT, almacenar el external_id para retry posterior
+  1. Guardar el external_id que devolvió la fila
+  2. GET /api/document_check_server/{external_id}  → state_type_id
+  3. Si state_type_id === "01" (Registrado, sin remitir):
+       · factura o nota de factura → POST /api/documents/send
+       · boleta o nota de boleta   → POST /api/summaries (resumen diario)
+  4. Si es "09" (Rechazado), corregir y reemitir. Reenviar el mismo no cambia nada
+  5. Si es "05" (Aceptado), no hay nada que hacer
 ```
+
+El paso 2 no es opcional. Un comprobante en `01` es válido, está firmado y tiene PDF, pero
+**está sin declarar**; si das por hecho que emitir es enviar, nadie se entera hasta el cierre
+del periodo. Qué decide que salga en `01` o en `05`:
+[37 — Envío automático a SUNAT](37-envio-automatico-a-sunat.md).
 
 ### Campos a almacenar en SQLite (Flutter)
 
 Para cada documento sincronizado:
 
-| Campo | Descripción |
-|-------|-------------|
-| `external_id` | UUID del documento en el servidor |
-| `state_type_id` | Estado actual (`01`, `03`, `05`, etc.) |
-| `number` | Número del documento (ej: `F001-122`) |
-| `needs_send` | Flag local: `true` si se creó con `enviar_xml_firmado: false` |
+| Campo | Descripción | De dónde sale |
+|-------|-------------|---------------|
+| `external_id` | UUID del documento en el servidor | La fila de `sync-batch` |
+| `number` | Número del documento (ej: `F001-122`) | La fila de `sync-batch` |
+| `state_type_id` | Estado actual (`01`, `03`, `05`, …) | **No viene en `sync-batch`.** `GET /api/document_check_server/{external_id}` |
+| `needs_send` | Flag local: `true` si se creó con `enviar_xml_firmado: false` | Lo pones tú al emitir |
