@@ -495,8 +495,8 @@ lo mismo, identificando la guía por su **id numérico**.
 
 Desde una integración, con token y por `external_id`:
 **[`POST /api/dispatches/{external_id}/anular`](tenant/Guia-remision/anular-guia-remision.api.mdx)**.
-Una sola ruta para la `09` y la `31`, porque comparten tabla. Pide
-`{"confirmo_baja_en_sunat": true}` en el cuerpo —es la traducción de ese diálogo— y es
+Una sola ruta para la `09` y la `31`, porque comparten tabla. **No lleva cuerpo**: el diálogo
+existe porque en el panel se pulsa por error, y construir esta llamada ya es la intención. Es
 idempotente: repetirla sobre una guía ya anulada responde `200` con `already_voided: true`, no un
 error.
 

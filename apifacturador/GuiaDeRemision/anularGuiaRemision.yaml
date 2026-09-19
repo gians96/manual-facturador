@@ -59,10 +59,10 @@ paths:
         | `01`, `03`, `07` | No | Aún no hay nada aceptado que dar de baja |
         | `11` Ya anulada | Responde `200` | Es idempotente: ver abajo |
 
-        **El cuerpo es obligatorio.** `confirmo_baja_en_sunat` es la traducción del diálogo que
-        el panel muestra antes de tocar nada. Nadie puede verificar la afirmación; existe para
-        que una llamada accidental falle, porque el estado `11` **no se deshace**: no hay forma
-        de desanular, ni por API ni por panel. Se aceptan `true`, `"true"`, `1` y `"1"`.
+        **No lleva cuerpo.** El panel pregunta «¿ya diste de baja esta guía en SUNAT?» antes de
+        tocar nada porque ahí se pulsa por error; construir esta llamada ya es la intención. Aun
+        así, tenlo presente: el estado `11` **no se deshace**, no hay forma de desanular ni por
+        API ni por panel.
 
         **Es idempotente.** Repetir la llamada sobre una guía ya anulada devuelve `200` con
         `data.already_voided: true` en vez de un error: la guía termina en el estado que pedías,
@@ -78,15 +78,14 @@ paths:
         ***Ejemplo:***
          - **Método:** POST
          - **URL:** `https://tu-dominio.com/api/dispatches/2c1a2e6a-680d-4b60-96fc-6eb568971e44/anular`
-         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>`, `Accept: application/json` y `Content-Type: application/json`
-         - **Cuerpo:** `{"confirmo_baja_en_sunat": true}`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+         - **Cuerpo:** ninguno
 
         **Qué hacer ante cada error** (campo `error_code`):
 
         | HTTP | `error_code` | Significa | Qué hacer |
         |---|---|---|---|
         | 422 | `DISPATCH_NOT_FOUND` | El `external_id` no existe | No reintentar. Revisar el UUID; puede ser de otro tenant |
-        | 422 | `DISPATCH_VOID_NOT_CONFIRMED` | Falta `confirmo_baja_en_sunat`, o no es verdadero | Añadirlo al cuerpo. No reintentar sin corregirlo |
         | 409 | `DISPATCH_NOT_VOIDABLE` | El estado no admite la anulación | No reintentar. Mirar `errors.estado` y `errors.numero_ocupado` para saber qué toca |
       operationId: anularGuiaRemision
       parameters:
@@ -97,12 +96,6 @@ paths:
           schema:
             type: string
             example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PeticionAnular'
       responses:
         '200':
           description: |-
@@ -160,52 +153,22 @@ paths:
                   estado: "09"
                   numero_ocupado: false
         '422':
-          description: |-
-            - `DISPATCH_NOT_FOUND`: el `external_id` no corresponde a ninguna guía.
-            - `DISPATCH_VOID_NOT_CONFIRMED`: falta la confirmación en el cuerpo.
+          description: El `external_id` no corresponde a ninguna guía (`DISPATCH_NOT_FOUND`).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorConCodigo'
-              examples:
-                noEncontrada:
-                  summary: El external_id no existe
-                  value:
-                    success: false
-                    message: "El external id es incorrecto"
-                    error_code: "DISPATCH_NOT_FOUND"
-                    errors:
-                      external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
-                sinConfirmar:
-                  summary: Falta confirmo_baja_en_sunat
-                  value:
-                    success: false
-                    message: "Falta confirmar la baja. La guía se da de baja en el portal de SUNAT, y solo el mismo día de la emisión; esto únicamente lo refleja aquí. Envía \"confirmo_baja_en_sunat\": true para confirmarlo."
-                    error_code: "DISPATCH_VOID_NOT_CONFIRMED"
-                    errors:
-                      external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
-                      faltantes:
-                        - confirmo_baja_en_sunat
+              example:
+                success: false
+                message: "El external id es incorrecto"
+                error_code: "DISPATCH_NOT_FOUND"
+                errors:
+                  external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
       security:
         - bearerAuth: []
 
 components:
   schemas:
-    PeticionAnular:
-      type: object
-      properties:
-        confirmo_baja_en_sunat:
-          description: |-
-            Afirma que la baja ya se hizo en el portal de SUNAT. Obligatorio.
-            Se aceptan `true`, `"true"`, `1` y `"1"`.
-          oneOf:
-            - type: boolean
-            - type: string
-            - type: integer
-          example: true
-      required:
-        - confirmo_baja_en_sunat
-
     RespuestaAnular:
       type: object
       properties:
@@ -252,7 +215,6 @@ components:
           description: Código estable para ramificar sin leer el texto.
           enum:
             - DISPATCH_NOT_FOUND
-            - DISPATCH_VOID_NOT_CONFIRMED
             - DISPATCH_NOT_VOIDABLE
         errors:
           type: object

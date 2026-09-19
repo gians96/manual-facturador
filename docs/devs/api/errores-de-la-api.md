@@ -185,13 +185,13 @@ Los tres salían antes como `500` sin `error_code` —y el último devolvía `20
 
 ### `POST /api/dispatches/{external_id}/anular` — desde 2026-09-19
 
-Marca una guía como anulada para reflejar una baja **ya hecha en el portal de SUNAT**. Detalle
-completo en [Guías de remisión](guias-de-remision.md#marcar-como-anulada-no-da-de-baja-en-sunat).
+Marca una guía como anulada para reflejar una baja **ya hecha en el portal de SUNAT**. No lleva
+cuerpo. Detalle completo en
+[Guías de remisión](guias-de-remision.md#marcar-como-anulada-no-da-de-baja-en-sunat).
 
 | HTTP | `error_code` | Cuándo |
 |---|---|---|
 | 422 | `DISPATCH_NOT_FOUND` | El `external_id` no existe. Mismo código y mismo mensaje que al borrar |
-| 422 | `DISPATCH_VOID_NOT_CONFIRMED` | Falta `confirmo_baja_en_sunat` en el cuerpo, o no es verdadero |
 | 409 | `DISPATCH_NOT_VOIDABLE` | El estado no admite la anulación: ni `05`, ni `09` con el número ocupado |
 
 `errors` trae `external_id`, `estado` y `numero_ocupado`, para decidir sin leer el texto: un `09`
