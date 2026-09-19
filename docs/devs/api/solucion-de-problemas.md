@@ -218,7 +218,10 @@ está guardado, sin volver a generarlo.
 
 **Qué hacer.** Mira `was_duplicate`: si viene en `true`, no se corrigió nada. Desde el
 2026-09-18 esa fila trae además el estado de la guía y, si está rechazada, el aviso
-`GUIA_RECHAZADA_SIN_CORREGIR` con el `external_id` que falta. Tienes dos caminos:
+`GUIA_RECHAZADA_SIN_CORREGIR` con el `external_id` que falta. Desde el 2026-09-19, si la fila
+traía un `external_id` y aun así no se corrigió, el aviso `CORRECCION_NO_APLICADA` dice por qué:
+lo más común es que la guía siga Enviada (`03`) porque nadie consultó el ticket. Tienes dos
+caminos:
 
 - Reenvía la guía por el lote con su `external_id` dentro de `data`. Desde el 2026-09-18 vale con
   el mismo `offline_id` y la fila vuelve con `was_corrected: true`; en un servidor anterior, usa

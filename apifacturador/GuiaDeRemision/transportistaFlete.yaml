@@ -53,6 +53,11 @@ paths:
         > sea tipo `09` y acto seguido las exige, así que no existe payload que lo satisfaga.
         > El endpoint correcto es `POST /api/dispatch-carrier`, y `direccion_partida` /
         > `direccion_llegada` no intervienen: el domicilio viaja en `direcciones_proveedores`.
+        >
+        > **Desde el 2026-09-19** la partida y la llegada son obligatorias: sin ellas la guía
+        > responde `MISSING_FIELDS` sin gastar el número (antes se firmaba sin ubigeo y SUNAT la
+        > rechazaba con 2775). Y si no mandas `direcciones_proveedores`, se usan
+        > `direccion_partida` / `direccion_llegada`.
 
         **Flujo completo de una guía de remisión:**
         1. `POST /api/dispatch-carrier` → genera la guía (XML firmado + PDF) y devuelve `external_id`.

@@ -441,6 +441,7 @@ tener que leer el texto del `message`. Es un campo **añadido**: si tu integraci
 | `INVALID_ENCODING` | El cuerpo no es UTF-8 válido | ❌ No, sin corregir |
 | `VALUE_TOO_LONG` · `VALUE_OUT_OF_RANGE` | Texto o importe fuera del ancho del campo | ❌ No, sin corregir |
 | `CONFLICT_NUMBER` | El correlativo ya lo usó **otra** venta | ⚠️ Renumerar y reemitir |
+| `DISPATCH_NOT_FOUND` · `DISPATCH_ALREADY_ACCEPTED` · `DISPATCH_NUMBER_TAKEN` | Solo guías: una corrección con `external_id` que no se puede aplicar, porque la guía no existe, SUNAT ya la aceptó, o SUNAT ya tiene su número (`1032`/`1033`) → [corregir una guía rechazada por el lote](#corregir-una-guía-rechazada-por-el-lote) | ❌ No |
 | `DATABASE_ERROR` | Fallo de base de datos **del servidor**, no de tu payload. Desde el 2026-09-15 `errors.tipo` dice cuál (ver abajo) | ⚠️ Según `errors.tipo` |
 | `PROCESSING_ERROR` | Excepción que el servidor no sabe atribuir. **Ya no incluye campos ausentes del payload** | ⚠️ Uno, y escalar con el `offline_id` |
 
@@ -706,8 +707,8 @@ Los `doc_type` `80` (nota de venta), `09`/`31` (guías) y `20` (retención) **no
 :::info Desde el 2026-09-09
 Esta página describía las guías como pendientes de implementar. **No lo están: el lote acepta
 `09` y `31` desde hace tiempo**, con su propia idempotencia por `offline_id` contra la tabla
-`dispatches`. Si tu integración las estaba mandando de una en una por `POST /api/dispatches`,
-puedes pasarlas al lote sin cambiar el `data`.
+`dispatches`. Si tu integración las estaba mandando de una en una por `POST /api/dispatches` (la
+`09`) o por `POST /api/dispatch-carrier` (la `31`), puedes pasarlas al lote sin cambiar el `data`.
 :::
 
 Los siete tipos que acepta `sync-batch` y dónde se guarda su `offline_id`:
@@ -718,6 +719,31 @@ Los siete tipos que acepta `sync-batch` y dónde se guarda su `offline_id`:
 | `"01"` `"03"` `"07"` `"08"` | `documents.offline_id` | Sí |
 | `"09"` `"31"` guías de remisión | `dispatches.offline_id` | No |
 | `"20"` retención | `retentions.offline_id` | No |
+
+### La `31` por lote: el mismo `data` que `POST /api/dispatch-carrier`
+
+**No hay un formato de lote para la guía transportista.** El `data` de una fila
+`"doc_type": "31"` es, campo por campo, el JSON de
+[14 — Guía Transportista](14-guia-remision-transportista.md), y pasa por el mismo código. Lo único
+que añade el lote es el sobre: `doc_type`, `offline_id` y `data`. Lo mismo vale para la `09` y
+[13 — Guía Remitente](13-guia-remision-remitente.md).
+
+La confusión habitual es otra: partir del [ejemplo de la `09`](#ejemplo-completo-de-una-fila-09)
+para armar una `31`. Son dos guías distintas y cada una lleva sus bloques:
+
+| Qué | Guía remitente `09` | Guía transportista `31` |
+|---|---|---|
+| Quién la emite | El dueño de la mercadería | La empresa de transporte |
+| Remitente | Tu empresa: sale del token | `datos_remitente` |
+| Destinatario | `datos_del_cliente_o_receptor` | `datos_destinatario` |
+| Punto de partida | `direccion_partida` | `direcciones_proveedores.remitente` |
+| Punto de llegada | `direccion_llegada` | `direcciones_proveedores.destinatario` |
+| Transportista | `transportista`, en transporte público (`01`) | No va: el transportista eres tú. Si lo mandas, se descarta con el aviso `TRANSPORTISTA_IGNORADO` |
+| Conductor | `chofer`, en transporte privado (`02`) | `chofer`, siempre |
+| Quién paga el flete | — | `pagador_flete` |
+
+Hay un [ejemplo completo de una fila `31`](#ejemplo-completo-de-una-fila-31) más abajo, con la
+respuesta y los [errores típicos](#errores-típicos-de-la-31-por-lote).
 
 ### Los ítems de una guía no llevan precio
 
@@ -754,9 +780,26 @@ Solo `09`: `datos_del_cliente_o_receptor`, `direccion_partida`, `direccion_llega
 `codigo_modo_transporte`, `codigo_motivo_traslado`, y **según la modalidad**: `transportista`
 si es `01` (transporte público) o `chofer` si es `02` (transporte privado).
 
-Solo `31`: `datos_remitente`, `datos_destinatario`, `chofer`. **No** pide `direccion_partida`
-ni `direccion_llegada`; si las mandas se aceptan y se descartan. Las direcciones del `31` viajan
-en `direcciones_proveedores` o en `direccion_remitente_id` / `direccion_destinatario_id`.
+Solo `31`: `datos_remitente`, `datos_destinatario`, `chofer` y **el punto de partida y el de
+llegada**, cada uno con `ubigeo` y `direccion`, por una de estas tres vías:
+
+1. `direcciones_proveedores.remitente` (partida) y `direcciones_proveedores.destinatario`
+   (llegada). Es la recomendada.
+2. `direccion_remitente_id` / `direccion_destinatario_id`: el id de una dirección ya registrada.
+3. `direccion_partida` / `direccion_llegada`, la forma de la `09`. Solo se usa si no llega ninguna
+   de las otras dos. Si llegan las dos formas, manda `direcciones_proveedores` y la fila avisa
+   `DIRECCION_PARTIDA_IGNORADA` / `DIRECCION_LLEGADA_IGNORADA`.
+
+:::warning Desde el 2026-09-19, una `31` sin partida o sin llegada no se emite
+Vuelve `MISSING_FIELDS` con lo que falta en `errors.faltantes` (por ejemplo
+`direcciones_proveedores.remitente`), **sin gastar el número**. Antes se emitía igual: se firmaba
+con `cac:DespatchAddress/cbc:ID` vacío y SUNAT la rechazaba con **2775** («El XML no contiene el
+atributo o no existe información del código de ubigeo»), con el correlativo ya consumido.
+
+También desde esa fecha, en la `31` la forma de la `09` ya no se descarta: si no mandas
+`direcciones_proveedores`, `direccion_partida` y `direccion_llegada` son la partida y la llegada.
+Antes se aceptaban y se tiraban sin avisar, y era la causa más común del 2775.
+:::
 
 `datos_del_emisor` es **opcional** en ambos: si no lo mandas se usa el establecimiento del
 usuario del token, igual que en `POST /api/documents`.
@@ -785,6 +828,14 @@ era indistinguible de una firmada.
 :::warning `signed: false` NO se reenvía por sync-batch
 La guía **ya está emitida** y su correlativo consumido; reenviarla volvería como duplicada. Lo
 que hay que hacer es rehacer el archivo y mandarla con `POST /api/dispatches/send`.
+:::
+
+:::caution Una corrección con `signed: false` sí se reenvía
+Desde el 2026-09-19, si **corriges** una guía por el lote (`was_corrected: true`) y la firma falla,
+el servidor retira el XML firmado anterior y la fila trae el aviso `CORRECCION_SIN_FIRMA`. Antes
+ese archivo se quedaba, y `POST /api/dispatches/send` lo mandaba: a SUNAT le llegaba la guía **sin
+corregir** y la volvía a rechazar por lo mismo. Ahora `send` responde que la guía no tiene XML
+firmado. Reenvía la misma fila de corrección y, cuando vuelva con `signed: true`, envíala.
 :::
 
 ### Ejemplo completo de una fila `09`
@@ -913,6 +964,122 @@ observe, corrige la descripción con el `external_id` antes de enviarla. Por el 
 se explica justo abajo; fuera del lote, como en
 [corregir una guía rechazada](../../guias-de-remision.md#corregir-una-guía-rechazada).
 
+### Ejemplo completo de una fila `31`
+
+Una guía transportista de transporte privado con los datos de una integración real, con datos
+ficticios: el remitente y el destinatario son terceros y las direcciones van en
+`direcciones_proveedores`.
+
+```json
+{
+    "sales": [
+        {
+            "doc_type": "31",
+            "offline_id": "9d4dda7d-563f-4f16-99e6-777af5a7da7f",
+            "data": {
+                "serie_documento": "V001",
+                "numero_documento": "1",
+                "fecha_de_emision": "2026-09-19",
+                "hora_de_emision": "10:00:00",
+                "codigo_tipo_documento": "31",
+                "codigo_modo_transporte": "02",
+                "codigo_motivo_traslado": "01",
+                "descripcion_motivo_traslado": "VENTA",
+                "fecha_de_traslado": "2026-09-19",
+                "indicador_de_transbordo": false,
+                "unidad_peso_total": "TNE",
+                "peso_total": 1.0,
+                "numero_de_bultos": 1,
+                "direcciones_proveedores": {
+                    "remitente": { "ubigeo": "110301", "direccion": "Cal. Bolognesi 251 - Nasca" },
+                    "destinatario": { "ubigeo": "110305", "direccion": "Mz. 10 Lt. 10 Ampliación Portachuelo" }
+                },
+                "datos_remitente": {
+                    "codigo_tipo_documento_identidad": "6",
+                    "numero_documento": "20000000001",
+                    "apellidos_y_nombres_o_razon_social": "MINERA DEMO S.A.C."
+                },
+                "datos_destinatario": {
+                    "codigo_tipo_documento_identidad": "6",
+                    "numero_documento": "20000000003",
+                    "apellidos_y_nombres_o_razon_social": "COMERCIAL DEMO S.A.C."
+                },
+                "chofer": {
+                    "codigo_tipo_documento_identidad": "1",
+                    "numero_documento": "12345678",
+                    "nombres": "PEREZ GARCIA, JUAN",
+                    "numero_licencia": "Q12345678"
+                },
+                "vehiculo": {
+                    "numero_de_placa": "ABC123",
+                    "modelo": "HILUX",
+                    "marca": "TOYOTA",
+                    "certificado_habilitacion_vehicular": "15M24000001E"
+                },
+                "pagador_flete": {
+                    "indicador_pagador_flete": "Remitente",
+                    "codigo_tipo_documento_identidad": "6",
+                    "numero": "20000000001",
+                    "nombres": "MINERA DEMO S.A.C."
+                },
+                "items": [
+                    { "codigo_interno": "2000022003", "descripcion": "MINERAL MOLIDO DE COBRE",
+                      "unidad_de_medida": "TNE", "cantidad": 1.0 }
+                ]
+            }
+        }
+    ]
+}
+```
+
+No lleva `vehiculo_secundario` porque no hay segundo vehículo: una fila con solo
+`"codigo_entidad_autorizadora": "06"` no es un vehículo (ver los errores típicos, abajo).
+
+La fila vuelve firmada y con su `external_id`. **Guárdalo junto al `offline_id`**: es lo que
+necesitas para enviarla, consultarla y, si SUNAT la rechaza, corregirla.
+
+```json
+{
+    "index": 0,
+    "offline_id": "9d4dda7d-563f-4f16-99e6-777af5a7da7f",
+    "success": true,
+    "doc_type": "31",
+    "data": {
+        "id": 58,
+        "number": "V001-1",
+        "external_id": "50cca68a-ddb7-4c1e-ac0c-33cda4b89eab",
+        "filename": "20123456789-31-V001-1",
+        "signed": true,
+        "sign_message": null,
+        "warnings": [],
+        "cash_registered": true
+    },
+    "cash_registered": true,
+    "cash_error_code": null,
+    "cash_message": null
+}
+```
+
+`warnings` puede traer observaciones de SUNAT que no impiden emitir, como `4391` si tu empresa no
+tiene registrado su número del MTC → [avisos antes de emitir](../../guias-de-remision.md#avisos-antes-de-emitir).
+
+El lote **no la envía a SUNAT**. Después vienen `send` y la consulta del ticket, como en el
+[ciclo de una guía rechazada](#el-ciclo-completo-corregir-enviar-y-consultar).
+
+### Errores típicos de la `31` por lote
+
+| Lo que ves | Por qué | Qué hacer |
+|---|---|---|
+| SUNAT rechaza con **2775** (`cac:DespatchAddress/cbc:ID` vacío) | La guía se emitió sin ubigeo de partida. Pasaba, antes del 2026-09-19, al mandar `direccion_partida` en vez de `direcciones_proveedores` | Corrígela con su `external_id` y `direcciones_proveedores` ([abajo](#corregir-una-guía-rechazada-por-el-lote)). Desde el 2026-09-19 ya no se puede emitir así |
+| `MISSING_FIELDS` con `direcciones_proveedores.remitente` o `.destinatario` | Falta el punto de partida o el de llegada | Manda el bloque con `ubigeo` y `direccion`. No se gastó ningún número |
+| `INVALID_UBIGEO` | El ubigeo no está en el catálogo de distritos | Seis dígitos del catálogo INEI. `errors.campo` dice cuál |
+| Aviso `VEHICULO_SECUNDARIO_VACIO` | Una fila de `vehiculo_secundario` sin placa ni datos, por ejemplo solo `"codigo_entidad_autorizadora": "06"` | Nada: no se declaró. Si no hay segundo vehículo, no mandes la fila. Antes salía al XML como un vehículo con la placa vacía |
+| Avisos `DIRECCION_PARTIDA_IGNORADA` / `DIRECCION_LLEGADA_IGNORADA` | Mandaste las dos formas de dirección | Nada: se usó `direcciones_proveedores`. Quita la otra para no confundirte |
+| SUNAT rechaza con **2108** («Presentación fuera de fecha») | Reenviaste una corrección con la `fecha_de_emision` de hace días | Fechas de hoy en `fecha_de_emision`, `hora_de_emision` y `fecha_de_traslado` |
+| Reenvías la corrección y vuelve `was_duplicate`, sin `was_corrected` | La fila no lleva el `external_id` de la guía, o la guía no está Registrada ni Rechazada | `data.warnings` dice qué pasó: `GUIA_RECHAZADA_SIN_CORREGIR` o `CORRECCION_NO_APLICADA` |
+| `was_corrected: true` con `signed: false` | La corrección se guardó pero no se pudo firmar | No la envíes: reenvía la fila. Viene con el aviso `CORRECCION_SIN_FIRMA` |
+| `DISPATCH_NUMBER_TAKEN` | SUNAT ya tiene ese número (rechazo `1032`/`1033`) | Con ese número ya no pasa: emite otra guía con otro número y otro `offline_id` |
+
 ### Corregir una guía rechazada por el lote
 
 Una guía que SUNAT rechaza **se corrige, no se vuelve a emitir**: conserva su serie, su número y
@@ -941,6 +1108,19 @@ lote más de 320 veces, siempre con el mismo `offline_id`. Todas las respuestas 
 
 En un servidor anterior, con el mismo `offline_id` no se corrige nunca: usa uno nuevo, como se
 explica abajo. Si no sabes de qué fecha es tu instalación, pregúntale a soporte.
+:::
+
+:::info Desde el 2026-09-19
+Un reenvío que no corrige ya **no calla nunca**. Además de `GUIA_RECHAZADA_SIN_CORREGIR`:
+
+- **`CORRECCION_NO_APLICADA`**: la fila trae un `external_id` pero la guía no se tocó. Dice por qué:
+  es el de otra guía (y te da el bueno), o la guía está Enviada (`03`), Aceptada (`05`) o Anulada
+  (`11`). La más traicionera es la `03`: se envió y nadie consultó el ticket, así que aún no se
+  sabe si SUNAT la rechazó. Consúltalo primero y, si vuelve rechazada, reenvía la fila.
+- **`GUIA_NUMERO_OCUPADO`** en el duplicado, y **`DISPATCH_NUMBER_TAKEN`** si intentas corregirla:
+  SUNAT la rechazó porque ya tiene ese número (`1032`/`1033`). Con ese número no vuelve a pasar.
+- **`CORRECCION_SIN_FIRMA`**: la corrección se guardó pero no se pudo firmar. Ver
+  [`signed` y `sign_message`](#signed-y-sign_message).
 :::
 
 Para corregirla por el lote, la fila lleva:
@@ -1004,17 +1184,49 @@ La fila vuelve con `success: true` y `was_corrected: true`, con **el mismo `numb
 La guía se vuelve a firmar, se rehace el PDF y queda en **Registrado** (`01`). Si la empresa tiene
 activo el envío automático por correo, el cliente vuelve a recibir la guía.
 
-**El lote no la envía a SUNAT.** Después hay que llamar a `POST /api/dispatches/send` con su
-`external_id` y consultar el ticket con `POST /api/dispatches/status_ticket`. Hasta que la
-reenvíes, la consulta del ticket devuelve el rechazo anterior.
+:::info Comprobado contra SUNAT el 2026-09-19
+Una guía de transportista rechazada con **2775** (partida sin ubigeo) se corrigió por el lote con su
+mismo `offline_id` y su `external_id`, se reenvió con `send` y SUNAT la **aceptó con el mismo
+número**. Un rechazo no deja el número ocupado: eso solo pasa con `1032`/`1033`.
+:::
+
+**El lote no la envía a SUNAT.** Hasta que la reenvíes, la consulta del ticket devuelve el
+rechazo anterior.
+
+#### El ciclo completo: corregir, enviar y consultar
+
+Son tres llamadas, las mismas para la `09` y la `31`:
+
+1. **Corregir**: la fila del lote con el `external_id` dentro de `data`, como arriba. Sigue solo
+   si vuelve `was_corrected: true` **y** `data.signed: true`. Si no, `data.warnings` dice qué
+   pasó.
+2. **Enviar**: `POST /api/dispatches/send` con `{"external_id": "…"}`. No hay ruta propia de la
+   transportista: la busca por `external_id` sea `09` o `31`. La guía pasa a Enviada (`03`) con
+   un ticket nuevo.
+3. **Consultar el ticket**: `POST /api/dispatches/status_ticket` con el mismo `external_id`, y leer
+   `data.state_type_id`:
+   - `05`: aceptada. Fin.
+   - `09`: rechazada otra vez; `message` y `code` dicen por qué. Vuelve al paso 1 con eso
+     corregido, salvo `1032`/`1033` (número ocupado), que se resuelve emitiendo otra.
+   - Sigue en `03`: SUNAT aún no responde. Vuelve a consultar más tarde. **No la corrijas
+     mientras tanto**: una Enviada no se corrige por el lote (`CORRECCION_NO_APLICADA`).
+
+```
+Lote (corregir) ──► was_corrected + signed ──► send ──► status_ticket
+      ▲                                                      │
+      └──────────────── 09 rechazada (no 1032/1033) ─────────┘
+```
+
+Para leer el rechazo → [cuando el envío falla](../../guias-de-remision.md#cuando-el-envío-falla-cómo-leer-el-aviso).
 
 Qué hace cada forma de reenviar la guía:
 
 | Lo que mandas en la fila | Qué pasa |
 |---|---|
 | El mismo `offline_id` + su `external_id`, con la guía Registrada o Rechazada | **Corrige esa guía** y conserva el `offline_id`. `was_corrected: true` |
-| El mismo `offline_id` + su `external_id`, con la guía Enviada (`03`), Aceptada (`05`) o Anulada (`11`) | `was_duplicate: true` con su `state_type_id`. No se toca |
-| El mismo `offline_id` sin `external_id`, o con el de otra guía | `was_duplicate: true` con su `state_type_id`. El `data` no se lee y la guía no cambia; si está rechazada, llega el aviso `GUIA_RECHAZADA_SIN_CORREGIR` |
+| El mismo `offline_id` + su `external_id`, con la guía Enviada (`03`), Aceptada (`05`) o Anulada (`11`) | `was_duplicate: true` con su `state_type_id` y, desde el 2026-09-19, el aviso `CORRECCION_NO_APLICADA`, que dice qué hacer. No se toca |
+| El mismo `offline_id` sin `external_id`, o con el de otra guía | `was_duplicate: true` con su `state_type_id`. El `data` no se lee y la guía no cambia; si está rechazada, llega el aviso `GUIA_RECHAZADA_SIN_CORREGIR`, y con el `external_id` de otra guía en cualquier otro estado, `CORRECCION_NO_APLICADA` con el bueno |
+| El `external_id` de una guía rechazada porque SUNAT ya tiene su número (`1032`/`1033`), con cualquier `offline_id` | `DISPATCH_NUMBER_TAKEN`. Sin él, el duplicado avisa `GUIA_NUMERO_OCUPADO`. Emite otra con otro número y otro `offline_id` |
 | Un `offline_id` nuevo sin `external_id`, con el número de la guía | `CONFLICT_NUMBER`. El número ya está registrado con otro `offline_id` y, sin el `external_id`, el servidor no sabe que es la misma guía |
 | Un `offline_id` nuevo + el `external_id` de la guía | **Corrige esa guía**, que se queda con el `offline_id` nuevo. `was_corrected: true` |
 | Un `offline_id` nuevo + un `external_id` que no existe | `DISPATCH_NOT_FOUND`. No registra otra guía en su lugar |
@@ -1091,6 +1303,14 @@ SET @Json = JSON_MODIFY(@Json, '$.data.fecha_de_emision',  CONVERT(CHAR(10), GET
 SET @Json = JSON_MODIFY(@Json, '$.data.hora_de_emision',   CONVERT(CHAR(8),  GETDATE(), 108)); -- hh:mm:ss
 SET @Json = JSON_MODIFY(@Json, '$.data.fecha_de_traslado', CONVERT(CHAR(10), GETDATE(), 23));
 -- El offline_id se queda como está.
+```
+
+Si el procedimiento arma `vehiculo_secundario` aunque no haya segundo vehículo, quítalo: con
+`NULL`, `JSON_MODIFY` borra la clave.
+
+```sql
+IF @PlacaSecundaria IS NULL
+    SET @Json = JSON_MODIFY(@Json, '$.data.vehiculo_secundario', NULL);
 ```
 
 En un servidor anterior al 2026-09-18, añade un `offline_id` nuevo y guárdalo en tu tabla, porque

@@ -589,7 +589,6 @@ no los conoce, pero te dicen que la guía no va a quedar exactamente como la env
 | `2570` | `chofer_secundario.N` | Conductor secundario con datos pero sin tipo de documento. Solo cuando la guía lleva los secundarios al XML: transporte privado, público con el indicador, o guía de transportista |
 | `2692` | `documento_relacionado.N.documento.id` | Código del catálogo 61 que ese tipo de guía no admite. El caso típico: el `76` (residuos) en una guía de transportista, que es solo del remitente |
 | `2775` | `direccion_partida.ubigeo` | Seis dígitos exactos, en partida y en llegada |
-| `2775` | direcciones | Se descartan en la guía de transportista |
 | `2566` | `vehiculo.numero_de_placa` | Con el indicador de vehículos y conductores del transportista, o en una guía de transportista, falta la placa del vehículo principal |
 | `3345` · `3346` | `documento_relacionado` | Guía de transportista con más documentos relacionados de los que admite: hasta 2 si uno es un permiso (`65` a `69`) o una `31`; si no, 1, salvo una guía remitente electrónica |
 | `3380` | `documento_relacionado.N.ruc` | Guía de transportista con una factura, boleta o guía relacionada sin un RUC de emisor de 11 dígitos: sale sin emisor y SUNAT la rechaza |
@@ -622,6 +621,8 @@ no los conoce, pero te dicen que la guía no va a quedar exactamente como la env
 | `AUTORIZACION_NO_EMITIDA` | `vehiculo.numero_autorizacion_especial` · `vehiculo_secundario.N.numero_autorizacion_especial` | Autorización de un vehículo completa y válida, pero en una guía remitente sin el régimen: transporte privado (`02`), o público (`01`) sin `indicador_vehiculos_conductores_transportista`. Se guarda, pero **no viaja en el XML**. La del transportista sí viaja en cualquier caso, y en la guía de transportista viajan todas |
 | `AUTORIZACION_NO_EMITIDA` | `datos_del_emisor.numero_autorizacion_especial` | Autorización de `datos_del_emisor` en una guía remitente: solo existe en la de transportista |
 | `TRANSPORTISTA_IGNORADO` | `transportista` | Bloque `transportista` en una guía de transportista: ahí el transportista es tu empresa y el bloque se descarta. El MTC sale de la ficha y la autorización va en `datos_del_emisor` |
+| `DIRECCION_PARTIDA_IGNORADA` · `DIRECCION_LLEGADA_IGNORADA` | `direccion_partida` · `direccion_llegada` | Guía de transportista con las dos formas de dirección: se usa `direcciones_proveedores` (o el id de una dirección registrada) y la de la remitente se descarta. Si **solo** llega la de la remitente, se usa y no hay aviso |
+| `VEHICULO_SECUNDARIO_VACIO` · `CHOFER_SECUNDARIO_VACIO` | `vehiculo_secundario.N` · `chofer_secundario.N` | Una fila sin ningún dato: un vehículo sin placa, modelo, marca, TUC ni número de autorización (la entidad sola no cuenta), o un conductor sin documento, nombres ni licencia. No se declara en la guía. Antes el vehículo salía al XML con la placa vacía |
 
 Como en el pliego de SUNAT, los códigos que empiezan por `2` o `3` son rechazos y los que empiezan
 por `4`, observaciones. `3409` es la excepción: SUNAT no llega a verlo, porque el XML pone el RUC de
@@ -632,10 +633,12 @@ admite; con `4396` y `4406` la autorización sí viaja, y SUNAT la observa. Los 
 secundario nombran su posición: `vehiculo_secundario.0.…`.
 
 Los códigos **no numéricos** (`REDONDEO_PESO`, `REDONDEO_CANTIDAD`, `SECUNDARIO_INCOMPLETO`,
-`AUTORIZACION_NO_EMITIDA`, `RECORTE_DESCRIPCION_MOTIVO` y `TRANSPORTISTA_IGNORADO`) son avisos del
-sistema, no de SUNAT. Los cuatro primeros, `2570`, `3409`, `4371`, `4372`, `4396` y `4406` existen
-desde el 2026-09-15; `4190` y `RECORTE_DESCRIPCION_MOTIVO`, desde el 2026-09-16, cuando la
-descripción del motivo empezó a viajar en el XML.
+`AUTORIZACION_NO_EMITIDA`, `RECORTE_DESCRIPCION_MOTIVO`, `TRANSPORTISTA_IGNORADO`,
+`DIRECCION_PARTIDA_IGNORADA`, `DIRECCION_LLEGADA_IGNORADA`, `VEHICULO_SECUNDARIO_VACIO` y
+`CHOFER_SECUNDARIO_VACIO`) son avisos del sistema, no de SUNAT. Los cuatro primeros, `2570`,
+`3409`, `4371`, `4372`, `4396` y `4406` existen desde el 2026-09-15; `4190` y
+`RECORTE_DESCRIPCION_MOTIVO`, desde el 2026-09-16, cuando la descripción del motivo empezó a viajar
+en el XML; los cuatro últimos, desde el 2026-09-19 y solo por la API y el lote.
 
 Desde el 2026-09-18 la **guía de transportista** avisa como la remitente: antes callaba porque no
 enviaba ni el registro MTC ni ninguna autorización, y lo que llegaba se guardaba y se perdía. Son
@@ -733,10 +736,30 @@ Se conservan la serie, el número y el propio `external_id`. Después hay que vo
 envío y a la consulta del ticket: corregir no envía nada a SUNAT.
 
 :::tip ¿La emitiste por el lote?
-También se corrige por `POST /api/offline/sync-batch`, con el `external_id` dentro de `data`.
+También se corrige por `POST /api/offline/sync-batch`, y **con el mismo JSON**: el `data` de la fila
+es este mismo payload, con el `external_id` dentro de `data`. Lo único que cambia es el sobre
+(`doc_type`, `offline_id` y `data`).
+
+```json
+{
+  "sales": [
+    {
+      "doc_type": "31",
+      "offline_id": "el de siempre",
+      "data": {
+        "external_id": "229f45f3-3c5f-411e-922b-c800ccbeea75",
+        "serie_documento": "V001",
+        "...": "resto del payload ya corregido"
+      }
+    }
+  ]
+}
+```
+
 Desde el 2026-09-18 vale con el `offline_id` de siempre. En un servidor anterior hace falta uno
 **nuevo**: con el de siempre, el lote devuelve `was_duplicate` sin leer el JSON y la guía no
-cambia →
+cambia. Mira `was_corrected` en la fila: si no viene, no se corrigió, y `data.warnings` dice por
+qué →
 [corregir una guía rechazada por el lote](./offline/endpoints/15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 :::
 
@@ -764,9 +787,10 @@ solo por el `external_id`. Que registre o actualice depende de si lo mandas:
 |---|---|---|
 | Sin `external_id`, con `numero_documento: "#"` | Registra una guía **nueva** con el siguiente número. La rechazada se queda como estaba | 200, con otro `external_id` |
 | Sin `external_id`, con el número de la rechazada | Nada: ese número ya está registrado | 409 `DUPLICATE_DOCUMENT` |
-| Con el `external_id` de una guía en cualquier estado salvo Aceptado (`05`) | **Actualiza** esa guía | 200, con el mismo número y el mismo `external_id` |
+| Con el `external_id` de una guía en cualquier estado salvo Aceptado (`05`) y número ocupado | **Actualiza** esa guía | 200, con el mismo número y el mismo `external_id` |
 | Con un `external_id` que no existe | Nada: no registra otra en su lugar | 422 `DISPATCH_NOT_FOUND` |
 | Con el `external_id` de una guía aceptada | Nada | 422 `DISPATCH_ALREADY_ACCEPTED` |
+| Con el `external_id` de una guía rechazada porque SUNAT ya tiene su número (`1032`/`1033`) | Nada: con ese número no vuelve a pasar | 422 `DISPATCH_NUMBER_TAKEN`. Emite otra con otro número |
 
 Un `external_id` vacío o `null` cuenta como no enviado.
 
@@ -851,12 +875,16 @@ correlativo, así que conviene conocerlos antes:
 |---|---|
 | 2560 | El transportista no puede ser el mismo que el remitente |
 | 2567 | La placa no admite separadores: `ABC-123` se rechaza, `ABC123` pasa |
-| 2775 | En la guía de transportista las direcciones van en `direcciones_proveedores`. Las habituales se aceptan y **se descartan en silencio** |
+| 2775 | En la guía de transportista las direcciones van en `direcciones_proveedores`. Hasta el 2026-09-19 las de la remitente (`direccion_partida`/`direccion_llegada`) **se descartaban en silencio** y la guía salía sin ubigeo |
 | 3359 | El documento del conductor se contrasta con el padrón de SUNAT |
 | 3443 | El RUC del destinatario, también |
 
-El de las direcciones es el más caro de depurar, porque el sistema acepta el payload sin
-quejarse y el rechazo llega después, hablando de un ubigeo vacío que tú sí enviaste.
+El de las direcciones era el más caro de depurar, porque el sistema aceptaba el payload sin
+quejarse y el rechazo llegaba después, hablando de un ubigeo vacío que tú sí enviaste. Desde el
+2026-09-19 no puede pasar: en la guía de transportista, `direccion_partida`/`direccion_llegada` se
+usan si no mandas `direcciones_proveedores`, y sin ninguna de las dos la emisión responde
+`MISSING_FIELDS` **antes de gastar el número**
+→ [la 31 por lote](./offline/endpoints/15-sync-batch.md#la-31-por-lote-el-mismo-data-que-post-apidispatch-carrier).
 
 ## Cuando el envío falla: cómo leer el aviso
 

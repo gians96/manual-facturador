@@ -206,14 +206,19 @@ Misma estructura que `chofer`. Para choferes adicionales.
 | `chofer_secundario` | No | **Sí** (máx. 2) |
 | `pagador_flete` | No | **Sí** |
 | `chofer` | Según modalidad | **Sí, siempre** |
-| `direccion_partida` / `direccion_llegada` | **Sí** | Se aceptan y **se descartan** |
+| `direccion_partida` / `direccion_llegada` | **Sí** | Solo si no mandas `direcciones_proveedores` (desde el 2026-09-19) |
 
-:::warning Las direcciones del `31` no van donde parece
-`direccion_partida` y `direccion_llegada` solo se leen en la guía remitente (`09`). En el `31`
-el servidor las acepta sin quejarse y **las descarta**: las direcciones de este tipo viajan en
-`direcciones_proveedores` (con `remitente` y `destinatario`, cada uno con `ubigeo` y
-`direccion`) o, si ya están registradas, en `direccion_remitente_id` /
-`direccion_destinatario_id`.
+:::warning Las direcciones del `31` van en `direcciones_proveedores`
+Las direcciones de este tipo viajan en `direcciones_proveedores` (con `remitente` y
+`destinatario`, cada uno con `ubigeo` y `direccion`) o, si ya están registradas, en
+`direccion_remitente_id` / `direccion_destinatario_id`. **Son obligatorias**: sin partida o sin
+llegada la guía responde `MISSING_FIELDS` y no gasta el número.
+
+Hasta el 2026-09-19, `direccion_partida` y `direccion_llegada` solo se leían en la guía remitente
+(`09`): en el `31` el servidor las aceptaba sin quejarse y **las descartaba**, la guía se firmaba
+sin ubigeo y SUNAT la rechazaba con 2775. Desde esa fecha se usan como partida y llegada cuando no
+llega ninguna de las otras dos formas; si llegan las dos, manda `direcciones_proveedores` y la
+respuesta avisa `DIRECCION_PARTIDA_IGNORADA` / `DIRECCION_LLEGADA_IGNORADA`.
 :::
 
 ---
@@ -379,8 +384,16 @@ que la regenera siempre.
 
 ## Notas para Offline
 
-- Mismas consideraciones que la guía remitente: firma digital y envío SUNAT se procesan al sincronizar.
-- Por lote (`sync-batch`) funciona igual que el `09`: ver [15 — Guías de remisión por lote](15-sync-batch.md#guías-de-remisión-por-lote--09-y-31).
-- Para corregir por el lote una guía rechazada, mándala con su `external_id` dentro de `data`: sin él, con el mismo `offline_id` la corrección no se aplica. Desde el 2026-09-18 basta con eso; en un servidor anterior, además con un `offline_id` nuevo → [15 — Corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
+- **Por lote (`sync-batch`), el `data` de la fila es este mismo JSON**, con `"doc_type": "31"`. No
+  hay otro formato: no partas del ejemplo de la guía remitente, que lleva otros bloques
+  → [15 — La 31 por lote](15-sync-batch.md#la-31-por-lote-el-mismo-data-que-post-apidispatch-carrier),
+  con un ejemplo completo y los errores típicos.
+- Al sincronizar se genera el XML, **se firma** y se crea el PDF, pero **no se envía a SUNAT**: eso
+  es `POST /api/dispatches/send`, y después `POST /api/dispatches/status_ticket`, igual que por esta
+  API.
+- Las direcciones van en `direcciones_proveedores`. Desde el 2026-09-19, si no las mandas, se usan
+  `direccion_partida`/`direccion_llegada`, y sin ninguna de las dos la guía no se emite
+  (`MISSING_FIELDS`, sin gastar el número). Antes salía sin ubigeo y SUNAT la rechazaba con 2775.
+- Para corregir por el lote una guía rechazada, mándala con su `external_id` dentro de `data`: sin él, con el mismo `offline_id` la corrección no se aplica. Desde el 2026-09-18 basta con eso; en un servidor anterior, además con un `offline_id` nuevo. Mira `was_corrected` en la respuesta: si no viene, `data.warnings` dice por qué → [15 — Corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 - Los datos de remitente y destinatario se pueden llenar offline usando el catálogo de clientes descargado.
-- Los vehículos secundarios son opcionales (para semirremolques).
+- Los vehículos secundarios son opcionales (para semirremolques). Si no hay segundo vehículo, no mandes la fila: una fila sin placa ni datos se descarta con el aviso `VEHICULO_SECUNDARIO_VACIO`.
