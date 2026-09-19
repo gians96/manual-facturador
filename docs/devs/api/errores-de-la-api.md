@@ -183,6 +183,27 @@ solo envía facturas y sus notas. Las boletas y las notas de boleta van por
 
 Los tres salían antes como `500` sin `error_code` —y el último devolvía `200` con cuerpo vacío—.
 
+### `POST /api/dispatches/{external_id}/anular` — desde 2026-09-19
+
+Marca una guía como anulada para reflejar una baja **ya hecha en el portal de SUNAT**. Detalle
+completo en [Guías de remisión](guias-de-remision.md#marcar-como-anulada-no-da-de-baja-en-sunat).
+
+| HTTP | `error_code` | Cuándo |
+|---|---|---|
+| 422 | `DISPATCH_NOT_FOUND` | El `external_id` no existe. Mismo código y mismo mensaje que al borrar |
+| 422 | `DISPATCH_VOID_NOT_CONFIRMED` | Falta `confirmo_baja_en_sunat` en el cuerpo, o no es verdadero |
+| 409 | `DISPATCH_NOT_VOIDABLE` | El estado no admite la anulación: ni `05`, ni `09` con el número ocupado |
+
+`errors` trae `external_id`, `estado` y `numero_ocupado`, para decidir sin leer el texto: un `09`
+con `numero_ocupado: false` se corrige o se elimina, no se anula; un `03` espera al ticket.
+
+**Ninguno es reintentable, y aquí no existe el `503`** que sí tiene
+`DELETE /api/dispatches/{external_id}`. Aquel consulta a SUNAT antes de borrar y la consulta
+puede caerse; anular no habla con nadie, solo mira el estado.
+
+Repetir la llamada sobre una guía ya anulada **no es un error**: responde `200` con
+`data.already_voided: true`.
+
 ### Notas de crédito y débito — desde 2026-09-07
 
 | Situación | `error_code` |

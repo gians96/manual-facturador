@@ -1,0 +1,301 @@
+openapi: 3.0.3
+info:
+  title: Introducción
+  description: |-
+    La API del **Facturador** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
+
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
+    10. Productos
+
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
+servers:
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://tu-dominio.com
+    description: Demostración
+tags:
+  - name: api
+    description: Emisión de comprobantes electrónicos (CPE)
+
+paths:
+  /api/dispatches/{external_id}/anular:
+    post:
+      tags:
+        - api
+      summary: Marcar como anulada - Guía de Remisión
+      description: |
+        Marca como **anulada** (`11`) una guía de remisión, remitente (`09`) o transportista
+        (`31`). Una sola ruta cubre las dos.
+
+        **Esto NO da de baja nada en SUNAT.** Para las guías de remisión no existe comunicación
+        de baja ni resumen que las anule, como sí lo hay para facturas y boletas. La baja se
+        hace **en el portal de SUNAT**, y **solo el mismo día de la emisión**. Este endpoint
+        refleja aquí lo que ya se hizo allí, para que los dos digan lo mismo.
+
+        Lo único que cambia es el estado. No genera XML, no firma nada y no envía nada.
+
+        **Qué guías admite:**
+
+        | Estado de partida | ¿Se anula? | Por qué |
+        |---|---|---|
+        | `05` Aceptada | Sí | SUNAT la tiene; la baja en el portal necesita reflejarse |
+        | `09` Rechazada **con el número ya registrado en SUNAT** (`1032`/`1033`) | Sí | Lo que SUNAT tiene con ese número es otra guía; si la diste de baja allí, se refleja aquí |
+        | `09` Rechazada normal | No | SUNAT no la registró: no hay nada que anular. Corrígela o elimínala |
+        | `01`, `03`, `07` | No | Aún no hay nada aceptado que dar de baja |
+        | `11` Ya anulada | Responde `200` | Es idempotente: ver abajo |
+
+        **El cuerpo es obligatorio.** `confirmo_baja_en_sunat` es la traducción del diálogo que
+        el panel muestra antes de tocar nada. Nadie puede verificar la afirmación; existe para
+        que una llamada accidental falle, porque el estado `11` **no se deshace**: no hay forma
+        de desanular, ni por API ni por panel. Se aceptan `true`, `"true"`, `1` y `"1"`.
+
+        **Es idempotente.** Repetir la llamada sobre una guía ya anulada devuelve `200` con
+        `data.already_voided: true` en vez de un error: la guía termina en el estado que pedías,
+        así que es un éxito. Solo la anulación real queda en el registro de actividad; los
+        reintentos no lo ensucian. Es la misma idea que el `was_duplicate` de `sync-batch`.
+
+        **No hay ningún error reintentable** (`503`). A diferencia de `DELETE
+        /api/dispatches/{external_id}`, que consulta a SUNAT antes de borrar, este endpoint no
+        habla con nadie: solo mira el estado. Sin llamada externa no hay fallo pasajero.
+
+        **Lo que no hace:** no revierte stock ni kardex, igual que la acción del panel.
+
+        ***Ejemplo:***
+         - **Método:** POST
+         - **URL:** `https://tu-dominio.com/api/dispatches/2c1a2e6a-680d-4b60-96fc-6eb568971e44/anular`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>`, `Accept: application/json` y `Content-Type: application/json`
+         - **Cuerpo:** `{"confirmo_baja_en_sunat": true}`
+
+        **Qué hacer ante cada error** (campo `error_code`):
+
+        | HTTP | `error_code` | Significa | Qué hacer |
+        |---|---|---|---|
+        | 422 | `DISPATCH_NOT_FOUND` | El `external_id` no existe | No reintentar. Revisar el UUID; puede ser de otro tenant |
+        | 422 | `DISPATCH_VOID_NOT_CONFIRMED` | Falta `confirmo_baja_en_sunat`, o no es verdadero | Añadirlo al cuerpo. No reintentar sin corregirlo |
+        | 409 | `DISPATCH_NOT_VOIDABLE` | El estado no admite la anulación | No reintentar. Mirar `errors.estado` y `errors.numero_ocupado` para saber qué toca |
+      operationId: anularGuiaRemision
+      parameters:
+        - name: external_id
+          in: path
+          required: true
+          description: Identificador devuelto por `POST /api/dispatches` al generar la guía.
+          schema:
+            type: string
+            example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PeticionAnular'
+      responses:
+        '200':
+          description: |-
+            La guía quedó marcada como anulada, o ya lo estaba.
+            `data.already_voided` distingue los dos casos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaAnular'
+              examples:
+                anuladaAhora:
+                  summary: Se anuló con esta llamada
+                  value:
+                    success: true
+                    message: "La guía T001-4 quedó marcada como anulada."
+                    data:
+                      external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+                      number: "T001-4"
+                      state_type_id: "11"
+                      already_voided: false
+                yaEstabaAnulada:
+                  summary: Reintento sobre una guía ya anulada
+                  value:
+                    success: true
+                    message: "La guía T001-4 ya estaba marcada como anulada."
+                    data:
+                      external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+                      number: "T001-4"
+                      state_type_id: "11"
+                      already_voided: true
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: Bloqueo por licencia (tenant suspendido)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorLicencia'
+        '409':
+          description: El estado de la guía no admite la anulación (`DISPATCH_NOT_VOIDABLE`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              example:
+                success: false
+                message: "Solo se puede anular una guía aceptada por SUNAT, o una cuyo número ya está registrado en SUNAT."
+                error_code: "DISPATCH_NOT_VOIDABLE"
+                errors:
+                  external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+                  estado: "09"
+                  numero_ocupado: false
+        '422':
+          description: |-
+            - `DISPATCH_NOT_FOUND`: el `external_id` no corresponde a ninguna guía.
+            - `DISPATCH_VOID_NOT_CONFIRMED`: falta la confirmación en el cuerpo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              examples:
+                noEncontrada:
+                  summary: El external_id no existe
+                  value:
+                    success: false
+                    message: "El external id es incorrecto"
+                    error_code: "DISPATCH_NOT_FOUND"
+                    errors:
+                      external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+                sinConfirmar:
+                  summary: Falta confirmo_baja_en_sunat
+                  value:
+                    success: false
+                    message: "Falta confirmar la baja. La guía se da de baja en el portal de SUNAT, y solo el mismo día de la emisión; esto únicamente lo refleja aquí. Envía \"confirmo_baja_en_sunat\": true para confirmarlo."
+                    error_code: "DISPATCH_VOID_NOT_CONFIRMED"
+                    errors:
+                      external_id: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+                      faltantes:
+                        - confirmo_baja_en_sunat
+      security:
+        - bearerAuth: []
+
+components:
+  schemas:
+    PeticionAnular:
+      type: object
+      properties:
+        confirmo_baja_en_sunat:
+          description: |-
+            Afirma que la baja ya se hizo en el portal de SUNAT. Obligatorio.
+            Se aceptan `true`, `"true"`, `1` y `"1"`.
+          oneOf:
+            - type: boolean
+            - type: string
+            - type: integer
+          example: true
+      required:
+        - confirmo_baja_en_sunat
+
+    RespuestaAnular:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "La guía T001-4 quedó marcada como anulada."
+        data:
+          type: object
+          properties:
+            external_id:
+              type: string
+              example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            number:
+              type: string
+              description: Número de la guía, suelto para no tener que sacarlo del mensaje.
+              example: "T001-4"
+            state_type_id:
+              type: string
+              description: Siempre `"11"` cuando la respuesta es correcta.
+              example: "11"
+            already_voided:
+              type: boolean
+              description: |-
+                `true` si la guía ya estaba anulada antes de esta llamada. En ese caso no se
+                tocó nada ni se escribió en el registro de actividad.
+              example: false
+      required:
+        - success
+        - message
+
+    ErrorConCodigo:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error_code:
+          type: string
+          description: Código estable para ramificar sin leer el texto.
+          enum:
+            - DISPATCH_NOT_FOUND
+            - DISPATCH_VOID_NOT_CONFIRMED
+            - DISPATCH_NOT_VOIDABLE
+        errors:
+          type: object
+          properties:
+            external_id:
+              type: string
+            estado:
+              type: string
+              description: Estado de la guía en el momento de la negativa (`01`, `03`, `05`, `09`...).
+            numero_ocupado:
+              type: boolean
+              description: |-
+                `true` si SUNAT ya tiene registrado ese número con otros datos (`1032`/`1033`).
+                Un `09` con `false` hay que corregirlo o eliminarlo, no anularlo.
+
+    ErrorLicencia:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Operación bloqueada: tenant suspendido por licencia."
+        message_code:
+          type: string
+          example: "LICENSE_TENANT_BLOCKED"
+
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

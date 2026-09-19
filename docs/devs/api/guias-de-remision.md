@@ -397,7 +397,7 @@ todo: lo explica el aviso de abajo.
 | **Registrado** | Editar · Enviar a SUNAT · **Volver a recrear** · **Eliminar** | SUNAT todavía no la ha visto |
 | **Enviado** | Solo consultar el ticket | Está en manos de SUNAT y aún no hay respuesta |
 | **Aceptado** | Opciones · Generar comprobante · **Marcar como anulada** | SUNAT ya la tiene |
-| **Rechazado** | Editar y volver a enviar · **Volver a recrear** · **Eliminar** | SUNAT la rechazó y **no la registró** |
+| **Rechazado** | Editar y volver a enviar · **Volver a recrear** · **Eliminar** · **Marcar como anulada**, solo si SUNAT ya tiene su número (`1032`/`1033`) | SUNAT la rechazó y **no la registró** — salvo que el número sí esté ocupado allí, y entonces lo que hay en SUNAT es otra guía |
 | **Anulado** | Opciones · descargar XML, PDF y **CDR** | Se marcó a mano para reflejar una baja hecha en el portal de SUNAT |
 
 :::warning Una guía enviada no se edita
@@ -482,21 +482,30 @@ para facturas y boletas. La baja se hace **en el portal de SUNAT**, y **solo el 
 emisión**. Esta acción refleja en el sistema lo que ya se hizo allí, para que los dos digan lo
 mismo. Antes había que entrar a la base de datos.
 
-Está en el menú ⋮ de la fila, **solo en una guía Aceptada**, y pregunta antes de tocar nada:
+Está en el menú ⋮ de la fila, en una guía **Aceptada** (`05`) y también en una **Rechazada** (`09`)
+cuyo número SUNAT ya tenga registrado (`1032`/`1033`), y pregunta antes de tocar nada:
 
 > **¿Ya diste de baja esta guía en SUNAT?**
 > La baja se hace en el portal de SUNAT, y solo el mismo día de la emisión. Esto marca la guía
 > T001-4 como anulada en el sistema para que coincida con SUNAT.
 
-Por dentro es una **acción del panel**, con la sesión del usuario:
+Por dentro son dos caminos a la misma decisión. En el panel, con la sesión del usuario:
 `POST /dispatches/{id}/anular` y `POST /dispatch_carrier/{id}/anular` van al mismo sitio y hacen
-lo mismo. **No hay endpoint equivalente con token**: no busques `anular` en `/api`.
+lo mismo, identificando la guía por su **id numérico**.
 
-Lo único que cambia es el estado, de **Aceptado** (`05`) a **Anulado** (`11`). No se genera
+Desde una integración, con token y por `external_id`:
+**[`POST /api/dispatches/{external_id}/anular`](tenant/Guia-remision/anular-guia-remision.api.mdx)**.
+Una sola ruta para la `09` y la `31`, porque comparten tabla. Pide
+`{"confirmo_baja_en_sunat": true}` en el cuerpo —es la traducción de ese diálogo— y es
+idempotente: repetirla sobre una guía ya anulada responde `200` con `already_voided: true`, no un
+error.
+
+Lo único que cambia es el estado, a **Anulado** (`11`): desde **Aceptado** (`05`), o desde
+**Rechazado** (`09`) con el número ocupado. No se genera
 ningún XML, no se firma nada y no se envía nada a SUNAT. Desde cualquier otro estado responde:
 
 ```json
-{"success": false, "message": "Solo se puede anular una guía aceptada por SUNAT."}
+{"success": false, "message": "Solo se puede anular una guía aceptada por SUNAT, o una cuyo número ya está registrado en SUNAT."}
 ```
 
 y cuando sí se puede:
@@ -506,9 +515,14 @@ y cuando sí se puede:
 ```
 
 :::danger Anular aquí no cambia nada en SUNAT
-Solo actualiza el estado **en este sistema**. Para SUNAT la guía sigue exactamente como estaba,
-y **no existe forma de anularla por API**, ni remitente ni transportista. Si hace falta la baja
-de verdad, se hace en el portal de SUNAT y solo el mismo día de la emisión.
+Solo actualiza el estado **en este sistema**. Para SUNAT la guía sigue exactamente como estaba.
+**No existe forma de darla de baja ante SUNAT**, ni por API ni fuera del mismo día: para las
+guías no hay comunicación de baja ni resumen, ni remitente ni transportista. La baja de verdad se
+hace en el portal de SUNAT y solo el mismo día de la emisión.
+
+Que ahora exista `POST /api/dispatches/{external_id}/anular` no cambia nada de esto — lo hace más
+fácil de confundir. Ese endpoint marca el estado **local**; llamarlo sin haber hecho la baja en
+el portal deja tu sistema diciendo una cosa y SUNAT otra.
 :::
 
 **La guía anulada conserva sus archivos.** La fila sigue ofreciendo **XML**, **PDF** y **CDR**,

@@ -1157,6 +1157,9 @@ Un reenvío que no corrige ya **no calla nunca**. Además de `GUIA_RECHAZADA_SIN
   sabe si SUNAT la rechazó. Consúltalo primero y, si vuelve rechazada, reenvía la fila.
 - **`GUIA_NUMERO_OCUPADO`** en el duplicado, y **`DISPATCH_NUMBER_TAKEN`** si intentas corregirla:
   SUNAT la rechazó porque ya tiene ese número (`1032`/`1033`). Con ese número no vuelve a pasar.
+  Emite otra con otro número y otro `offline_id`; y si diste de baja en el portal de SUNAT la guía
+  que allí ocupa ese número, márcala como anulada con
+  [`POST /api/dispatches/{external_id}/anular`](../../tenant/Guia-remision/anular-guia-remision.api.mdx).
 - **`CORRECCION_SIN_FIRMA`**: la corrección se guardó pero no se pudo firmar. Ver
   [`signed` y `sign_message`](#signed-y-sign_message).
 :::
