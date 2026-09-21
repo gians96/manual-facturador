@@ -56,9 +56,14 @@ paths:
           (DNI, RUC, carnet de extranjería o pasaporte). Para montos menores se puede usar
           `codigo_tipo_documento_identidad: "0"` con `numero_documento: "99999999"`
           (Clientes varios).
-        - **Las boletas NO se envían individualmente a SUNAT:** al emitirse quedan en estado
-          `01` Registrado y se declaran después mediante el **resumen diario**
-          (`POST /api/summaries`, ver sección Generar Resúmenes).
+        - **Cómo llega la boleta a SUNAT lo decide la empresa.** Con el envío individual de
+          boletas activo (así se crean las empresas nuevas) y el envío automático, sale sola al
+          emitirse y llega ya en `05` con CDR propio:
+          [Ciclo de la factura y envío individual](/devs/api/offline/endpoints/ciclo-de-la-factura-y-envio-individual).
+          Si no, queda en `01` Registrado y se declara después con el **resumen diario**
+          (`POST /api/summaries`, ver sección Generar Resúmenes), que luego se consulta con
+          `POST /api/summaries/status`; entonces el CDR es el del resumen:
+          [Ciclo de la boleta](/devs/api/offline/endpoints/ciclo-de-la-boleta).
         **Bloques opcionales comunes.** Esta página muestra el JSON mínimo de la variante.
         Los bloques opcionales que acepta `POST /api/documents` —entre ellos `anticipos`,
         `guias`, `relacionados`, `descuentos`, `cargos`, `detraccion`, `leyendas` y
@@ -80,10 +85,12 @@ paths:
       responses:
         '200':
           description: |
-            Boleta emitida correctamente. Queda en estado `01` **Registrado**: `links.cdr`
-            llega vacío (`""`) y `response` vacío (`[]`). La aceptación de SUNAT se obtiene
-            después, al declarar la boleta con el **resumen diario** (`POST /api/summaries`,
-            ver sección Generar Resúmenes).
+            Boleta emitida correctamente. Con el envío individual activo sale a SUNAT en esta
+            misma llamada: `state_type_id` `05` (o `07`/`09`), `links.cdr` con su CDR y
+            `response` con la respuesta. Si no, queda en `01` **Registrado**: `links.cdr` llega
+            vacío (`""`) y `response` vacío (`[]`); la aceptación se obtiene después, al declarar
+            la boleta con el **resumen diario** (`POST /api/summaries`, ver sección Generar
+            Resúmenes) y consultar ese resumen (`POST /api/summaries/status`).
           content:
             application/json:
               schema:
@@ -330,7 +337,7 @@ components:
               example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             state_type_id:
               type: string
-              description: '"01" Registrado (sin enviar), "03" Enviado, "05" Aceptado, "07" Observado, "09" Rechazado, "11" Anulado, "13" Por anular. Las boletas quedan en "01" hasta declararse con el resumen diario.'
+              description: '"01" Registrado (sin enviar), "03" Enviado, "05" Aceptado, "07" Observado, "09" Rechazado, "11" Anulado, "13" Por anular. Con el envío individual de boletas activo, la boleta sale sola y llega ya en "05" (o "07"/"09"). Si no, queda en "01" hasta que la declara un resumen diario: pasa a "03" al enviarlo (`POST /api/summaries`) y a "05" cuando se consulta ese resumen (`POST /api/summaries/status`) y SUNAT lo acepta. Si después se anula con un resumen de tipo "3", pasa a "13" (o "03" si la empresa envía por un PSE) y, al consultar ese resumen, a "11".'
               example: "01"
             state_type_description:
               type: string
@@ -398,7 +405,7 @@ components:
               example: "https://tu-dominio.com/downloads/document/pdf/46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
             cdr:
               type: string
-              description: Vacío ("") — el CDR de la boleta llega al declararla con el resumen diario.
+              description: Con el envío individual, el enlace al CDR propio de la boleta. Si quedó en "01", vacío (""); declarada por resumen no tiene CDR propio y su CDR es el del resumen, en el `links.cdr` de `POST /api/summaries/status`.
               example: ""
         response:
           type: object

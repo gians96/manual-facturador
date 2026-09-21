@@ -140,6 +140,10 @@ Este documento describe el contrato de API para la aplicación offline del Factu
 | 34 | [Lista de Precios por Item](endpoints/34-lista-de-precios-items.md) | `item_unit_types[]` + flag `select_available_price_list` |
 | 35 | [Plazo de la Fecha de Emisión](endpoints/35-plazo-fecha-emision.md) | `shipping_time_days` + `restrict_receipt_date`: cuándo el backend rechaza `fecha_de_emision` |
 | 36 | [Envío Automático por Correo](endpoints/36-envio-automatico-por-correo.md) | `acciones.enviar_email` + interruptor `auto_send_pdf_email`: cuándo el backend manda el comprobante al cliente |
+| 37 | [Envío Automático a SUNAT](endpoints/37-envio-automatico-a-sunat.md) | `send_auto` + `ticket_single_shipment`: por qué un comprobante sale en `01` o en `05` |
+| 38 | [Envío por WhatsApp](endpoints/38-envio-de-comprobantes-por-whatsapp.md) | El comprobante por el WhatsApp conectado del negocio, en cola |
+| 39 | [Ciclo de la Boleta](endpoints/39-ciclo-de-la-boleta.md) | `POST /api/summaries` + `/status`: de `01` a `05` por resumen diario, anulación hasta `11`, y el CDR, que es del resumen |
+| 40 | [Ciclo de la Factura y Envío Individual](endpoints/40-ciclo-de-la-factura-y-envio-individual.md) | Estado y CDR propio de facturas y boletas enviadas solas, `POST /api/documents/send`, y la anulación por `/api/voided` o por resumen |
 
 ---
 

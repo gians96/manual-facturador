@@ -28,7 +28,7 @@ Un comprobante en `01` es válido, está firmado y tiene PDF: solo está **pendi
 | Envío de guía de remisión automático | `auto_send_dispatchs_to_sunat` | **Solo al panel.** La API de guías nunca envía sola |
 | Enviar boletas y notas asociadas (Crédito y Débito) de forma individual | `ticket_single_shipment` | Si las boletas y sus notas van una a una, o esperan al resumen diario |
 
-El tercero no aparece para usuarios de tipo *integrator*.
+El tercero no aparece para usuarios de tipo *integrator*. Las empresas nuevas se crean con el primero y el tercero **encendidos**: sus boletas salen solas, con CDR propio. Estado, CDR y anulación en ese caso: [40 — Ciclo de la factura y de la boleta de envío individual](40-ciclo-de-la-factura-y-envio-individual.md).
 
 ---
 
@@ -103,14 +103,16 @@ Los otros dos rechazos del endpoint también son `422`: `DOCUMENT_NOT_FOUND` si 
 
 ```
 POST /api/summaries
-{ "fecha_de_referencia": "2026-09-07", ... }
+{ "fecha_de_emision_de_documentos": "2026-09-07", "codigo_tipo_proceso": "1" }
 ```
 
 El resumen recoge automáticamente **todo** lo que ese día siga en grupo `02`, estado `01` y sin marca de envío individual —boletas y notas juntas, hasta 500 documentos por resumen—. Cada nota se declara con su `BillingReference` al comprobante que corrige.
 
-:::warning Nadie manda el resumen por ti
+Con eso quedan en `03` (Enviado), no aceptadas: falta consultar el ticket del resumen con `POST /api/summaries/status`, y el CDR que se obtiene es el del resumen, no el de cada boleta. Los pasos, con la anulación: [39 — Ciclo de la boleta](39-ciclo-de-la-boleta.md).
 
-No hay tarea programada que genere ni envíe el resumen diario. Si apagas el envío individual de boletas, alguien tiene que llamar a `POST /api/summaries` cada día —tu integración, o un usuario desde el panel—. Un tenant con el interruptor apagado y sin nadie que genere resúmenes acumula boletas en estado `01` indefinidamente.
+:::warning Emitir no manda el resumen
+
+Lo envía alguien después: las tareas programadas «Enviar el resumen diario de boletas» y «Consultar el resultado del resumen diario», si la empresa las tiene activas y con el cron encendido; si no, tu integración o un usuario desde el panel. Un tenant con el envío individual apagado y sin nada de eso acumula boletas en estado `01` indefinidamente → [las tareas](39-ciclo-de-la-boleta.md#tareas-programadas).
 :::
 
 ---
@@ -133,5 +135,5 @@ Lo que hace el interruptor es responder `data.send_sunat` en el endpoint **del p
 1. `data.state_type_id` de la respuesta de emisión. Si es `01`, no se intentó enviar: es configuración, no un fallo de red.
 2. Si es `01` y esperabas envío: mira `send_auto`, y para boletas y sus notas, `ticket_single_shipment`.
 3. Si la nota es de boleta y los dos están activos: comprueba si mandaste `documento_afectado.external_id`, y cómo se envió la boleta afectada.
-4. Si el estado es `03` (Enviado) y no avanza, el envío salió pero no hay CDR: eso ya es SUNAT o el PSE, no esta configuración.
+4. Si el estado es `03` (Enviado) y no avanza, el envío salió pero no hay CDR: eso ya es SUNAT o el PSE, no esta configuración. En una boleta, `03` suele ser que su resumen salió y nadie lo ha consultado: `POST /api/summaries/status` con el `external_id` **del resumen** ([39](39-ciclo-de-la-boleta.md#paso-3)).
 5. Estados y su significado, en [26-envio-diferido-update-estado.md](26-envio-diferido-update-estado.md).

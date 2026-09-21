@@ -56,16 +56,17 @@ Content-Type: application/json
     "data": {
         "number": "F001-122",
         "filename": "20123456789-01-F001-122",
-        "external_id": "2dded172-cd17-4078-9c88-10a9b1177f2d"
+        "external_id": "2dded172-cd17-4078-9c88-10a9b1177f2d",
+        "state_type_id": "05",
+        "state_type_description": "Aceptado"
     },
     "links": {
-        "xml": "https://demo.nt-suite.pro/downloads/document/xml/2dded172...",
-        "pdf": "https://demo.nt-suite.pro/downloads/document/pdf/2dded172...",
         "cdr": "https://demo.nt-suite.pro/downloads/document/cdr/2dded172..."
     },
     "response": {
         "code": "0",
-        "description": "La Factura F001-122 ha sido aceptada"
+        "description": "La Factura numero F001-122, ha sido aceptada",
+        "notes": []
     }
 }
 ```
@@ -187,14 +188,17 @@ Trae contenido solo si se cumplen **las dos** condiciones:
 :::warning Con una boleta es `null` aunque esté aceptada
 
 Las boletas son grupo `02`, así que este endpoint nunca les devuelve el CDR: solo el
-`state_type_id`. Para el archivo hay dos vías, las dos válidas para boletas:
+`state_type_id`. Y el CDR tampoco es de la boleta: una boleta declarada en un resumen diario **no
+tiene CDR propio**. Su constancia es la del resumen que la declaró:
 
-- `GET /downloads/document/cdr/{external_id}` — descarga directa.
-- El `links.cdr` que devuelve `POST /api/documents` al emitirla, si emites en línea. Ver
-  [09 — Boleta y Factura](09-boleta-factura.md#campos-clave-del-response).
+- el `links.cdr` que devuelve `POST /api/summaries/status` al consultar ese resumen, o
+- `GET /downloads/summary/cdr/{external_id}`, con el `external_id` **del resumen**.
 
-Y recuerda que una boleta solo tiene CDR si llegó a `05`, lo que depende de cómo esté
-configurado el envío: [37 — Envío automático a SUNAT](37-envio-automatico-a-sunat.md).
+`GET /downloads/document/cdr/{external_id}` con el de la boleta responde **500**: ese archivo no
+existe. Solo la boleta de envío individual tiene CDR propio, y se descarga justo por esa ruta
+([40 — Ciclo de la factura y de la boleta de envío individual](40-ciclo-de-la-factura-y-envio-individual.md#cdr-propio)).
+
+Del `01` al CDR, y la anulación: [39 — Ciclo de la boleta](39-ciclo-de-la-boleta.md).
 :::
 
 ### Un `external_id` que no existe responde `500`
@@ -267,7 +271,7 @@ comprobante del tenant, se emitiera como se emitiera.
 
 ### Cuándo NO usar envío diferido
 
-1. **Flutter offline puro:** Si Flutter no tiene conexión al servidor, el comprobante se almacena en SQLite local. Al sincronizar con `sync-batch`, el servidor lo crea Y lo envía a SUNAT automáticamente (sin necesidad de `acciones`).
+1. **Flutter offline puro:** Si Flutter no tiene conexión al servidor, el comprobante se almacena en SQLite local. Al sincronizar con `sync-batch`, el servidor lo crea y decide si lo envía igual que `POST /api/documents`: una factura sale si el envío automático está activo; una boleta, solo si además está activo el envío individual ([37](37-envio-automatico-a-sunat.md), [40](40-ciclo-de-la-factura-y-envio-individual.md)).
 2. **Operación normal:** Si el servidor tiene internet, no hay razón para no enviar.
 
 ### Flujo recomendado post-sync
@@ -281,7 +285,11 @@ sync-batch → para cada documento creado:
   2. GET /api/document_check_server/{external_id}  → state_type_id
   3. Si state_type_id === "01" (Registrado, sin remitir):
        · factura o nota de factura → POST /api/documents/send
-       · boleta o nota de boleta   → POST /api/summaries (resumen diario)
+       · boleta o nota de boleta   → nada por documento: un POST /api/summaries por FECHA
+                                     de emisión (no uno por boleta); guarda el external_id
+                                     del resumen (ver 39)
+  3b. Si es "03" y es una boleta: su resumen ya salió → POST /api/summaries/status
+      con el external_id del resumen
   4. Si es "09" (Rechazado), corregir y reemitir. Reenviar el mismo no cambia nada
   5. Si es "05" (Aceptado), no hay nada que hacer
 ```
@@ -301,3 +309,4 @@ Para cada documento sincronizado:
 | `number` | Número del documento (ej: `F001-122`) | La fila de `sync-batch` |
 | `state_type_id` | Estado actual (`01`, `03`, `05`, …) | **No viene en `sync-batch`.** `GET /api/document_check_server/{external_id}` |
 | `needs_send` | Flag local: `true` si se creó con `enviar_xml_firmado: false` | Lo pones tú al emitir |
+| `external_id` del resumen | Solo boletas y sus notas: el resumen que la declaró, y el que la anuló si se anula. Su CDR es el del resumen | La respuesta de `POST /api/summaries` → [39](39-ciclo-de-la-boleta.md#qué-guardar-por-cada-boleta) |

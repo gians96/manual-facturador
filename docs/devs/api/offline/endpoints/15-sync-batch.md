@@ -273,9 +273,11 @@ Lo que ves arriba es todo lo que devuelve una fila de boleta, factura o nota: `i
 `external_id` y `warnings`. **No hay `state_type_id`, ni `links`, ni la respuesta de SUNAT.**
 
 Eso no significa que el comprobante no se haya enviado. `sync-batch` reutiliza por dentro el
-mismo motor que `POST /api/documents`, así que si el negocio tiene el envío automático activo,
-la boleta sale hacia SUNAT y puede quedar **aceptada** en el mismo lote — solo que la fila no
-te lo cuenta.
+mismo motor que `POST /api/documents`: una **factura** sale hacia SUNAT si el envío automático
+está activo, y una **boleta** solo si además está activo el envío individual de boletas —que es
+como se crean las empresas nuevas—. En ese caso queda **aceptada** en el mismo lote, solo que la
+fila no te lo cuenta. Comprobado el 2026-09-21 contra SUNAT beta: en un mismo lote, con el envío
+individual apagado, la factura quedó en `05` y la boleta en `01`.
 
 Para saber en qué estado quedó, con el `external_id` que acabas de recibir:
 
@@ -284,6 +286,12 @@ GET /api/document_check_server/{external_id}
 ```
 
 → [26 — Consultar el estado de un comprobante](26-envio-diferido-update-estado.md#3-consultar-el-estado-de-un-comprobante)
+
+Si la empresa tiene apagado el envío individual, una **boleta** recién sincronizada está en `01`
+(Registrado): no la declara el lote sino un resumen diario, que la pasa a `03` y, al consultarlo, a
+`05`. Qué llamar después —y cómo anularla y de dónde sale su CDR, que es el del resumen—:
+[39 — Ciclo de la boleta](39-ciclo-de-la-boleta.md). Facturas y boletas de envío individual:
+[40](40-ciclo-de-la-factura-y-envio-individual.md).
 
 :::warning El `doc_type` de la fila no es el estado
 

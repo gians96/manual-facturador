@@ -146,10 +146,14 @@ Si las credenciales son inválidas, el login responde HTTP 200 con
    evitar duplicados con `offline_id`: ver [Items, productos y clientes](./emision-items-y-catalogo.md).
 3. **Facturas y notas de factura**: se envían a SUNAT al emitirse (o con `POST /api/documents/send`
    si se emitió con `acciones.enviar_xml_firmado: false`).
-4. **Boletas y notas de boleta**: se declaran con el **resumen diario** (`POST /api/summaries`) y
-   se consulta el ticket con `POST /api/summaries/status`.
-5. **Anulaciones**: facturas con `POST /api/voided` (+ `voided/status`); boletas con resumen de
-   tipo `3` (`POST /api/summaries`).
+4. **Boletas y notas de boleta**: si la empresa tiene activo el envío individual (así se crean las
+   empresas nuevas), salen solas al emitirse, como las facturas; si no, se declaran con el
+   **resumen diario** (`POST /api/summaries`) y se consulta el ticket con
+   `POST /api/summaries/status` → [39](offline/endpoints/39-ciclo-de-la-boleta.md) y
+   [40](offline/endpoints/40-ciclo-de-la-factura-y-envio-individual.md).
+5. **Anulaciones**: facturas con `POST /api/voided` (+ `voided/status`); boletas con un resumen de
+   anulación, `POST /api/summaries` con `"codigo_tipo_proceso": "3"` **como texto**, y después
+   `POST /api/summaries/status` → [39 — Ciclo de la boleta](offline/endpoints/39-ciclo-de-la-boleta.md#paso-5).
 6. **Guías de remisión**: `POST /api/dispatches` → `POST /api/dispatches/send` →
    `POST /api/dispatches/status_ticket`. Son tres llamadas porque el API GRE de SUNAT es
    asíncrono: el envío devuelve un ticket y la aceptación se recoge después.

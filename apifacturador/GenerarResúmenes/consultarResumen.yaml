@@ -37,59 +37,59 @@ paths:
     post:
       tags:
         - api
-      summary: CONSULTAR TICKET ANULACIÓN
+      summary: CONSULTAR RESUMEN
       description: |
-        Consulta ante SUNAT el estado de un **resumen** registrado previamente con
-        `POST /api/summaries` (en este caso, el resumen de anulación de boletas,
-        `codigo_tipo_proceso: "3"`). Se puede identificar el resumen por su `external_id`
-        **o** por su `ticket` (basta enviar uno de los dos). Son los **del resumen de
-        anulación**, no los de la boleta.
+        Consulta ante SUNAT el ticket de un **resumen diario** registrado con
+        `POST /api/summaries` (`codigo_tipo_proceso: "1"`). Es el paso que deja las boletas
+        **aceptadas**: al registrar el resumen quedan en `03` Enviado, y solo pasan a `05`
+        Aceptado cuando esta consulta devuelve `response.code: "0"`.
 
-        Cuando SUNAT acepta el resumen (`response.code: "0"`), las boletas que lo conforman
-        pasan de `13` Por anular (o de `03`, si la empresa envía por un PSE o por el OSE
-        SendFact) a `11` **Anulado**, y `links.cdr` descarga **el CDR de la
-        anulación**: es el del resumen, no hay uno por boleta. SUNAT también lo describe como
-        «Resumen diario … ha sido aceptado».
+        Se identifica el resumen por su `external_id` **o** por su `ticket`: basta uno de los
+        dos. Son los **del resumen**, los que devolvió `POST /api/summaries`; con el
+        `external_id` de una boleta responde que no encontró resumen relacionado.
+
+        **El CDR es el del resumen.** `links.cdr` descarga un ZIP
+        (`R-{RUC}-RC-{fecha}-{n}.zip`) que vale para todas las boletas del resumen. Una boleta
+        declarada por resumen no tiene CDR propio: `/downloads/document/cdr/{external_id}` de la
+        boleta responde 500.
 
         **Qué puede volver:**
-        - `response.code: "0"` → anuladas.
+        - `response.code: "0"` → aceptado; las boletas pasan a `05`.
         - HTTP 500 `Code: 98; Description: El procesamiento del comprobante aún no ha terminado`
-          (envío directo a SUNAT), o HTTP 200 sin `response.code` (envío por PSE) → SUNAT aún
-          procesa: repetir la consulta en unos minutos.
-        - `response.code` distinto de `"0"` → SUNAT rechazó la anulación. Si la empresa envía
-          directo a SUNAT (`status_code: 99`), las boletas vuelven a `01` Registrado —no a `05`—
-          aunque para SUNAT sigan aceptadas: corregir y enviar la anulación otra vez antes de que
-          un resumen diario las vuelva a declarar. Por un PSE no cambia ningún estado.
+          → SUNAT aún procesa (empresa que envía directo a SUNAT). **Se reintenta** en unos
+          minutos.
+        - HTTP 200 sin `response.code` → lo mismo en una empresa que envía por un PSE. Se
+          consulta más tarde.
+        - `response.code` distinto de `"0"` → SUNAT rechazó el resumen. Si la empresa envía
+          directo a SUNAT (`status_code: 99`), el resumen queda en `09` y sus boletas vuelven a
+          `01`, listas para otro resumen de la misma fecha. Por un PSE no cambia ningún estado:
+          el resumen y sus boletas siguen en `03`.
 
-        **Ninguna tarea programada consulta estos resúmenes:** la de resúmenes solo mira los de
-        tipo `"1"`, y «Consultar las comunicaciones de baja», solo las bajas de facturas. Lo
-        consultas tú con esta llamada, o desde el panel en *Comprobantes pendientes →
-        Anulaciones* (botón *Enviar Baja*). Si nadie lo hace, la boleta se queda en `13` (en `03`
-        con PSE).
+        **No se vuelve a consultar un resumen ya aceptado:** cada consulta aceptada pone otra
+        vez en `05` todas sus boletas, también una que se haya anulado después.
 
-        El mismo endpoint consulta los resúmenes diarios: ver CONSULTAR RESUMEN en Generar
-        Resúmenes. El ciclo completo, con ejemplos reales:
+        El ciclo completo, con la anulación y ejemplos reales:
         [Ciclo de la boleta](/devs/api/offline/endpoints/ciclo-de-la-boleta).
 
         ***Ejemplo:***
          - **Método:** POST
          - **URL:** `https://tu-dominio.com/api/summaries/status`
          - **Encabezados:** `Authorization: Bearer <TU_TOKEN>`, `Accept: application/json` y `Content-Type: application/json`
-      operationId: consultarTicketAnulacion
+      operationId: consultarResumen
       requestBody:
-        description: JSON a enviar (enviar `external_id` o `ticket`, al menos uno)
+        description: JSON a enviar (enviar `external_id` o `ticket` del resumen, al menos uno)
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConsultaTicketRequest'
+              $ref: '#/components/schemas/ConsultaResumenRequest'
         required: true
       responses:
         '200':
-          description: Estado del resumen de anulación. Las boletas quedan anuladas solo si `response.code` es `"0"`.
+          description: Estado del resumen. Aceptado solo si `response.code` es `"0"`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespuestaConsultaTicket'
+                $ref: '#/components/schemas/RespuestaConsultaResumen'
         '401':
           description: Token inválido o ausente
           content:
@@ -124,20 +124,20 @@ paths:
 
 components:
   schemas:
-    ConsultaTicketRequest:
+    ConsultaResumenRequest:
       type: object
-      description: Enviar `external_id` o `ticket` (al menos uno de los dos).
+      description: Enviar `external_id` o `ticket` del resumen (al menos uno de los dos).
       properties:
         external_id:
           type: string
-          description: Identificador del resumen (`data.external_id` de `POST /api/summaries`). Alternativa a `ticket`.
-          example: "8cf16a43-9134-4809-8677-f0ecafede0b2"
+          description: Identificador **del resumen** (`data.external_id` de `POST /api/summaries`). Alternativa a `ticket`.
+          example: "b88390b6-1755-413e-acf4-c6f905ce8181"
         ticket:
           type: string
           description: Ticket SUNAT devuelto al registrar el resumen (`data.ticket`). Alternativa a `external_id`.
-          example: "1784778434733"
+          example: "1790027776413"
 
-    RespuestaConsultaTicket:
+    RespuestaConsultaResumen:
       type: object
       properties:
         success:
@@ -148,22 +148,22 @@ components:
           properties:
             filename:
               type: string
-              description: Nombre del archivo del resumen (RUC-RC-fecha-correlativo).
-              example: "20123456789-RC-20260722-2"
+              description: Nombre del archivo del resumen (RUC-RC-fecha de envío-correlativo).
+              example: "20123456789-RC-20260921-1"
             external_id:
               type: string
-              example: "8cf16a43-9134-4809-8677-f0ecafede0b2"
+              example: "b88390b6-1755-413e-acf4-c6f905ce8181"
         links:
           type: object
           properties:
             xml:
               type: string
               description: URL de descarga del XML firmado del resumen.
-              example: "https://tu-dominio.com/downloads/summary/xml/8cf16a43-9134-4809-8677-f0ecafede0b2"
+              example: "https://tu-dominio.com/downloads/summary/xml/b88390b6-1755-413e-acf4-c6f905ce8181"
             cdr:
               type: string
-              description: URL de descarga del CDR **del resumen de anulación**, que es el de todas sus boletas. No pide token.
-              example: "https://tu-dominio.com/downloads/summary/cdr/8cf16a43-9134-4809-8677-f0ecafede0b2"
+              description: URL de descarga del CDR **del resumen**, que es el de todas sus boletas. No pide token.
+              example: "https://tu-dominio.com/downloads/summary/cdr/b88390b6-1755-413e-acf4-c6f905ce8181"
         response:
           type: object
           description: Respuesta de SUNAT.
@@ -177,7 +177,7 @@ components:
               example: "0"
             description:
               type: string
-              example: "El Resumen diario RC-20260722-2, ha sido aceptado"
+              example: "El Resumen diario RC-20260921-1, ha sido aceptado"
             notes:
               type: array
               items:
@@ -225,7 +225,7 @@ components:
           example: false
         message:
           type: string
-          example: "Es requerido el código externo o ticket"
+          example: "Code: 98; Description: El procesamiento del comprobante aún no ha terminado"
 
   securitySchemes:
     bearerAuth:

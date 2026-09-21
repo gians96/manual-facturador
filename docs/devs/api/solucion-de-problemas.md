@@ -28,8 +28,10 @@ segunda, un error puede volver como la pantalla de login en HTML en vez de como 
 → [la cabecera](./errores-de-la-api.md#antes-que-nada-la-cabecera)
 
 **2. ¿El fallo es de tu payload o del servidor?** No se decide por el código HTTP, se decide por
-el `error_code`. Un dato mal enviado **nunca** devuelve un 500; y hay errores del servidor que
-llegan con HTTP 200 dentro de `results[]`.
+el `error_code`. Al emitir, un dato mal enviado **nunca** devuelve un 500; y hay errores del
+servidor que llegan con HTTP 200 dentro de `results[]`. La excepción son los resúmenes de
+boletas, `document_check_server` y las descargas: ahí un `external_id` equivocado todavía responde
+500 → [39 — Ciclo de la boleta](offline/endpoints/39-ciclo-de-la-boleta.md).
 
 **3. ¿Reintentar puede arreglarlo?** Si el error es permanente, reintentar solo gasta tiempo —y
 en algunos casos gasta correlativos. La columna «¿Reintentar?» de
@@ -57,6 +59,10 @@ Reintenta solo `bloqueo_temporal` y los fallos de red. Todo lo demás: corrige o
 | La guía salió, pero sin PDF ni XML | [La guía sale sin firmar](#la-guia-sale-sin-firmar) |
 | Se cortó la conexión y no sé si se emitió | [No sé si se emitió](#no-se-si-se-emitio) |
 | Enlacé la guía con el comprobante y el enlace no existe | [El enlace guía ↔ comprobante no existe](#el-enlace-guia-comprobante-no-existe) |
+| La boleta sigue en `01` (Registrado) después del `sync-batch` | [39 — Por qué queda en `01` y cómo declararla](offline/endpoints/39-ciclo-de-la-boleta.md#paso-1) |
+| La boleta enviada sola (envío individual) quedó en `01` y la API no la reenvía | [40 — Una boleta de envío individual en `01`](offline/endpoints/40-ciclo-de-la-factura-y-envio-individual.md#factura-en-01) |
+| El CDR de una boleta aceptada da error 500 | [39 — El CDR es el del resumen](offline/endpoints/39-ciclo-de-la-boleta.md#paso-4) |
+| Pedí anular una boleta y se anuló otra | [39 — `codigo_tipo_proceso` va como texto](offline/endpoints/39-ciclo-de-la-boleta.md#paso-5) |
 
 ---
 
@@ -339,6 +345,7 @@ el síntoma viejo en servidores anteriores.
 | 2026-09-16 | `codigo_del_domicilio_fiscal` en `null` ya no provoca el rechazo 3369; el código de producto SUNAT por línea llega al XML |
 | 2026-09-17 | La dirección de llegada de la guía `09` deja de fallar con MySQL 1452; el ubigeo enviado como número es un 422 antes de emitir, en vez de viajar crudo al XML; nace `restriccion_no_atribuible` |
 | 2026-09-18 | Una guía se corrige por el lote con su mismo `offline_id` si trae su `external_id` (`was_corrected: true`); el `was_duplicate` de una guía trae su estado y, si está rechazada, lo avisa |
+| 2026-09-21 | En `POST /api/summaries`, `"codigo_tipo_proceso": 3` como número vale lo mismo que `"3"` (antes anulaba todo lo de la fecha en `01`); un tipo fuera de catálogo es 422 `INVALID_PROCESS_TYPE`, y la falta de fecha o tipo, 422 `MISSING_FIELDS` (antes 500) |
 
 ## Ver también
 

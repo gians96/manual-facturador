@@ -47,15 +47,34 @@ paths:
         ningún array `documentos`.
 
         **Flujo completo:**
-        1. Emitir las boletas con `POST /api/documents` (`codigo_tipo_documento: "03"`).
-        2. Registrar el resumen del día con este servicio → SUNAT devuelve un **ticket** (`data.ticket`).
-        3. Consultar el ticket con `POST /api/summaries/status` hasta obtener la aceptación;
-           recién entonces las boletas quedan **Aceptadas** por SUNAT.
+        1. Emitir las boletas con `POST /api/documents` (`codigo_tipo_documento: "03"`) o por
+           `POST /api/offline/sync-batch`. Si la empresa no tiene activo el envío individual de
+           boletas, quedan en `01` **Registrado**.
+        2. Registrar el resumen de su fecha con este servicio → SUNAT devuelve un **ticket**
+           (`data.ticket`). Las boletas que entran pasan a `03` **Enviado**.
+        3. Consultar el resumen con `POST /api/summaries/status` (ver CONSULTAR RESUMEN) hasta
+           obtener la aceptación; recién entonces las boletas quedan en `05` **Aceptado**. El CDR
+           que se obtiene es **el del resumen**: la boleta no tiene CDR propio.
+
+        El ciclo completo, con la anulación y ejemplos reales:
+        [Ciclo de la boleta](/devs/api/offline/endpoints/ciclo-de-la-boleta).
 
         **Notas importantes:**
-        - La fecha se envía en formato **`Y-m-d`** (año-mes-día), por ejemplo `"2026-07-22"`.
+        - La fecha es la de **emisión de las boletas**, no la de hoy, en formato **`Y-m-d`**
+          (año-mes-día), por ejemplo `"2026-07-22"`.
+        - `codigo_tipo_proceso` se envía como texto: `"1"`.
+        - `data.external_id` es **el del resumen**, no el de una boleta: es el que se usa para
+          consultarlo. La respuesta no lista las boletas incluidas: son las que estaban en `01`
+          con esa fecha, en el entorno actual de la empresa (demo o producción) y sin la marca de
+          envío individual. Una boleta de envío individual que se quedó en `01` no entra en
+          ningún resumen.
+        - Entran hasta 500 documentos por resumen. Si quedan más, o se emiten más boletas con
+          esa fecha, se vuelve a llamar con la misma fecha: el resumen nuevo solo lleva las que
+          sigan en `01`.
         - Si no hay boletas pendientes de declarar en esa fecha, el servicio responde con error
-          de negocio (ver respuesta 500).
+          de negocio (ver respuesta 500). No se reintenta.
+        - Las tareas programadas del panel pueden enviar y consultar este resumen cada
+          madrugada, si la empresa las tiene activas.
         - Este mismo endpoint con `codigo_tipo_proceso: "3"` se usa para **anular** boletas
           (ver ANULACIÓN DE BOLETAS).
 
@@ -85,22 +104,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorNoAutenticado'
         '403':
-          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          description: Tenant suspendido por licencia (`LICENSE_TENANT_BLOCKED`)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorLicencia'
-        '422':
-          description: Error de validación de campos
+        '400':
+          description: |
+            No se pudo leer el cuerpo; corrígelo antes de reintentar: `MISSING_CONTENT_TYPE`
+            (falta `Content-Type: application/json`), `EMPTY_BODY` o `INVALID_JSON`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorValidacion'
+                $ref: '#/components/schemas/ErrorNegocio'
+        '422':
+          description: |
+            Desde el 2026-09-21: `MISSING_FIELDS` si falta `fecha_de_emision_de_documentos` o
+            `codigo_tipo_proceso`, e `INVALID_PROCESS_TYPE` si el tipo no es del catálogo. En un
+            servidor anterior, los dos primeros eran un 500 `Undefined array key "…"`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNegocio'
         '500':
           description: |
-            Error de negocio. Mensaje típico:
-            - `No se encontraron documentos con fecha de emisión {fecha}.` (no hay boletas
-              pendientes de declarar en esa fecha)
+            - `No se encontraron documentos con fecha de emisión {fecha}.` Nada que declarar en
+              esa fecha: ya se declaró todo, la fecha no es la de emisión, las boletas en `01`
+              son de envío individual o se emitieron en demo. No se reintenta.
+            - `Code: …; Description: …` o `PSE. SEND - Code: …`: SUNAT o el PSE no recibieron el
+              resumen. No se guarda nada y las boletas siguen en `01`: se reintenta con la
+              misma fecha.
           content:
             application/json:
               schema:
@@ -123,7 +156,7 @@ components:
           example: "2026-07-22"
         codigo_tipo_proceso:
           type: string
-          description: '"1" = resumen diario de boletas y sus notas. (Con "3" se anulan boletas, ver ANULACIÓN DE BOLETAS.)'
+          description: '"1" = resumen diario de boletas y sus notas, como texto. (Con "3" se anulan boletas, ver ANULACIÓN DE BOLETAS.)'
           example: "1"
       required:
         - fecha_de_emision_de_documentos
@@ -140,7 +173,7 @@ components:
           properties:
             external_id:
               type: string
-              description: Identificador único del resumen. Guardarlo para consultar el estado.
+              description: Identificador único **del resumen** (no de una boleta). Guardarlo para consultarlo con `POST /api/summaries/status`.
               example: "8cf16a43-9134-4809-8677-f0ecafede0b2"
             ticket:
               type: string
@@ -168,23 +201,10 @@ components:
           example: false
         message:
           type: string
-          example: "Emisión bloqueada por licencia."
+          example: "Operación bloqueada: tenant suspendido por licencia."
         message_code:
           type: string
-          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
-          example: "LICENSE_EMISSION_BLOCKED"
-
-    ErrorValidacion:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: false
-        message:
-          type: object
-          description: Objeto con los errores por campo.
-          example:
-            fecha_de_emision_de_documentos: ["El campo fecha de emision de documentos es obligatorio."]
+          example: "LICENSE_TENANT_BLOCKED"
 
     ErrorNegocio:
       type: object

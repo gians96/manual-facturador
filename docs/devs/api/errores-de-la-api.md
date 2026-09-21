@@ -66,7 +66,11 @@ ya funciona leyendo solo `success` y `message`, sigue funcionando igual.
 | `422` | Falta un campo, un catálogo no es válido o una regla de negocio no se cumple |
 | `500` | Fallo real del servidor |
 
-Un dato mal enviado **nunca** devuelve 500. Si recibes un 500, no es culpa de tu payload.
+Al emitir —`POST /api/documents` y `sync-batch`— un dato mal enviado **nunca** devuelve 500. Si
+recibes un 500 ahí, no es culpa de tu payload. Los resúmenes (`/api/summaries`,
+`/api/summaries/status`), `document_check_server` y las descargas de `/downloads/…` todavía
+responden 500 a algunos errores tuyos, como un `external_id` equivocado: en esos, lee el `message`
+antes de reintentar → [39 — Ciclo de la boleta](offline/endpoints/39-ciclo-de-la-boleta.md).
 
 > **Cambio de comportamiento (2026-09-05).** El comprobante duplicado, que era la última
 > excepción a esa regla, ahora sale con **409** y `error_code: "DUPLICATE_DOCUMENT"`. El
@@ -164,6 +168,7 @@ texto. **Los mensajes no han cambiado**: si tu integración los compara, sigue f
 | `Para empresas NRUS solo están disponibles las series de Boleta de venta electrónica y Nota de venta.` | `SERIES_NOT_ALLOWED_NRUS` |
 | `El código ingresado del establecimiento es incorrecto.` | `INVALID_ESTABLISHMENT` |
 | `No se encontró el documento con código externo {X}.` | `AFFECTED_DOCUMENT_NOT_FOUND` |
+| `El código externo {X} no fue encontrado o la fecha indica no corresponde al documento.` — al anular, por `POST /api/voided` (facturas) o por `POST /api/summaries` con `"3"` (boletas) | `AFFECTED_DOCUMENT_NOT_FOUND` |
 | `No se enviaron documentos para la anulación.` | `NO_DOCUMENTS` |
 
 ### `POST /api/documents/send` — desde 2026-09-07
@@ -477,6 +482,7 @@ Estos siguen sin dar error y conviene tenerlos presentes:
 | `unidad_de_medida` en un ítem que ya existe | No se revalida contra el catálogo 03: llega tal cual al `unitCode` del XML. Solo se valida al **crear** el ítem |
 | `items[]` **sin** `codigo_interno` | Todas esas líneas se resuelven al mismo producto interno y acaban compartiendo descripción |
 | `codigo_producto_sunat` de 8 dígitos que no existe en el catálogo 25 | Se imprime tal cual: el Facturador solo comprueba el formato ([avisos](#codigo_producto_sunat_ignorado)). SUNAT lo observa hoy (OBS-3496) y desde el **2027-01-01** rechaza el comprobante (ERR-3496) |
+| `codigo_tipo_proceso: 3` —número, sin comillas— al anular boletas con `POST /api/summaries`, en un servidor **anterior al 2026-09-21** | **Se ignora `documentos`**: el resumen anula todo lo de esa fecha que siga en `01` y responde `success: true`. Desde esa fecha `3` vale como `"3"`. Mándalo siempre como `"3"` → [ciclo de la boleta](offline/endpoints/39-ciclo-de-la-boleta.md#paso-5) |
 
 ## Cosas que conviene saber
 

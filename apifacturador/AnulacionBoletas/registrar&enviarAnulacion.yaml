@@ -45,17 +45,35 @@ paths:
         `fecha_de_emision_de_documentos`.
 
         El proceso es **asíncrono**: al registrar el resumen de anulación, SUNAT devuelve un
-        **ticket** (`data.ticket`). Luego se debe consultar ese ticket con
+        **ticket** (`data.ticket`) y las boletas pasan a `13` **Por anular** (a `03` si la
+        empresa envía por un PSE o por el OSE SendFact). Luego se debe consultar ese ticket con
         `POST /api/summaries/status` hasta obtener la aceptación; recién entonces las boletas
-        quedan **Anuladas** (estado `11`).
+        quedan **Anuladas** (estado `11`), y el CDR de la anulación es el de este resumen.
+
+        **`codigo_tipo_proceso` va como texto: `"3"`.** En un servidor anterior al 2026-09-21,
+        con el número `3` sin comillas el servidor **ignora `documentos`** y anula todo lo de
+        esa fecha que siga en `01`, respondiendo `success: true` (comprobado ese día: se pidió
+        anular una boleta y se anuló otra). Desde esa fecha `3` vale como `"3"`; mándalo como
+        texto igual.
 
         **Notas importantes:**
         - En este endpoint la fecha se envía en formato **`Y-m-d`** (año-mes-día), por ejemplo
-          `"2026-07-22"`. Ojo: es distinto de `/api/voided`, que usa `d-m-Y`.
+          `"2026-07-22"`, y es la de **emisión de las boletas** que se anulan. Ojo: es distinto
+          de `/api/voided`, que usa `d-m-Y`.
         - `external_id` es el identificador devuelto al emitir la boleta
-          (`data.external_id` de `POST /api/documents`).
+          (`data.external_id` de `POST /api/documents` o de la fila de `sync-batch`).
+        - Se anulan boletas **aceptadas** (`05`), declaradas en un resumen o enviadas solas. El
+          panel solo ofrece «Anular» en ese estado; la API no lo comprueba.
+        - Una nota de boleta se anula con **su** fecha de emisión, no la de la boleta.
+        - `motivo_anulacion` es opcional y queda en el registro, pero no viaja a SUNAT: el
+          resumen no tiene campo de motivo.
+        - La respuesta trae el `external_id` y el `ticket` **del resumen de anulación**: son los
+          que se usan para consultarlo. Ninguna tarea programada consulta estos resúmenes.
         - Las **facturas** y sus notas NO se anulan por este endpoint: usar `POST /api/voided`
           (comunicación de baja).
+
+        El ciclo completo, de la emisión al CDR de la anulación:
+        [Ciclo de la boleta](/devs/api/offline/endpoints/ciclo-de-la-boleta).
 
         ***Ejemplo:***
          - **Método:** POST
@@ -83,22 +101,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorNoAutenticado'
         '403':
-          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          description: Tenant suspendido por licencia (`LICENSE_TENANT_BLOCKED`)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorLicencia'
-        '422':
-          description: Error de validación de campos
+        '400':
+          description: |
+            No se pudo leer el cuerpo; corrígelo antes de reintentar: `MISSING_CONTENT_TYPE`
+            (falta `Content-Type: application/json`), `EMPTY_BODY` o `INVALID_JSON`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorValidacion'
+                $ref: '#/components/schemas/ErrorNegocio'
+        '422':
+          description: |
+            La anulación no se envió a SUNAT. No se reintenta:
+            - `NO_DOCUMENTS` — `No se enviaron documentos para la anulación.` (falta `documentos`
+              o va vacío)
+            - `AFFECTED_DOCUMENT_NOT_FOUND` — `El código externo {external_id} no fue encontrado o
+              la fecha indica no corresponde al documento.` (la fecha no es la de emisión de ese
+              comprobante, el `external_id` no existe en esta empresa, o es de una factura o
+              nota de factura: esas van por `POST /api/voided`)
+            - `MISSING_FIELDS` / `INVALID_PROCESS_TYPE` — falta la fecha o el tipo, o el tipo no es
+              del catálogo (desde el 2026-09-21)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorAnulacion'
         '500':
           description: |
-            Error de negocio. Mensajes típicos:
-            - `No se enviaron documentos para la anulación.`
-            - `El código externo {external_id} no fue encontrado o la fecha indica no corresponde al documento.`
+            Fallo al enviar a SUNAT (`Code: …; Description: …`): no se guarda nada y se puede
+            reintentar. En un servidor anterior al 2026-09-21, también el número `3` sin boletas
+            en `01` en esa fecha (`No se encontraron documentos con fecha de emisión {fecha}.`).
           content:
             application/json:
               schema:
@@ -120,7 +155,7 @@ components:
           example: "2026-07-22"
         codigo_tipo_proceso:
           type: string
-          description: '"3" = anulación de boletas vía resumen. (Con "1" se registra un resumen diario, ver GENERAR RESÚMENES.)'
+          description: '"3" = anulación de boletas vía resumen. **Como texto**: con el número 3 se ignora `documentos` y se anulan todas las boletas en "01" de esa fecha. (Con "1" se registra un resumen diario, ver GENERAR RESÚMENES.)'
           example: "3"
         documentos:
           type: array
@@ -130,7 +165,6 @@ components:
             type: object
             required:
               - external_id
-              - motivo_anulacion
             properties:
               external_id:
                 type: string
@@ -138,7 +172,7 @@ components:
                 example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
               motivo_anulacion:
                 type: string
-                description: Motivo de la anulación que se informará a SUNAT.
+                description: Opcional. Se guarda con la anulación, pero no viaja a SUNAT (el resumen no tiene campo de motivo).
                 example: "Se duplicó documento"
       required:
         - fecha_de_emision_de_documentos
@@ -156,7 +190,7 @@ components:
           properties:
             external_id:
               type: string
-              description: Identificador único del resumen de anulación. Guardarlo para consultar el estado.
+              description: Identificador único **del resumen de anulación** (no de la boleta). Guardarlo para consultarlo con `POST /api/summaries/status`.
               example: "8cf16a43-9134-4809-8677-f0ecafede0b2"
             ticket:
               type: string
@@ -184,23 +218,24 @@ components:
           example: false
         message:
           type: string
-          example: "Emisión bloqueada por licencia."
+          example: "Operación bloqueada: tenant suspendido por licencia."
         message_code:
           type: string
-          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
-          example: "LICENSE_EMISSION_BLOCKED"
+          example: "LICENSE_TENANT_BLOCKED"
 
-    ErrorValidacion:
+    ErrorAnulacion:
       type: object
       properties:
         success:
           type: boolean
           example: false
         message:
-          type: object
-          description: Objeto con los errores por campo.
-          example:
-            fecha_de_emision_de_documentos: ["El campo fecha de emision de documentos es obligatorio."]
+          type: string
+          example: "El código externo 46c6ce9d-aaae-4b8d-8e94-a6f94c964b47 no fue encontrado o la fecha indica no corresponde al documento."
+        error_code:
+          type: string
+          description: '"NO_DOCUMENTS" o "AFFECTED_DOCUMENT_NOT_FOUND".'
+          example: "AFFECTED_DOCUMENT_NOT_FOUND"
 
     ErrorNegocio:
       type: object
@@ -210,7 +245,7 @@ components:
           example: false
         message:
           type: string
-          example: "No se enviaron documentos para la anulación."
+          example: "No se encontraron documentos con fecha de emisión 2026-07-22."
 
   securitySchemes:
     bearerAuth:

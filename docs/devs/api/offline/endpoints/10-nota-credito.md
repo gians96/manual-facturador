@@ -287,9 +287,9 @@ El endpoint solo acepta documentos del grupo `01`. Con una nota de boleta respon
 El tipo de documento 07 es inválido, no es posible enviar.
 ```
 
-No es un fallo: una nota asociada a una boleta se declara en el **resumen diario**, no de una en una. Para esas, el camino es `POST /api/summaries` con `fecha_de_referencia` igual a su fecha de emisión. El resumen recoge automáticamente todo lo del grupo `02` que ese día siga en estado `01` y no esté marcado como envío individual — boletas y notas juntas, cada nota con su `BillingReference` al comprobante que corrige.
+No es un fallo: una nota asociada a una boleta se declara en el **resumen diario**, no de una en una. Para esas, el camino es `POST /api/summaries` con `fecha_de_emision_de_documentos` igual a su fecha de emisión y `codigo_tipo_proceso: "1"`, y después consultar ese resumen con `POST /api/summaries/status`. El resumen recoge automáticamente todo lo del grupo `02` que ese día siga en estado `01` y no esté marcado como envío individual — boletas y notas juntas, cada nota con su `BillingReference` al comprobante que corrige.
 
-**Nadie manda el resumen por ti.** No hay tarea programada que lo haga: si apagas el envío individual de boletas, alguien tiene que llamar a `POST /api/summaries` cada día, sea tu integración o un usuario desde el panel.
+**Emitir no manda el resumen.** Lo envían las tareas programadas del resumen diario, si la empresa las tiene activas; si no, tu integración o un usuario desde el panel. Los pasos, el CDR (que es el del resumen) y la anulación: [39 — Ciclo de la boleta](39-ciclo-de-la-boleta.md).
 :::
 
 ---
