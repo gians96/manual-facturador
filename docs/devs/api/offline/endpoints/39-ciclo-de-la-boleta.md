@@ -14,8 +14,9 @@
 Si la empresa tiene apagado el envío individual, una boleta no viaja sola a SUNAT: **se declara
 dentro de un resumen diario, y se anula dentro de otro resumen**. El ticket, la respuesta de SUNAT
 y el CDR son **del resumen**, no de la boleta. Por eso, a partir del paso 2, la consulta
-(`/api/summaries/status`) y la descarga del CDR van con el `external_id` del resumen; el estado de
-cada boleta lo sigues leyendo con el `external_id` de la boleta.
+(`/api/summaries/status`) y la descarga del CDR van con el `external_id` del resumen. Qué boletas
+lleva cada resumen, y el estado de cada una, viene en `documents`, en la respuesta del envío y en la
+de la consulta.
 
 Las empresas nuevas se crean con el **envío individual encendido**: sus boletas salen solas al
 emitirse, con CDR propio, y no pasan por el resumen diario. Esta página es para las que lo tienen
@@ -49,19 +50,20 @@ apagado. Si es tu caso el otro: [40 — Ciclo de la factura y de la boleta de en
 | Paso | Llamada | La boleta pasa a | Qué guardar |
 |---|---|---|---|
 | [1. Registrar](#paso-1) | `POST /api/offline/sync-batch` | `01` Registrado | El `external_id` de la boleta |
-| [2. Declarar](#paso-2) | `POST /api/summaries` con `"1"` | `03` Enviado | El `external_id` y el `ticket` **del resumen** |
-| [3. Consultar](#paso-3) | `POST /api/summaries/status` | `05` Aceptado | El `links.cdr` del resumen |
+| [2. Declarar](#paso-2) | `POST /api/summaries` con `"1"` | `03` Enviado | El `external_id` y el `ticket` **del resumen**, en cada boleta de `documents` |
+| [3. Consultar](#paso-3) | `POST /api/summaries/status` | `05` Aceptado | El `links.cdr` del resumen y el estado de cada boleta de `documents` |
 | [5. Anular](#paso-5) | `POST /api/summaries` con `"3"` y la boleta | `13` Por anular (`03` con PSE u OSE SendFact) | El `external_id` y el `ticket` **del resumen de anulación** |
 | [6. Consultar la anulación](#paso-6) | `POST /api/summaries/status` | `11` Anulado | El `links.cdr` del resumen de anulación |
 
 El [paso 4](#paso-4) no es una llamada: es de dónde sale el CDR. Una boleta que no se anula termina
 en el paso 3.
 
-:::info Probado de punta a punta el 2026-09-21
+:::info Probado de punta a punta el 2026-09-21 y el 2026-09-22
 El ciclo se corrió entero contra SUNAT beta: la B001-1 entró por `sync-batch`, se declaró en el
-resumen `RC-20260921-1` y se anuló en el `RC-20260921-2`. Las respuestas de ejemplo son las de esa
-prueba, con el RUC y el dominio cambiados. Los mensajes de error que la prueba no provocó están
-tomados del código.
+resumen `RC-20260921-1` y se anuló en el `RC-20260921-2`. El 2026-09-22 se repitió con la lista
+`documents` de las respuestas, y con una boleta registrada después de enviar el resumen. Las
+respuestas de ejemplo salen de esas pruebas, con el RUC, el dominio y el `offline_id` cambiados. Los
+mensajes de error que la prueba no provocó están tomados del código.
 :::
 
 ---
@@ -121,27 +123,82 @@ resumen.
     "success": true,
     "data": {
         "external_id": "b88390b6-1755-413e-acf4-c6f905ce8181",
-        "ticket": "1790027776413"
+        "ticket": "1790027776413",
+        "filename": "20123456789-RC-20260921-1",
+        "date_of_reference": "2026-09-21",
+        "summary_status_type_id": "1",
+        "state_type_id": "03",
+        "state_type_description": "Enviado",
+        "documents": [
+            {
+                "id": 123,
+                "external_id": "c50fb61c-ed0c-4bc6-b70a-df7893a7eba8",
+                "offline_id": "B2C3D4E5-F6A7-8901-BCDE-F12345678901",
+                "document_type_id": "03",
+                "series": "B001",
+                "number": 1,
+                "number_full": "B001-1",
+                "currency_type_id": "PEN",
+                "total": "118.00",
+                "state_type_id": "03",
+                "state_type_description": "Enviado"
+            }
+        ]
     }
 }
 ```
 
-Ese `external_id` es **el del resumen**, no el de ninguna boleta. Guárdalo con el `ticket`: son lo
-único que sirve en el paso 3. Las boletas que entraron pasan a `03` (Enviado) en ese momento.
+`external_id` y `ticket` son **del resumen**, no de ninguna boleta: son los que sirven en el
+paso 3. `documents` son las boletas que llevó este resumen, que ya pasaron a `03` (Enviado).
 
-:::warning La respuesta no dice qué boletas llevó
-Son las que estaban en `01` con esa fecha justo antes de la llamada. Para saberlo boleta a boleta,
-consulta cada una: las que pasaron a `03` van en este resumen.
+| Campo de `data` | Qué es |
+|---|---|
+| `external_id`, `ticket` | Del resumen. Con cualquiera de los dos se consulta en el paso 3 |
+| `filename` | `RUC-RC-AAAAMMDD-N`. La fecha del nombre es la del día del envío, no la de las boletas |
+| `date_of_reference` | La fecha de emisión de las boletas que mandaste |
+| `summary_status_type_id` | `"1"` si declara, `"3"` si anula |
+| `state_type_id`, `state_type_description` | El estado del resumen: `03` al enviarlo |
+| `documents` | Una fila por comprobante del resumen, en el orden del XML |
 
-Lo más simple es no tener que averiguarlo: manda el resumen **cuando el día ya cerró** —de
-madrugada del día siguiente, como hace la [tarea programada](#tareas-programadas)— y una sola
-llamada lleva todas las boletas de esa fecha, si no pasan de 500.
+| Campo de cada `documents[]` | Qué es |
+|---|---|
+| `offline_id` | El que mandaste a `sync-batch`, tal cual, mayúsculas incluidas. `null` si la boleta no entró por `sync-batch` |
+| `external_id`, `id` | Los mismos que te devolvió la fila de `sync-batch` |
+| `document_type_id` | `03` boleta; `07` y `08`, notas de crédito y débito de boleta |
+| `series`, `number` | `B001` y `1`: la serie y el correlativo, por separado |
+| `number_full` | `B001-1`: lo que la fila de `sync-batch` llama `number` |
+| `currency_type_id`, `total` | La moneda y el total declarado. `total` es texto con dos decimales |
+| `state_type_id`, `state_type_description` | El estado de la boleta después de la llamada |
 
-Si después emites más boletas con esa misma fecha, o eran más de 500, vuelve a llamar con la misma
-fecha: el resumen nuevo solo lleva las que sigan en `01`. Una boleta que ya va en un resumen no
-entra en otro, salvo que SUNAT rechace el primero o que alguien lo elimine desde el panel mientras
-sigue en `03`: eso devuelve sus boletas a `01`, y si SUNAT ya lo había recibido, se declaran dos
-veces.
+### Cuadrar el resumen con tu base {#cuadrar}
+
+Recorre `documents` y, en tu tabla, marca cada boleta con el `external_id` y el `ticket` del
+resumen. Búscala por `offline_id`, que lo generaste tú, o por `external_id`. De paso, compara
+`total` con el tuyo: es el importe que se declaró a SUNAT. Hay un
+[ejemplo en SQL Server](#desde-sql-server).
+
+- Una boleta pendiente en tu base que **no** está en `documents` no entró en este resumen: sigue en
+  `01` e irá en el siguiente. Pasa si la registraste después de la llamada, si es de envío
+  individual o si su fecha de emisión es otra.
+- Si emites más boletas con esa misma fecha, o eran más de 500, vuelve a llamar con la misma
+  fecha: el resumen nuevo solo lleva las que sigan en `01`, y su `documents` te dice cuáles.
+- Una boleta que ya va en un resumen no entra en otro, salvo que SUNAT rechace el primero o que
+  alguien lo elimine desde el panel mientras sigue en `03`: eso devuelve sus boletas a `01`, y si
+  SUNAT ya lo había recibido, se declaran dos veces.
+- **No lances dos resúmenes de la misma fecha a la vez**, por ejemplo tu integración a la misma
+  hora que la [tarea programada](#tareas-programadas), o un reintento mientras el primero no ha
+  respondido. La lista se arma al llegar la llamada y las boletas pasan a `03` cuando SUNAT
+  responde: en ese intervalo, otra llamada se lleva las mismas. Si tu llamada se cortó por tiempo,
+  antes de repetirla consulta una de las boletas. Si ya está en `03`, el resumen salió.
+
+Lo más simple sigue siendo mandar el resumen **cuando el día ya cerró**, de madrugada del día
+siguiente como la [tarea programada](#tareas-programadas). Así una sola llamada lleva todas las
+boletas de esa fecha, si no pasan de 500.
+
+:::note En un servidor anterior al 2026-09-22
+La respuesta solo trae `external_id` y `ticket`: ni `documents` ni los demás campos. Para saber qué
+boletas llevó, consulta cada una con `document_check_server`: las que pasaron a `03` van en este
+resumen. Al actualizar el servidor llega la lista.
 :::
 
 Si esa fecha no tiene nada pendiente, responde **HTTP 500**:
@@ -179,8 +236,28 @@ ticket, que puede no ser el tuyo.
 {
     "success": true,
     "data": {
+        "external_id": "b88390b6-1755-413e-acf4-c6f905ce8181",
+        "ticket": "1790027776413",
         "filename": "20123456789-RC-20260921-1",
-        "external_id": "b88390b6-1755-413e-acf4-c6f905ce8181"
+        "date_of_reference": "2026-09-21",
+        "summary_status_type_id": "1",
+        "state_type_id": "05",
+        "state_type_description": "Aceptado",
+        "documents": [
+            {
+                "id": 123,
+                "external_id": "c50fb61c-ed0c-4bc6-b70a-df7893a7eba8",
+                "offline_id": "B2C3D4E5-F6A7-8901-BCDE-F12345678901",
+                "document_type_id": "03",
+                "series": "B001",
+                "number": 1,
+                "number_full": "B001-1",
+                "currency_type_id": "PEN",
+                "total": "118.00",
+                "state_type_id": "05",
+                "state_type_description": "Aceptado"
+            }
+        ]
     },
     "links": {
         "xml": "https://tu-dominio.com/downloads/summary/xml/b88390b6-1755-413e-acf4-c6f905ce8181",
@@ -197,18 +274,29 @@ ticket, que puede no ser el tuyo.
 }
 ```
 
-`response.code: "0"` es la aceptación: **todas** las boletas del resumen quedan en `05` (Aceptado).
-`document_check_server` ya lo devuelve así.
+`response.code: "0"` es la aceptación: las boletas del resumen quedan en `05` (Aceptado), y
+`documents` ya las trae así. Con esta respuesta actualizas tu tabla sin consultar boleta a boleta.
+`data` tiene los mismos campos que en el [paso 2](#paso-2); `documents` sale **después** de la
+consulta, con el estado en que quedó cada boleta. `document_check_server` también lo devuelve así.
+
+:::tip Solo cambian las boletas de `documents`
+La lista quedó fija al enviar el resumen. Una boleta que registraste después, aunque sea de la
+misma fecha, no cambia al consultarlo: sigue en `01` y va en el siguiente resumen.
+
+Probado el 2026-09-22 contra SUNAT beta: la BB01-8 se registró después de enviar el
+`RC-20260922-1`. Al consultarlo, la BB01-7, que era la que llevaba, pasó a `05`, y la BB01-8 siguió
+en `01` hasta que la declaró el `RC-20260922-2`.
+:::
 
 ### Qué puede volver
 
 | Respuesta | Qué significa | Qué hacer |
 |---|---|---|
-| `response.code: "0"` | Aceptado. Las boletas pasan a `05` | Guarda `links.cdr` y no vuelvas a consultar este resumen |
+| `response.code: "0"` | Aceptado. Las boletas de `documents` pasan a `05` | Guarda `links.cdr`, actualiza tus boletas con `documents` y no vuelvas a consultar este resumen |
 | HTTP 500 `Code: 98; Description: El procesamiento del comprobante aún no ha terminado` | SUNAT aún procesa el ticket (empresa que envía directo a SUNAT o por un OSE) | **Consulta otra vez en unos minutos** |
 | HTTP 200 **sin** `response.code`, con `response.description` | Lo mismo en una empresa que envía por un PSE: todavía no hay CDR | Consulta otra vez más tarde |
 | HTTP 500 `Undefined variable $cdrResponse` | Lo mismo con el OSE SendFact: todavía no hay CDR. Es un fallo conocido del servidor | Trátalo como el 98 |
-| `response.code` distinto de `"0"`, con `status_code: 99` | Envío directo a SUNAT: SUNAT **rechazó** el resumen. El resumen queda en `09` y sus boletas vuelven a `01` | Lee `response.description`, corrige y declara otra vez: un `POST /api/summaries` con la misma fecha las recoge |
+| `response.code` distinto de `"0"`, con `status_code: 99` | Envío directo a SUNAT: SUNAT **rechazó** el resumen. El resumen queda en `09` y sus boletas vuelven a `01`, y así salen en `documents` | Lee `response.description`, corrige y declara otra vez: un `POST /api/summaries` con la misma fecha las recoge |
 | `response.code` distinto de `"0"`, con `status_code` igual a ese código | Envío por PSE: SUNAT rechazó, pero **nada cambia de estado**: el resumen y sus boletas siguen en `03`, e `is_accepted` sale `true` igual | No uses `is_accepted`. Un resumen nuevo no las recoge porque no están en `01`: pide a soporte que las destrabe |
 | HTTP 500 `Code: 0127; Description: El ticket no existe` | SUNAT ya no reconoce el ticket. En beta pasó al volver a consultar un resumen que ya había respondido | Si ya tienes el `0` guardado, ignóralo: la consulta falla antes de tocar las boletas |
 | HTTP 500 con otro `Code:` entre `0100` y `1999`, o `Code: HTTP` | SUNAT no pudo atender, o no hubo conexión | Si dice «El sistema no puede responder su solicitud» (0100, 0109, 0130–0138, 02xx) o es `Code: HTTP`, consulta más tarde. Si es de usuario o clave (0101–0113), corrígelo: reintentar no cambia nada |
@@ -244,8 +332,9 @@ La boleta no tiene CDR propio, y ninguna ruta de la boleta lo devuelve:
 | `links.cdr` de `POST /api/documents` | `""`. La fila de `sync-batch` ni siquiera trae `links` |
 
 Por eso, en tu base, **el CDR de una boleta es el del resumen que la declaró**: guarda con cada
-boleta el `external_id` de su resumen. Si luego se anula, tiene dos: el del resumen que la declaró
-y el del resumen que la anuló.
+boleta el `external_id` de su resumen. El `documents` de la respuesta te dice qué boletas lleva
+cada resumen ([cuadrar](#cuadrar)). Si luego se anula, tiene dos: el del resumen que la declaró y
+el del resumen que la anuló.
 
 Las URL de `links` no llevan token: con el `external_id` basta para descargarlas.
 
@@ -292,15 +381,36 @@ POST /api/summaries
     "success": true,
     "data": {
         "external_id": "ecc708e0-b6e5-4b14-a938-3e8c4bee7f53",
-        "ticket": "1790027810410"
+        "ticket": "1790027810410",
+        "filename": "20123456789-RC-20260921-2",
+        "date_of_reference": "2026-09-21",
+        "summary_status_type_id": "3",
+        "state_type_id": "03",
+        "state_type_description": "Enviado",
+        "documents": [
+            {
+                "id": 123,
+                "external_id": "c50fb61c-ed0c-4bc6-b70a-df7893a7eba8",
+                "offline_id": "B2C3D4E5-F6A7-8901-BCDE-F12345678901",
+                "document_type_id": "03",
+                "series": "B001",
+                "number": 1,
+                "number_full": "B001-1",
+                "currency_type_id": "PEN",
+                "total": "118.00",
+                "state_type_id": "13",
+                "state_type_description": "Por anular"
+            }
+        ]
     }
 }
 ```
 
-Es un resumen nuevo (`RC-20260921-2`), con su propio `external_id` y su propio ticket. La boleta
-pasa a `13` (Por anular) si la empresa envía directo a SUNAT o por un OSE, o a `03` (Enviado) si
-envía por un PSE o por el OSE SendFact. En los dos casos **todavía no está anulada**: falta el
-[paso 6](#paso-6).
+Es un resumen nuevo (`RC-20260921-2`), con su propio `external_id` y su propio ticket;
+`summary_status_type_id: "3"` lo marca como anulación. `documents` trae las boletas que anula, que
+son las que mandaste. La boleta pasa a `13` (Por anular) si la empresa envía directo a SUNAT o por
+un OSE, o a `03` (Enviado) si envía por un PSE o por el OSE SendFact. En los dos casos **todavía no
+está anulada**: falta el [paso 6](#paso-6).
 
 - **Anula solo boletas en `05`.** El panel solo ofrece «Anular» en una boleta aceptada; la API no
   lo comprueba y acepta cualquier boleta de esa fecha. Si la venta se anuló antes de declararla,
@@ -360,8 +470,28 @@ POST /api/summaries/status
 {
     "success": true,
     "data": {
+        "external_id": "ecc708e0-b6e5-4b14-a938-3e8c4bee7f53",
+        "ticket": "1790027810410",
         "filename": "20123456789-RC-20260921-2",
-        "external_id": "ecc708e0-b6e5-4b14-a938-3e8c4bee7f53"
+        "date_of_reference": "2026-09-21",
+        "summary_status_type_id": "3",
+        "state_type_id": "05",
+        "state_type_description": "Aceptado",
+        "documents": [
+            {
+                "id": 123,
+                "external_id": "c50fb61c-ed0c-4bc6-b70a-df7893a7eba8",
+                "offline_id": "B2C3D4E5-F6A7-8901-BCDE-F12345678901",
+                "document_type_id": "03",
+                "series": "B001",
+                "number": 1,
+                "number_full": "B001-1",
+                "currency_type_id": "PEN",
+                "total": "118.00",
+                "state_type_id": "11",
+                "state_type_description": "Anulado"
+            }
+        ]
     },
     "links": {
         "xml": "https://tu-dominio.com/downloads/summary/xml/ecc708e0-b6e5-4b14-a938-3e8c4bee7f53",
@@ -378,9 +508,11 @@ POST /api/summaries/status
 }
 ```
 
-Con `code: "0"` las boletas del resumen pasan a `11` (Anulado), y `links.cdr` es **el CDR de la
-anulación**. SUNAT también lo llama «Resumen diario»: lo que lo hace una anulación es el `"3"` que
-enviaste, no el texto de la respuesta.
+Con `code: "0"` las boletas del resumen pasan a `11` (Anulado), como ya las trae `documents`, y
+`links.cdr` es **el CDR de la anulación**. El `state_type_id` de `data` es el del resumen (`05`,
+aceptado); el de cada boleta está en `documents`. SUNAT también lo llama «Resumen diario»: lo que lo
+hace una anulación es el `"3"` que enviaste, que vuelve en `summary_status_type_id`, no el texto de
+la respuesta.
 
 Las respuestas posibles son las del [paso 3](#qué-puede-volver), con una diferencia si SUNAT
 **rechaza** la anulación y la empresa envía directo a SUNAT: la boleta no vuelve a `05` sino a
@@ -409,8 +541,9 @@ Los pasos 2 y 3 pueden correr sin tu integración, con dos tareas del panel, en
 Forman parte de la configuración recomendada, que se crea sola al dar de alta la empresa; si a la
 tuya le faltan, esa pantalla lo avisa y ofrece *Aplicar configuración recomendada*. Solo corren con
 el cron de la empresa encendido. Si están activas, tu integración no necesita los pasos 2 y 3: le
-basta con leer el estado de cada boleta al día siguiente. Si además los llamas tú, no se pisan:
-cada resumen solo lleva lo que siga en `01`.
+basta con leer el estado de cada boleta al día siguiente. Si además los llamas tú, no se pisan,
+porque cada resumen solo lleva lo que siga en `01`, siempre que no llames **a la misma hora** que la
+tarea ([por qué](#cuadrar)).
 
 La anulación, pasos 5 y 6, **no** la hace ninguna tarea. Si a tu empresa le faltan las dos del
 resumen, *Aplicar configuración recomendada* las crea con su hora; el alta a mano está en
@@ -468,7 +601,7 @@ SET @Body = (SELECT @ExternalIdResumen AS external_id FOR JSON PATH, WITHOUT_ARR
 Al leer las respuestas:
 
 ```sql
--- Pasos 2 y 5: guarda estos dos con la boleta.
+-- Pasos 2 y 5: el resumen. Guarda estos dos con cada boleta de documents.
 SELECT JSON_VALUE(@Resp, '$.data.external_id') AS external_id_resumen,
        JSON_VALUE(@Resp, '$.data.ticket')      AS ticket;
 
@@ -477,11 +610,42 @@ SELECT JSON_VALUE(@Resp, '$.response.code')        AS codigo_sunat,
        JSON_VALUE(@Resp, '$.response.description') AS descripcion,
        JSON_VALUE(@Resp, '$.links.cdr')            AS url_cdr,
        JSON_VALUE(@Resp, '$.message')              AS error;  -- 'Code: 98; …' = consulta más tarde
+
+-- Pasos 2, 3, 5 y 6: las boletas del resumen, una fila por boleta y con su estado.
+SELECT d.*
+FROM OPENJSON(@Resp, '$.data.documents')
+WITH (
+    id               INT           '$.id',
+    external_id      VARCHAR(36)   '$.external_id',
+    offline_id       VARCHAR(36)   '$.offline_id',
+    document_type_id CHAR(2)       '$.document_type_id',
+    series           VARCHAR(4)    '$.series',
+    number           INT           '$.number',
+    number_full      VARCHAR(20)   '$.number_full',
+    total            DECIMAL(12,2) '$.total',
+    state_type_id    CHAR(2)       '$.state_type_id'
+) AS d;
 ```
 
 Si la consulta falla, las tres primeras columnas salen en `NULL` y el motivo viene en `message`:
 con `Code: 98` vuelves a consultar en unos minutos; con los demás, mira la tabla del
-[paso 3](#qué-puede-volver).
+[paso 3](#qué-puede-volver). En ese caso no viene `documents`: las boletas no cambiaron.
+
+Para [cuadrar](#cuadrar) tu tabla con la respuesta del paso 2 o del 3, cruza por `offline_id`. Los
+nombres de tabla y columnas de este ejemplo son inventados; pon los tuyos:
+
+```sql
+UPDATE b
+SET    b.EXTERNAL_ID_RESUMEN = JSON_VALUE(@Resp, '$.data.external_id'),
+       b.TICKET_RESUMEN      = JSON_VALUE(@Resp, '$.data.ticket'),
+       b.ESTADO_SUNAT        = d.state_type_id      -- 03 al enviar; 05 (o 01) al consultar
+FROM   TU_TABLA_BOLETAS AS b
+JOIN   OPENJSON(@Resp, '$.data.documents')
+       WITH (offline_id VARCHAR(36), state_type_id CHAR(2)) AS d
+       ON d.offline_id = b.OFFLINE_ID;
+-- Una boleta que no entró por sync-batch trae offline_id null: crúzala por external_id.
+-- En los pasos 5 y 6 guarda el resumen en otra columna: el que la declaró sigue valiendo.
+```
 
 ---
 
@@ -490,10 +654,10 @@ con `Code: 98` vuelves a consultar en unos minutos; con los demás, mira la tabl
 | Campo | De dónde sale |
 |---|---|
 | `external_id` de la boleta | La fila de `sync-batch` |
-| `state_type_id` | `GET /api/document_check_server/{external_id}`: `01` → `03` → `05`, y si se anula, `13` → `11` (`03` → `11` si la empresa envía por un PSE o por el OSE SendFact) |
-| `external_id` y `ticket` del resumen que la declaró | La respuesta del paso 2 |
+| `state_type_id` | `documents[].state_type_id` de las respuestas de los pasos 2, 3, 5 y 6, o `GET /api/document_check_server/{external_id}`: `01` → `03` → `05`, y si se anula, `13` → `11` (`03` → `11` si la empresa envía por un PSE o por el OSE SendFact) |
+| `external_id` y `ticket` del resumen que la declaró | La respuesta del paso 2, en cada boleta de su `documents` |
 | CDR de la declaración | `links.cdr` del paso 3 |
-| `external_id` y `ticket` del resumen que la anuló | La respuesta del paso 5 |
+| `external_id` y `ticket` del resumen que la anuló | La respuesta del paso 5, en cada boleta de su `documents` |
 | CDR de la anulación | `links.cdr` del paso 6 |
 
 ---

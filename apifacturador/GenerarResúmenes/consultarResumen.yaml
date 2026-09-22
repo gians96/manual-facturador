@@ -53,8 +53,14 @@ paths:
         declarada por resumen no tiene CDR propio: `/downloads/document/cdr/{external_id}` de la
         boleta responde 500.
 
+        **Las boletas del resumen vienen en `data.documents`** (desde el 2026-09-22), con el
+        estado en que quedaron **después** de la consulta: con esta respuesta se actualiza la
+        base del integrador sin consultar boleta a boleta. Solo cambian esas boletas: una
+        registrada después de enviar el resumen, aunque sea de la misma fecha, sigue en `01` y
+        va en el siguiente.
+
         **Qué puede volver:**
-        - `response.code: "0"` → aceptado; las boletas pasan a `05`.
+        - `response.code: "0"` → aceptado; las boletas pasan a `05` (`11` en una anulación).
         - HTTP 500 `Code: 98; Description: El procesamiento del comprobante aún no ha terminado`
           → SUNAT aún procesa (empresa que envía directo a SUNAT). **Se reintenta** en unos
           minutos.
@@ -146,13 +152,42 @@ components:
         data:
           type: object
           properties:
+            external_id:
+              type: string
+              example: "b88390b6-1755-413e-acf4-c6f905ce8181"
+            ticket:
+              type: string
+              nullable: true
+              description: Ticket SUNAT del resumen. Desde el 2026-09-22.
+              example: "1790027776413"
             filename:
               type: string
               description: Nombre del archivo del resumen (RUC-RC-fecha de envío-correlativo).
               example: "20123456789-RC-20260921-1"
-            external_id:
+            date_of_reference:
               type: string
-              example: "b88390b6-1755-413e-acf4-c6f905ce8181"
+              format: date
+              description: Fecha de emisión de las boletas. Desde el 2026-09-22.
+              example: "2026-09-21"
+            summary_status_type_id:
+              type: string
+              description: '"1" declaración, "3" anulación. Desde el 2026-09-22.'
+              example: "1"
+            state_type_id:
+              type: string
+              description: 'Estado del resumen tras la consulta: "05" aceptado, "09" rechazado (envío directo a SUNAT), "03" si aún no hay respuesta. Desde el 2026-09-22.'
+              example: "05"
+            state_type_description:
+              type: string
+              example: "Aceptado"
+            documents:
+              type: array
+              description: |-
+                Las boletas y notas de boleta de este resumen, con el estado en que quedaron
+                después de la consulta: `05` (u `11` en una anulación) si SUNAT aceptó, `01` si
+                rechazó un resumen enviado directo a SUNAT. Desde el 2026-09-22.
+              items:
+                $ref: '#/components/schemas/ComprobanteDelResumen'
         links:
           type: object
           properties:
@@ -193,6 +228,52 @@ components:
       required:
         - success
         - data
+
+    ComprobanteDelResumen:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Id del comprobante, el mismo de la fila de `sync-batch`.
+          example: 123
+        external_id:
+          type: string
+          description: El `external_id` de la boleta.
+          example: "c50fb61c-ed0c-4bc6-b70a-df7893a7eba8"
+        offline_id:
+          type: string
+          nullable: true
+          description: El que el integrador mandó a `sync-batch`, tal cual. `null` si la boleta no entró por `sync-batch`.
+          example: "B2C3D4E5-F6A7-8901-BCDE-F12345678901"
+        document_type_id:
+          type: string
+          description: '"03" boleta; "07" y "08", notas de crédito y débito de boleta.'
+          example: "03"
+        series:
+          type: string
+          example: "B001"
+        number:
+          type: integer
+          description: El correlativo, sin la serie.
+          example: 1
+        number_full:
+          type: string
+          description: Serie y correlativo; lo que la fila de `sync-batch` llama `number`.
+          example: "B001-1"
+        currency_type_id:
+          type: string
+          example: "PEN"
+        total:
+          type: string
+          description: Total declarado, como texto con dos decimales.
+          example: "118.00"
+        state_type_id:
+          type: string
+          description: Estado de la boleta después de la consulta.
+          example: "05"
+        state_type_description:
+          type: string
+          example: "Aceptado"
 
     ErrorNoAutenticado:
       type: object

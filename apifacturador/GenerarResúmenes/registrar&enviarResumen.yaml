@@ -64,10 +64,16 @@ paths:
           (año-mes-día), por ejemplo `"2026-07-22"`.
         - `codigo_tipo_proceso` se envía como texto: `"1"`.
         - `data.external_id` es **el del resumen**, no el de una boleta: es el que se usa para
-          consultarlo. La respuesta no lista las boletas incluidas: son las que estaban en `01`
-          con esa fecha, en el entorno actual de la empresa (demo o producción) y sin la marca de
-          envío individual. Una boleta de envío individual que se quedó en `01` no entra en
-          ningún resumen.
+          consultarlo. El resumen se lleva las boletas que estaban en `01` con esa fecha, en el
+          entorno actual de la empresa (demo o producción) y sin la marca de envío individual.
+          Una boleta de envío individual que se quedó en `01` no entra en ningún resumen.
+        - `data.documents` lista las boletas que llevó, ya en `03`, con su `offline_id`,
+          `external_id`, serie, número, total y estado: con eso se cuadra el resumen con la base
+          del integrador. Una boleta registrada después de la llamada no está en la lista ni
+          cambia al consultar este resumen: va en el siguiente. En un servidor anterior al
+          2026-09-22, la respuesta solo trae `external_id` y `ticket`.
+        - No se lanzan dos resúmenes de la misma fecha a la vez (por ejemplo, un reintento
+          mientras el primero no ha respondido): los dos pueden llevar las mismas boletas.
         - Entran hasta 500 documentos por resumen. Si quedan más, o se emiten más boletas con
           esa fecha, se vuelve a llamar con la misma fecha: el resumen nuevo solo lleva las que
           sigan en `01`.
@@ -174,14 +180,88 @@ components:
             external_id:
               type: string
               description: Identificador único **del resumen** (no de una boleta). Guardarlo para consultarlo con `POST /api/summaries/status`.
-              example: "8cf16a43-9134-4809-8677-f0ecafede0b2"
+              example: "b88390b6-1755-413e-acf4-c6f905ce8181"
             ticket:
               type: string
-              description: Ticket asignado por SUNAT. Consultarlo después con `POST /api/summaries/status`.
-              example: "1784778434733"
+              nullable: true
+              description: Ticket asignado por SUNAT. Consultarlo después con `POST /api/summaries/status`. Puede volver `null` si la empresa envía por un PSE.
+              example: "1790027776413"
+            filename:
+              type: string
+              description: Nombre del resumen, `RUC-RC-AAAAMMDD-N`. La fecha es la del día del envío, no la de las boletas. Desde el 2026-09-22.
+              example: "20123456789-RC-20260921-1"
+            date_of_reference:
+              type: string
+              format: date
+              description: Fecha de emisión de las boletas (la que se envió). Desde el 2026-09-22.
+              example: "2026-09-21"
+            summary_status_type_id:
+              type: string
+              description: '"1" declarar, "3" anular. Desde el 2026-09-22.'
+              example: "1"
+            state_type_id:
+              type: string
+              description: Estado del resumen. `03` al enviarlo. Desde el 2026-09-22.
+              example: "03"
+            state_type_description:
+              type: string
+              example: "Enviado"
+            documents:
+              type: array
+              description: |-
+                Las boletas y notas de boleta que lleva este resumen, en el orden del XML y ya en
+                `03`. Una boleta registrada después de la llamada no está aquí. Desde el 2026-09-22.
+              items:
+                $ref: '#/components/schemas/ComprobanteDelResumen'
       required:
         - success
         - data
+
+    ComprobanteDelResumen:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Id del comprobante, el mismo de la fila de `sync-batch`.
+          example: 123
+        external_id:
+          type: string
+          description: El `external_id` de la boleta.
+          example: "c50fb61c-ed0c-4bc6-b70a-df7893a7eba8"
+        offline_id:
+          type: string
+          nullable: true
+          description: El que el integrador mandó a `sync-batch`, tal cual. `null` si la boleta no entró por `sync-batch`.
+          example: "B2C3D4E5-F6A7-8901-BCDE-F12345678901"
+        document_type_id:
+          type: string
+          description: '"03" boleta; "07" y "08", notas de crédito y débito de boleta.'
+          example: "03"
+        series:
+          type: string
+          example: "B001"
+        number:
+          type: integer
+          description: El correlativo, sin la serie.
+          example: 1
+        number_full:
+          type: string
+          description: Serie y correlativo; lo que la fila de `sync-batch` llama `number`.
+          example: "B001-1"
+        currency_type_id:
+          type: string
+          example: "PEN"
+        total:
+          type: string
+          description: Total declarado, como texto con dos decimales.
+          example: "118.00"
+        state_type_id:
+          type: string
+          description: Estado de la boleta después de la llamada.
+          example: "03"
+        state_type_description:
+          type: string
+          example: "Enviado"
 
     ErrorNoAutenticado:
       type: object
