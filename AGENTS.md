@@ -3,8 +3,8 @@
 > **Este archivo es para agentes de IA.** Léelo completo antes de generar, editar o refactorizar.
 >
 > **🌐 Ecosistema Nube Tecnológica** — repo dentro de un workspace multi-repo (6 repos · 2 hosts GitHub/GitLab · WSL+Windows). Contexto compartido, flujo del negocio y qué NO tocar: `nubetec/.workspace/ecosistema.md`.
-> **PASO 0 OBLIGATORIO — `nubetec/.workspace/arranque.md`:** antes de leer o editar nada, trae la rama principal de los 6 repos con `bash /mnt/c/Users/USER/Desktop/dev/nubetec/.workspace/sync-repos.sh` (en Claude Code corre solo vía hook `SessionStart`; en Codex córrelo tú). Solo informe: `check-repos.sh` / `check-repos.ps1`.
-> **Verifica siempre** la carpeta de integración con NubeTec (`C:\Users\USER\Desktop\dev\nubetec`) cuando documentes licencias, planes, provisioning o la API: la fuente de verdad de esos contratos está en `saas-facturacion-backend`, no aquí.
+> **PASO 0 OBLIGATORIO — `nubetec/.workspace/arranque.md`:** antes de leer o editar nada, trae la rama principal de los 6 repos con `bash /mnt/c/Users/*/Desktop/dev/nubetec/.workspace/sync-repos.sh` (el `*` es el usuario de Windows, que cambia de una máquina a otra). En Claude Code lo corre el hook `SessionStart` **solo si esa máquina lo tiene** en `~/.claude/settings.json` (`nuevo-dispositivo.md` §6); si no, y en Codex, córrelo tú. Solo informe: `check-repos.sh` / `check-repos.ps1`.
+> **Verifica siempre** la carpeta de integración con NubeTec (`%USERPROFILE%\Desktop\dev\nubetec`, o `/mnt/c/Users/*/Desktop/dev/nubetec` desde WSL) cuando documentes licencias, planes, provisioning o la API: la fuente de verdad de esos contratos está en `saas-facturacion-backend`, no aquí.
 > **Este repo:** **GitHub** · rama `main`. Credenciales vía GCM (`nubetec/.workspace/setup-git-credentials.sh`).
 
 ---
