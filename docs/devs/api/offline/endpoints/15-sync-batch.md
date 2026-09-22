@@ -11,6 +11,11 @@
 
 El endpoint principal de sincronización. Recibe un array de comprobantes creados offline y los procesa secuencialmente. Cada comprobante se intenta crear; si falla, el error se registra individualmente sin afectar a los demás.
 
+:::tip ¿Buscas el estado, el XML, el PDF o el CDR?
+La fila del lote no los trae, pero te da el `external_id`, y con él llegas a todo:
+[estado, XML, PDF y CDR de lo que sincronizaste](#estado-xml-pdf-y-cdr).
+:::
+
 :::tip ¿Una guía rechazada que no cambia al reenviarla?
 Si la reenvías con su mismo `offline_id` y sin su `external_id`, el lote no lee el `data` y la
 corrección no se aplica. Cómo hacerlo:
@@ -312,6 +317,92 @@ En las filas `09` y `31` aparece **únicamente cuando `was_duplicate` es `true`*
 de la guía que ya estaba. Ver [`signed` y `sign_message`](#signed-y-sign_message). En boletas y
 facturas no aparece nunca.
 :::
+
+### Estado, XML, PDF y CDR de lo que sincronizaste {#estado-xml-pdf-y-cdr}
+
+La fila es un **acuse de recibo**, no el comprobante. `sync-batch` crea exactamente el mismo
+comprobante que `POST /api/documents`; lo único distinto es la respuesta, que aquí se reduce a lo
+imprescindible para cada fila del lote. Todo lo demás lo sacas del **`external_id`** que te
+devuelve:
+
+| Lo que `POST /api/documents` trae en su respuesta | Cómo lo obtienes después de `sync-batch` |
+|---|---|
+| `data.state_type_id` | `GET /api/document_check_server/{external_id}` (con token) |
+| `links.xml` | `GET /downloads/document/xml/{external_id}` |
+| `links.pdf` | `GET /downloads/document/pdf/{external_id}`, o con el formato: `…/a4`, `…/ticket` |
+| `links.cdr` | `GET /downloads/document/cdr/{external_id}`, **solo si el comprobante tiene CDR propio** (tabla de abajo) |
+| `data.print_ticket` | `GET /print/document/{external_id}/ticket` (o `/a4`) |
+| `response` (lo que contestó SUNAT) | Está dentro del CDR: `ResponseCode` y `Description` |
+
+**Las URL de `/downloads` y `/print` las armas tú**: son siempre iguales, cambia solo el
+`external_id`. Van contra la misma dirección a la que llamas al lote, y **no piden token**. Si
+llamas por IP con la cabecera `Host` —como en una instalación local—, descarga con esa misma
+cabecera. Para que alguien las abra en un navegador, usa el dominio de la empresa.
+
+:::warning El `external_id` abre los archivos
+Como las descargas no piden token, quien tenga el `external_id` puede bajar el XML y el PDF, con
+los datos del cliente. Guárdalo como guardas el token: no lo pongas en URLs públicas ni en correos
+a terceros.
+:::
+
+Ejemplo con la F001-3 de la prueba del 2026-09-21:
+
+```
+GET /api/document_check_server/978f1b9a-6bff-4cd1-ac1d-d18b75787262   → {"state_type_id":"05", "file_cdr":"UEsDB…"}
+GET /downloads/document/xml/978f1b9a-6bff-4cd1-ac1d-d18b75787262       → 200 text/xml
+GET /downloads/document/pdf/978f1b9a-6bff-4cd1-ac1d-d18b75787262/a4    → 200 application/pdf
+GET /downloads/document/cdr/978f1b9a-6bff-4cd1-ac1d-d18b75787262       → 200 application/zip
+```
+
+#### No todo comprobante tiene CDR propio
+
+El XML y el PDF existen desde que la fila vuelve con `success: true`. El CDR es la respuesta de
+SUNAT, y solo existe si SUNAT respondió **por ese comprobante**:
+
+| Comprobante | ¿CDR propio? | Dónde está |
+|---|---|---|
+| Factura y notas de factura en `05` o `07` | Sí | `/downloads/document/cdr/{external_id}`. En `05` viene también en `file_cdr` de `document_check_server`, en base64 |
+| Factura en `01` | Todavía no: no se envió | Envíala con `POST /api/documents/send` y después pídelo → [26](26-envio-diferido-update-estado.md#1-enviar-documento-a-sunat) |
+| Boleta de **envío individual** en `05` | Sí | `/downloads/document/cdr/{external_id}`. `file_cdr` llega `null`: solo se llena en facturas |
+| Boleta que se declara **por resumen** | No, nunca | El CDR es el del resumen: `/downloads/summary/cdr/{external_id del resumen}` → [39](39-ciclo-de-la-boleta.md#paso-4) |
+| Nota de venta (`80`) | No es comprobante electrónico: no tiene XML ni CDR | Solo PDF: `/sale-notes/print/{external_id}/a4` o `/ticket` |
+| Guía (`09`, `31`) aceptada | Sí | `/downloads/dispatch/xml/{external_id}`, `…/pdf/…` y `…/cdr/…`. El envío y la consulta del ticket van aparte → [guías](../../guias-de-remision.md) |
+
+Pedir el CDR de un comprobante que no lo tiene responde **HTTP 500**: una página de error HTML o,
+con `Accept: application/json`, `Unable to retrieve the file_size for file at location: cdr/…`.
+No es una caída ni se arregla reintentando. Por eso el orden es: primero el estado, y el CDR solo
+si le corresponde.
+
+Comprobado en vivo el 2026-09-21: F001-3 (factura aceptada), B001-10 (envío individual, CDR
+propio), B001-9 (en `01`, esperando el resumen: su CDR da 500, su XML y su PDF dan 200), NV01-182
+(nota de venta, solo PDF) y V999-90005 (guía, los tres archivos).
+
+#### Desde SQL Server
+
+Con el `external_id` de la fila ya guardado, las tres URL salen de concatenar:
+
+```sql
+-- @Base: la dirección a la que llamas al lote, sin la ruta. Por ejemplo 'http://127.0.0.1:8080'.
+-- @ExternalId: data.external_id de la fila de sync-batch.
+SELECT CONCAT(@Base, '/downloads/document/xml/', @ExternalId)       AS url_xml,
+       CONCAT(@Base, '/downloads/document/pdf/', @ExternalId, '/a4') AS url_pdf,
+       CONCAT(@Base, '/downloads/document/cdr/', @ExternalId)       AS url_cdr;  -- solo si le corresponde
+```
+
+Y el estado, con la misma llamada que ya haces al lote pero por `GET` a
+`/api/document_check_server/{external_id}`, leyendo `JSON_VALUE(@Resp, '$.state_type_id')`.
+
+#### Sin pasar por la API
+
+- **El panel:** el listado de comprobantes tiene los botones *XML*, *PDF* y *CDR* de cada uno.
+- **La consulta pública `/buscar`** del dominio de la empresa: el cliente final encuentra su
+  comprobante con su RUC o DNI, la fecha, el tipo, la serie, el número y el total, y lo descarga.
+- **El envío automático al cliente**, por correo ([36](36-envio-automatico-por-correo.md)) o por
+  WhatsApp ([38](38-envio-de-comprobantes-por-whatsapp.md)).
+
+Si necesitas todo el recorrido —del `01` al CDR y la anulación—:
+[39 — Ciclo de la boleta](39-ciclo-de-la-boleta.md) (por resumen) y
+[40 — Ciclo de la factura y de la boleta de envío individual](40-ciclo-de-la-factura-y-envio-individual.md).
 
 ### Response con errores parciales
 

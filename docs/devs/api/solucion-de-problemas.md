@@ -59,6 +59,7 @@ Reintenta solo `bloqueo_temporal` y los fallos de red. Todo lo demás: corrige o
 | La guía salió, pero sin PDF ni XML | [La guía sale sin firmar](#la-guia-sale-sin-firmar) |
 | Se cortó la conexión y no sé si se emitió | [No sé si se emitió](#no-se-si-se-emitio) |
 | Enlacé la guía con el comprobante y el enlace no existe | [El enlace guía ↔ comprobante no existe](#el-enlace-guia-comprobante-no-existe) |
+| La fila del `sync-batch` no trae el estado ni los enlaces al XML, PDF o CDR | [15 — Estado, XML, PDF y CDR de lo que sincronizaste](offline/endpoints/15-sync-batch.md#estado-xml-pdf-y-cdr) |
 | La boleta sigue en `01` (Registrado) después del `sync-batch` | [39 — Por qué queda en `01` y cómo declararla](offline/endpoints/39-ciclo-de-la-boleta.md#paso-1) |
 | La boleta enviada sola (envío individual) quedó en `01` y la API no la reenvía | [40 — Una boleta de envío individual en `01`](offline/endpoints/40-ciclo-de-la-factura-y-envio-individual.md#factura-en-01) |
 | El CDR de una boleta aceptada da error 500 | [39 — El CDR es el del resumen](offline/endpoints/39-ciclo-de-la-boleta.md#paso-4) |
