@@ -155,7 +155,7 @@ Authorization: Bearer {token}
 | `date_of_issue` | string | **Sí** | `YYYY-MM-DD` |
 | `time_of_issue` | string | **Sí** | `HH:mm:ss` |
 | `customer_id` | int | **Sí** | ID del cliente en BD |
-| `currency_type_id` | string | **Sí** | `"PEN"`, `"USD"` |
+| `currency_type_id` | string | **Sí** | `"PEN"`, `"USD"`. Si está desactivada en la empresa, desde el 2026-09-24 se activa sola al emitir, igual que en [factura y boleta](09-boleta-factura.md) |
 | `exchange_rate_sale` | float | **Sí** | Tipo de cambio (0 o 1 para PEN) |
 | `seller_id` | int | No | ID del vendedor |
 | `purchase_order` | string\|null | No | Orden de compra |

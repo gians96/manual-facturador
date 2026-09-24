@@ -140,7 +140,7 @@ Misma estructura, con diferencias:
 | `hora_de_emision` | string | **Sí** | Formato `HH:mm:ss` |
 | `codigo_tipo_operacion` | string | **Sí** | `"0101"` = Venta interna. Ver catálogo SUNAT |
 | `codigo_tipo_documento` | string | **Sí** | `"01"` = Factura, `"03"` = Boleta |
-| `codigo_tipo_moneda` | string | **Sí** | `"PEN"` = Soles, `"USD"` = Dólares |
+| `codigo_tipo_moneda` | string | **Sí** | `"PEN"` = Soles, `"USD"` = Dólares. Si la moneda existe pero está desactivada en la empresa (Configuración → Lista de monedas), desde el 2026-09-24 **se activa sola** al emitir, y al actualizar el servidor se activan las que ya tienen comprobantes: sin eso el panel no podía abrir el comprobante para editarlo |
 | `fecha_de_vencimiento` | string | No | Formato `YYYY-MM-DD` |
 | `numero_orden_de_compra` | string | No | Orden de compra del cliente |
 | `numero_de_placa` | string | No | Placa de vehículo (combustibles) |
