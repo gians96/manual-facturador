@@ -292,6 +292,9 @@ GET /api/document_check_server/{external_id}
 
 → [26 — Consultar el estado de un comprobante](26-envio-diferido-update-estado.md#3-consultar-el-estado-de-un-comprobante)
 
+Si no guardaste el `external_id`, pregunta por la serie y el número con `POST /api/documents/status`
+→ [26 — Consultar por serie-número](26-envio-diferido-update-estado.md#por-serie-numero).
+
 Si la empresa tiene apagado el envío individual, una **boleta** recién sincronizada está en `01`
 (Registrado): no la declara el lote sino un resumen diario, que la pasa a `03` y, al consultarlo, a
 `05`. Qué llamar después —y cómo anularla y de dónde sale su CDR, que es el del resumen—:

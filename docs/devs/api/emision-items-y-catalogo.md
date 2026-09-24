@@ -163,6 +163,14 @@ Genera el `offline_id` en tu sistema **antes** de llamar al API y reutilízalo e
 esa misma venta. Así, aunque envíes la petición 2 o 3 veces, obtendrás siempre el mismo comprobante.
 :::
 
+:::warning Con número propio, hoy no
+Esto funciona con `"numero_documento": "#"`. Si mandas tu propio correlativo, el reenvío con el
+mismo `offline_id` responde `409 DUPLICATE_DOCUMENT` en vez de `was_duplicate`: el servidor
+comprueba el número antes de mirar el `offline_id`. No crea un segundo comprobante, pero tu
+integración lo verá como un error →
+[qué hacer mientras no se arregle](./solucion-de-problemas.md#no-se-si-se-emitio).
+:::
+
 ## Checklist para integrar desde otra aplicación
 
 - Obtén el **token** del usuario (Configuración → Usuarios) y envíalo como `Authorization: Bearer`.

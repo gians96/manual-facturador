@@ -280,6 +280,25 @@ error → [idempotencia por `offline_id`](offline/endpoints/16-idempotencia.md).
 Si el correlativo ya lo usó **otra** venta, es un conflicto de numeración, no un duplicado: hay
 que renumerar y reemitir (HTTP 409 `DUPLICATE_DOCUMENT`; en el lote, `CONFLICT_NUMBER`).
 
+**Para preguntar sin reenviar**, consulta el número con `POST /api/documents/status` y
+`{ "serie_number": "F001-2" }`. Un `200` significa que ese número está emitido, y te da su estado y
+su `external_id`. Un `422 DOCUMENT_NOT_FOUND` significa que no lo está
+→ [26 — Consultar por serie-número](offline/endpoints/26-envio-diferido-update-estado.md#por-serie-numero).
+
+:::warning Vigente — con número propio, `POST /api/documents` responde 409 al reenvío
+
+Si mandas tu propio correlativo (`"numero_documento": "53"` en vez de `"#"`), reenviar el mismo
+comprobante con el **mismo** `offline_id` no devuelve `was_duplicate`: devuelve
+`409 DUPLICATE_DOCUMENT`, igual que si el número fuera de otra venta. El servidor comprueba el
+número antes de mirar el `offline_id`. Con `"#"`, y en `sync-batch` con cualquier número, el
+reenvío sí vuelve como `was_duplicate`. Comprobado el 2026-09-24.
+
+Mientras no se arregle, si ese `409` te llega en un reintento, consulta el número con
+`documents/status`. Un `200` quiere decir que el comprobante ya está emitido: guarda su
+`external_id` y su estado en vez de marcarlo como error. Si dudas de que sea el tuyo y no el de
+otra venta, compara el importe (`number_to_letter`) o descarga el XML de `links.xml`.
+:::
+
 Para comprobar si además llegó a SUNAT, el checklist está en
 [qué comprobar cuando «no llegó a SUNAT»](offline/endpoints/37-envio-automatico-a-sunat.md#qué-comprobar-cuando-no-llegó-a-sunat).
 
@@ -346,7 +365,7 @@ el síntoma viejo en servidores anteriores.
 | 2026-09-16 | `codigo_del_domicilio_fiscal` en `null` ya no provoca el rechazo 3369; el código de producto SUNAT por línea llega al XML |
 | 2026-09-17 | La dirección de llegada de la guía `09` deja de fallar con MySQL 1452; el ubigeo enviado como número es un 422 antes de emitir, en vez de viajar crudo al XML; nace `restriccion_no_atribuible` |
 | 2026-09-18 | Una guía se corrige por el lote con su mismo `offline_id` si trae su `external_id` (`was_corrected: true`); el `was_duplicate` de una guía trae su estado y, si está rechazada, lo avisa |
-| 2026-09-21 | En `POST /api/summaries`, `"codigo_tipo_proceso": 3` como número vale lo mismo que `"3"` (antes anulaba todo lo de la fecha en `01`); un tipo fuera de catálogo es 422 `INVALID_PROCESS_TYPE`, y la falta de fecha o tipo, 422 `MISSING_FIELDS` (antes 500) |
+| 2026-09-21 | En `POST /api/summaries`, `"codigo_tipo_proceso": 3` como número vale lo mismo que `"3"` (antes anulaba todo lo de la fecha en `01`); un tipo fuera de catálogo es 422 `INVALID_PROCESS_TYPE`, y la falta de fecha o tipo, 422 `MISSING_FIELDS` (antes 500). `POST /api/documents/status` exige el token (antes respondía sin él) y sus errores son 422 con `error_code` (antes 500) |
 
 ## Ver también
 

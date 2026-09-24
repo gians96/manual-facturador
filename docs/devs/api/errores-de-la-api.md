@@ -188,6 +188,21 @@ solo envía facturas y sus notas. Las boletas y las notas de boleta van por
 
 Los tres salían antes como `500` sin `error_code` —y el último devolvía `200` con cuerpo vacío—.
 
+### `POST /api/documents/status` — desde 2026-09-21
+
+Consulta un comprobante por `serie_number` (`"F001-2"`) o por `external_id`. Detalle completo en
+[26 — Consultar por serie-número](offline/endpoints/26-envio-diferido-update-estado.md#por-serie-numero).
+
+| Mensaje | `error_code` |
+|---|---|
+| `Falta 'external_id' o 'serie_number' (por ejemplo "F001-2").` | `MISSING_FIELDS` |
+| `'serie_number' debe ir como serie-número, por ejemplo "F001-2"; llegó "{X}".` | `INVALID_SERIE_NUMBER` |
+| `El documento con código externo {X} o numero {Y}, no se encuentra registrado.` | `DOCUMENT_NOT_FOUND` |
+
+Aquí `DOCUMENT_NOT_FOUND` no es un fallo que haya que arreglar: es la respuesta a «¿está emitido
+este número?». Antes de esa fecha el endpoint respondía **sin token** y estos casos daban `500`
+o `200` con el cuerpo vacío.
+
 ### `POST /api/dispatches/{external_id}/anular` — desde 2026-09-19
 
 Marca una guía como anulada para reflejar una baja **ya hecha en el portal de SUNAT**. No lleva
@@ -499,6 +514,8 @@ Estos siguen sin dar error y conviene tenerlos presentes:
   `El documento: 01 F001-00005242 ya se encuentra registrado.` y el detalle de serie y número
   en `errors`. Por `sync-batch` no se reporta como fallo: si el `offline_id` coincide se
   devuelve el comprobante existente con `was_duplicate: true`, y si pertenece a otra venta se
-  marca `conflict_number`.
+  marca `conflict_number`. Por `POST /api/documents` con número propio (no `"#"`), hoy sale este
+  409 aunque el `offline_id` sea el mismo →
+  [qué hacer](./solucion-de-problemas.md#no-se-si-se-emitio).
 - **Las guías de remisión no siguen este flujo.** Tienen su propio proceso de tres pasos:
   ver [Guías de remisión: cómo funcionan](./guias-de-remision.md).

@@ -4,6 +4,7 @@
 > `POST /api/documents/send`  
 > `POST /api/documents/updatedocumentstatus`  
 > `GET /api/document_check_server/{external_id}`  
+> `POST /api/documents/status` — el estado por serie-número, sin el `external_id`  
 > **Auth:** `Bearer {token}`
 
 ---
@@ -222,6 +223,107 @@ comprueba el caso; se documenta tal cual para que puedas distinguirlo de una ca�
 Nació para el flujo `documents_server` y quedó sin ficha OpenAPI. Funciona igual para cualquier
 comprobante del tenant, se emitiera como se emitiera.
 :::
+
+---
+
+## 4. Consultar por serie-número: `POST /api/documents/status` {#por-serie-numero}
+
+```
+POST /api/documents/status
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+```json
+{ "serie_number": "B001-53" }
+```
+
+Hace lo mismo que el punto 3, pero **no necesita el `external_id`**: busca el comprobante por su
+serie y su número. Sirve cuando no guardaste la respuesta de la emisión —se cortó la conexión,
+venció el tiempo de espera— o cuando un reenvío te devolvió `409 DUPLICATE_DOCUMENT` y quieres
+saber qué hay con ese número. Entre otras cosas, te devuelve el `external_id` que te faltaba.
+
+| | Punto 3: `document_check_server` | Punto 4: `documents/status` |
+|---|---|---|
+| Busca por | `external_id` | serie-número o `external_id` |
+| Si no existe | `500` | `422 DOCUMENT_NOT_FOUND` |
+| Devuelve | estado y `file_cdr` (ZIP en base64, solo de facturas y sus notas aceptadas) | estado, `external_id` y enlaces al XML, al PDF y al CDR |
+
+### Payload
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `serie_number` | string | Uno de los dos | Serie y número con guion: `"F001-2"`. Admite ceros a la izquierda (`"B001-00000053"`) y la serie en minúsculas |
+| `external_id` | string (UUID) | Uno de los dos | El que devolvió la emisión |
+
+Si mandas los dos, tienen que ser **del mismo** comprobante; si no, responde `DOCUMENT_NOT_FOUND`.
+
+Solo busca entre **facturas, boletas y sus notas** de la empresa del token. Con la serie de una
+guía, una nota de venta o una retención responde `DOCUMENT_NOT_FOUND`.
+
+### Response (200 OK)
+
+```json
+{
+    "success": true,
+    "data": {
+        "number": "B001-53",
+        "filename": "20123456789-03-B001-53",
+        "external_id": "30bfd7b2-7e75-445c-80b9-50b5783bed82",
+        "status_id": "05",
+        "status": "Aceptado",
+        "qr": "iVBORw0KGgoAAAANSUhEUgAA...",
+        "number_to_letter": "Veintitres con 60/100"
+    },
+    "links": {
+        "xml": "https://tu-dominio.com/downloads/document/xml/30bfd7b2-7e75-445c-80b9-50b5783bed82",
+        "pdf": "https://tu-dominio.com/downloads/document/pdf/30bfd7b2-7e75-445c-80b9-50b5783bed82",
+        "cdr": "https://tu-dominio.com/downloads/document/cdr/30bfd7b2-7e75-445c-80b9-50b5783bed82"
+    }
+}
+```
+
+| Campo | Descripción |
+|-------|-------------|
+| `data.number` | Serie y número **sin ceros a la izquierda**: `"B001-53"` aunque preguntes por `"B001-00000053"` |
+| `data.external_id` | El UUID del comprobante. Lo piden el punto 3, `POST /api/documents/send`, las anulaciones y las descargas |
+| `data.status_id` | Estado actual, con los códigos de [Estados disponibles](#estados-disponibles) |
+| `data.status` | El mismo estado en texto: `Registrado`, `Enviado`, `Aceptado`… |
+| `data.filename` | Nombre del archivo: RUC, tipo, serie y número |
+| `data.qr` | Imagen del QR en base64 (PNG) |
+| `data.number_to_letter` | El importe en letras |
+| `links.xml`, `links.pdf` | Descargas públicas, sin token |
+| `links.cdr` | Llega **siempre**, haya CDR o no: ver abajo |
+
+:::warning `links.cdr` no dice que haya CDR
+
+La URL se arma con el `external_id` y viene en todas las respuestas. Si el comprobante no tiene
+CDR —uno en `01`, o una boleta declarada en un resumen diario—, esa descarga responde **500**.
+Decide por `status_id`. El CDR de una boleta declarada por resumen es el del resumen:
+[39 — Ciclo de la boleta](39-ciclo-de-la-boleta.md).
+:::
+
+### Rechazos con `error_code` — todos `422`
+
+| `error_code` | Cuándo | `errors` |
+|---|---|---|
+| `MISSING_FIELDS` | No llega ni `serie_number` ni `external_id` | `faltantes: ["external_id", "serie_number"]` |
+| `INVALID_SERIE_NUMBER` | `serie_number` no tiene la forma serie-número: `"B001"`, `"B001-ABC"` | `serie_number`, con lo que llegó |
+| `DOCUMENT_NOT_FOUND` | No hay ningún comprobante con esa serie-número, o con ese `external_id`, en la empresa del token | — |
+
+Sin token, `401`. **Ninguno se arregla reintentando.** Con `DOCUMENT_NOT_FOUND` sabes que ese
+número **no está emitido** en el Facturador.
+
+:::info Cambio de comportamiento (2026-09-21)
+
+Antes de esa fecha respondía **sin token**. Un número inexistente, o un cuerpo sin ninguno de los
+dos campos, daba `500` o un `200` con el cuerpo vacío, y con solo `external_id` fallaba: había que
+mandar también `serie_number`. Si tu integración lo llamaba sin `Authorization`, desde entonces
+recibe `401`: manda el Bearer de la empresa, como en el resto de la API. La respuesta de éxito no
+cambió.
+:::
+
+Tampoco tiene ficha en el explorador de API: se documenta solo aquí.
 
 ---
 

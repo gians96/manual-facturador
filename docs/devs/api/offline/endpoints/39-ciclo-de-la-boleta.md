@@ -4,6 +4,7 @@
 > `POST /api/summaries` — resumen diario (`"1"`) y resumen de anulación (`"3"`)  
 > `POST /api/summaries/status` — consultar el ticket de un resumen  
 > `GET /api/document_check_server/{external_id}` — estado de una boleta  
+> `POST /api/documents/status` — el estado por serie-número, si no tienes el `external_id`  
 > `GET /downloads/summary/cdr/{external_id}` — el CDR, con el `external_id` **del resumen**  
 > **Auth:** `Bearer {token}`. Las descargas de `/downloads/…` no lo piden.
 
@@ -81,6 +82,11 @@ GET /api/document_check_server/c50fb61c-ed0c-4bc6-b70a-df7893a7eba8
 ```json
 { "success": true, "state_type_id": "01", "file_cdr": null }
 ```
+
+Sin el `external_id` —se cortó la conexión, o no guardaste la fila— pregunta por la serie y el
+número con `POST /api/documents/status` y `{ "serie_number": "B001-15" }`. Responde con el estado
+y el `external_id`, o con `422 DOCUMENT_NOT_FOUND` si esa boleta no está emitida →
+[26 — Consultar por serie-número](26-envio-diferido-update-estado.md#por-serie-numero).
 
 Con el envío individual apagado, `01` en una boleta recién sincronizada es lo esperado, no un
 fallo: está válida y firmada, pendiente del resumen.

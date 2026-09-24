@@ -2,6 +2,7 @@
 
 > **Endpoints:**  
 > `GET /api/document_check_server/{external_id}` — estado del comprobante  
+> `POST /api/documents/status` — el estado por serie-número, si no tienes el `external_id`  
 > `POST /api/documents/send` — enviar una factura (o nota de factura) que quedó en `01`  
 > `GET /downloads/document/cdr/{external_id}` — el CDR propio del comprobante  
 > `POST /api/voided` y `POST /api/voided/status` — anular una factura (comunicación de baja)  
@@ -82,6 +83,20 @@ paso 3.
 
 Si emites por `POST /api/documents` en vez de `sync-batch`, la respuesta ya trae el estado, y
 `links.cdr` cuando el comprobante salió a SUNAT en esa llamada.
+
+¿No tienes el `external_id`, porque se cortó la conexión o no guardaste la respuesta? Pregunta por
+la serie y el número:
+
+```
+POST /api/documents/status
+```
+
+```json
+{ "serie_number": "F001-2" }
+```
+
+Responde con el estado (`data.status_id`) y el `external_id`, o con `422 DOCUMENT_NOT_FOUND` si ese
+número no está emitido → [26 — Consultar por serie-número](26-envio-diferido-update-estado.md#por-serie-numero).
 
 ---
 
@@ -212,7 +227,7 @@ sin cambios.
 |---|---|---|---|
 | Sale a SUNAT | Al emitir, con `send_auto` | Al emitir, con `send_auto` y el envío individual | En el resumen diario → [39](39-ciclo-de-la-boleta.md) |
 | Si quedó en `01` | `POST /api/documents/send` | Solo desde el panel | `POST /api/summaries` con `"1"` |
-| Estado | `document_check_server` | `document_check_server` | `document_check_server` |
+| Estado | `document_check_server`, o `documents/status` por serie-número | `document_check_server`, o `documents/status` por serie-número | `document_check_server`, o `documents/status` por serie-número |
 | CDR | Propio: `/downloads/document/cdr/{external_id}` o `file_cdr` | Propio: `/downloads/document/cdr/{external_id}` | El del resumen |
 | Anular | `POST /api/voided` (fecha `dd-mm-aaaa`) + `/api/voided/status` | `POST /api/summaries` con `"3"` + `/status` | `POST /api/summaries` con `"3"` + `/status` |
 | CDR de la anulación | `links.cdr` de la baja | `links.cdr` del resumen de anulación | `links.cdr` del resumen de anulación |
