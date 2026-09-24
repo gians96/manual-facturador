@@ -217,6 +217,10 @@ Repetir la llamada sobre una guía ya anulada **no es un error**: responde `200`
 | `codigo_tipo_nota` no existe en el catálogo del tenant | `INVALID_REFERENCE` |
 | Nota de crédito tipo `13` sin `codigo_condicion_de_pago: "02"` | `INVALID_PAYMENT_CONDITION` |
 | Nota de crédito tipo `13` con `02` pero sin `cuotas` | `MISSING_FIELDS` |
+| Desde 2026-09-24: `documento_afectado.codigo_tipo_documento` que no es `"01"` ni `"03"` (p. ej. `"B3"`), o una serie del afectado que contradice su tipo (`F001` como `"03"`) | `INVALID_REFERENCE` |
+| Desde 2026-09-24: serie de la nota de otra familia que el afectado (`FC01` sobre boleta, `BC01` sobre factura) | `INVALID_SERIES` |
+
+Detalle, ejemplos y qué pasaba antes: [nota de crédito — documento afectado](offline/endpoints/10-nota-credito.md#documento-afectado).
 
 Si faltan varios, se informan **todos en la misma respuesta** dentro de `errors.faltantes`. Una
 cadena vacía cuenta como ausente, incluido un `documento_afectado.external_id` en `""`.
@@ -450,6 +454,7 @@ Desde el **2026-09-05** casi todos se corrigen solos o se rechazan antes de emit
 | `codigo_tipo_moneda: "usd"` | Se normaliza a `"USD"`. Antes pasaba la validación —la colación no distingue mayúsculas— y el XML salía con `currencyID="usd"` |
 | `serie_documento: "f001"` | Se normaliza a `"F001"`, en el documento y en el nombre del archivo |
 | `documento_afectado.numero_documento: "00000003"` | Se normaliza a `3`. Antes la referencia de la nota salía como `F001-00000003` apuntando a un `F001-3` |
+| `documento_afectado.codigo_tipo_documento: 3` —número— o `"3"` | Desde el 2026-09-24 se guarda como `"03"` (y `1` como `"01"`). Antes salía `3` en el XML y SUNAT rechazaba el resumen diario entero (`2513`) |
 
 No tienes que cambiar nada si ya enviabas mayúsculas: la normalización no altera esos envíos.
 
@@ -465,6 +470,8 @@ No tienes que cambiar nada si ya enviabas mayúsculas: la normalización no alte
 | `pagos[].codigo_destino_pago` que no sea `"cash"` ni el id de una cuenta — `"001"`, `"CASH"`, `"efectivo"` | `INVALID_PAYMENT_DESTINATION` |
 | `codigo_condicion_de_pago: "03"` | `INVALID_PAYMENT_CONDITION` |
 | Texto en una columna numérica (`numero_de_contenedor: "MSKU1234567"`) | `INVALID_NUMERIC_VALUE` |
+| `documento_afectado.codigo_tipo_documento: "B3"` —el código de tu sistema y no el de SUNAT— (desde 2026-09-24) | `INVALID_REFERENCE` |
+| Nota `FC01` sobre una boleta, o `BC01` sobre una factura (desde 2026-09-24) | `INVALID_SERIES` |
 
 :::tip La regla que los cubre todos
 Manda cada campo **con el tipo y el formato que declara esta documentación**: fechas en

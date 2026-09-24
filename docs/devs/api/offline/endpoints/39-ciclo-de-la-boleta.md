@@ -672,7 +672,8 @@ JOIN   OPENJSON(@Resp, '$.data.documents')
 | `status` | 500 | `Code: 98; Description: El procesamiento del comprobante aún no ha terminado` | SUNAT aún procesa | **Sí**, en unos minutos |
 | `status` | 500 | `Code: 0127; Description: El ticket no existe` | SUNAT ya no reconoce el ticket; en beta, al reconsultar un resumen que ya había respondido | No. Si ya tienes el `0`, ignóralo |
 | `summaries` `"1"` | 500 | `No se encontraron documentos con fecha de emisión …` | Nada que declarar en esa fecha: ver el [paso 2](#paso-2) | No |
-| `summaries` | 500 | `Code: …; Description: …` o `PSE. SEND - Code: …` | SUNAT o el PSE no recibieron el resumen. No se guarda nada y las boletas siguen en `01` | **Sí**, con la misma fecha |
+| `summaries` | 500 | `Code: 01xx`/`02xx`, `Code: HTTP` o `PSE. SEND - Code: …` | SUNAT o el PSE no pudieron atender el resumen. No se guarda nada y las boletas siguen en `01` | **Sí**, con la misma fecha |
+| `summaries` | 500 | `Code: 2513` o `Code: 2920` — *Dato no cumple con formato de acuerdo al tipo de documento* | SUNAT **rechazó el resumen entero** porque uno de los comprobantes de esa fecha está mal armado, y no dice cuál. Casi siempre es una nota: su `documento_afectado.codigo_tipo_documento` no es `"03"` (p. ej. `"B3"`), o su serie no empieza con `B`. Desde el 2026-09-24 esas notas no se pueden emitir ([nota de crédito](10-nota-credito.md#documento-afectado)) | **No**: da el mismo error cada vez. Una nota anterior a esa fecha hay que retirarla (soporte) y reemitirla. Para declarar ya las boletas, crea el resumen desde el panel y quita la nota de la lista |
 | `summaries` | 422 | `MISSING_FIELDS` / `INVALID_PROCESS_TYPE` | Falta la fecha o el tipo, o el tipo no es del catálogo. Desde el 2026-09-21; antes, 500 `Undefined array key "…"` | No |
 | `summaries` | 400 | `MISSING_CONTENT_TYPE` / `EMPTY_BODY` / `INVALID_JSON` | Falta `Content-Type: application/json`, o el cuerpo no llegó o no es JSON | No, corrige |
 

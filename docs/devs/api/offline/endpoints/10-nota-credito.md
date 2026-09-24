@@ -164,9 +164,31 @@ Para referenciar un comprobante que **no está en esta base** — el típico cas
 |-------|------|-------------|
 | `serie_documento` | string | Serie del documento afectado. Se normaliza a mayúsculas y sin espacios |
 | `numero_documento` | string | Correlativo. Se canonicaliza (`00000015` → `15`) igual que el del propio comprobante |
-| `codigo_tipo_documento` | string | `"01"` (Factura) o `"03"` (Boleta) |
+| `codigo_tipo_documento` | string | `"01"` (Factura) o `"03"` (Boleta): el código del **catálogo 01 de SUNAT**, no el de tu sistema. `1`, `3` o `"3"` se aceptan y se guardan como `"01"`/`"03"` |
 
 Las tres son **obligatorias** en esta forma: si falta cualquiera se rechaza antes de emitir con `MISSING_FIELDS`, nombrándolas con el prefijo `documento_afectado.`. Un `external_id` presente pero vacío (`""`) cuenta como ausente y cae en esta rama, así que acabarás viendo las tres sub-claves en `faltantes`.
+
+**Desde el 2026-09-24 el tipo y la serie se validan antes de emitir** (HTTP 422, sin gastar el correlativo):
+
+| Payload | Respuesta | Qué pasaba antes |
+|---|---|---|
+| `codigo_tipo_documento` que no es `"01"` ni `"03"` (`"B3"`, `"F3"`, `"07"`…) | `INVALID_REFERENCE`, `errors.campo: "documento_afectado.codigo_tipo_documento"`, con `valor_recibido` y `valores_validos` | La nota se emitía con ese código en el XML, y el resumen diario que la llevaba se rechazaba **entero** con `2513`. Con `"F3"` la nota de factura ni siquiera se enviaba |
+| Serie del afectado que contradice el tipo: `F001` con `"03"` o `B001` con `"01"` | `INVALID_REFERENCE`, `errors.campo: "documento_afectado.serie_documento"` | Resumen diario rechazado entero con `2920` |
+
+```json
+{
+  "success": false,
+  "message": "'documento_afectado.codigo_tipo_documento' llegó como \"B3\", que no es un código del catálogo 01 de SUNAT. Envía \"01\" si la nota corrige una factura o \"03\" si corrige una boleta, o manda solo 'documento_afectado.external_id' y el tipo se toma del comprobante. …",
+  "error_code": "INVALID_REFERENCE",
+  "errors": {
+    "campo": "documento_afectado.codigo_tipo_documento",
+    "valor_recibido": "\"B3\"",
+    "valores_validos": ["01", "03"]
+  }
+}
+```
+
+Solo se rechaza la contradicción de letra: las series de contingencia (`0001`, `0F01`, `0B01`) y las de SEE-SOL (`E001`, `EB01`) pasan. Desde SQL Server, escribe el tipo como literal de texto (`'03' AS codigo_tipo_documento`), no desde una columna numérica ni con el código interno de tu sistema.
 
 Lo que **no** se comprueba es que ese comprobante exista ni que los importes cuadren: se guarda como JSON literal en `notes.data_affected_document`. **SUNAT sí lo valida**: si la referencia no corresponde a un comprobante suyo, el rechazo llega en el CDR, no en la respuesta de la API.
 
@@ -220,7 +242,25 @@ Esa lista importa: el `13` solo existe en las bases que corrieron la migración 
 | Factura (`F001`) | `FC01` |
 | Boleta (`B001`) | `BC01` |
 
-La serie debe existir para el tipo `07` en el establecimiento del token, o el envío se rechaza con `INVALID_SERIES`. Es la única comprobación que se hace sobre ella: **la serie no decide nada más**. No se verifica que una `BC01` vaya contra una boleta, y sobre todo, la ruta de envío no la fija la serie sino el documento afectado — ver abajo.
+La serie debe existir para el tipo `07` en el establecimiento del token, o el envío se rechaza con `INVALID_SERIES`. Y desde el 2026-09-24 **tiene que ser de la familia del documento afectado**, con `external_id` o sin él: una serie que empieza con `F` no puede corregir una boleta, ni una que empieza con `B` una factura. También sale `INVALID_SERIES`, antes de emitir:
+
+```json
+{
+  "success": false,
+  "message": "La serie FC01 es de notas de factura, pero la nota corrige la boleta B001-13. Las notas de boleta llevan una serie que empieza con B (por ejemplo BC01 o BD01): …",
+  "error_code": "INVALID_SERIES",
+  "errors": {
+    "serie": "FC01",
+    "documento_afectado": "B001-13",
+    "tipo_documento_afectado": "03",
+    "la_serie_debe_empezar_con": "B"
+  }
+}
+```
+
+Antes se emitía: una `FC01` sobre boleta iba al resumen diario y SUNAT lo rechazaba **entero** (`2513`); una `BC01` sobre factura la rechazaba SUNAT (`2399`) con el correlativo perdido. Las series de contingencia (`0001`, `0F01`, `0B01`) no se juzgan.
+
+La serie **no** decide la ruta de envío: esa la fija el documento afectado — ver abajo.
 
 ---
 
@@ -237,7 +277,7 @@ Al crearse, la nota copia el `group_id` del comprobante que corrige:
 | Factura (`01`) | `01` | Envío **individual**, en la misma petición |
 | Boleta (`03`) | `02` | Individual **solo si** el tenant lo tiene activado; si no, **resumen diario** |
 
-Con la forma alternativa (sin `external_id`) el grupo se deduce del `codigo_tipo_documento` que mandes dentro de `documento_afectado`: `01` → grupo `01`, cualquier otro valor → grupo `02`.
+Con la forma alternativa (sin `external_id`) el grupo se deduce del `codigo_tipo_documento` que mandes dentro de `documento_afectado`: `"01"` → grupo `01`, `"03"` → grupo `02`. Hasta el 2026-09-23 cualquier otro valor caía en el grupo `02`: por eso una nota de factura enviada con `"F3"` quedaba esperando un resumen diario y nunca salía. Hoy ese valor se rechaza.
 
 ### 2. Los interruptores del tenant deciden si sale ya
 
@@ -389,10 +429,10 @@ La nota se manda por correo con las mismas reglas que cualquier otro comprobante
 | `error_code` | Cuándo |
 |---|---|
 | `MISSING_FIELDS` | Falta `codigo_tipo_nota`, `motivo_o_sustento_de_nota`, `documento_afectado` o sus sub-claves — o cualquier obligatorio del tronco común. También cuando el tipo `13` no trae `cuotas` |
-| `INVALID_REFERENCE` | `codigo_tipo_nota` no existe en el catálogo del tenant. El mensaje lista los válidos |
+| `INVALID_REFERENCE` | `codigo_tipo_nota` no existe en el catálogo del tenant (el mensaje lista los válidos). Desde el 2026-09-24, también: `documento_afectado.codigo_tipo_documento` no es `"01"` ni `"03"`, la serie del afectado contradice su tipo, o el `external_id` apunta a algo que no es factura ni boleta. `errors.campo` dice cuál |
 | `NULL_NOT_ALLOWED` | `motivo_o_sustento_de_nota` llegó explícitamente como `null` por una vía que no pasa por la validación de entrada |
 | `AFFECTED_DOCUMENT_NOT_FOUND` | El `external_id` de `documento_afectado` no existe en este tenant |
-| `INVALID_SERIES` | La serie no está registrada para el tipo `07` en el establecimiento del token |
+| `INVALID_SERIES` | La serie no está registrada para el tipo `07` en el establecimiento del token, o (desde el 2026-09-24) no es de la familia del documento afectado: `F…` sobre boleta o `B…` sobre factura |
 | `INVALID_PAYMENT_CONDITION` | `codigo_condicion_de_pago` distinto de `01`/`02`, o un tipo `13` sin `02` |
 
 El catálogo completo y qué hacer con cada uno está en [Errores de la API](../../errores-de-la-api.md).

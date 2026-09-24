@@ -119,7 +119,7 @@ Igual que en la NC, un código inexistente se rechaza con `INVALID_REFERENCE` (H
 | Factura (`F001`) | `FD01` |
 | Boleta (`B001`) | `BD01` |
 
-Debe existir para el tipo `08` en el establecimiento del token, o se rechaza con `INVALID_SERIES`.
+Debe existir para el tipo `08` en el establecimiento del token, o se rechaza con `INVALID_SERIES`. Desde el 2026-09-24 también tiene que ser de la familia del documento afectado —`BD01` sobre boleta, `FD01` sobre factura— y `documento_afectado.codigo_tipo_documento` tiene que ser `"01"` o `"03"`: las mismas reglas y respuestas que en la [nota de crédito](10-nota-credito.md#documento-afectado).
 
 ---
 
