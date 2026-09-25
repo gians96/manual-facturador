@@ -168,7 +168,7 @@ texto. **Los mensajes no han cambiado**: si tu integración los compara, sigue f
 | `Para empresas NRUS solo están disponibles las series de Boleta de venta electrónica y Nota de venta.` | `SERIES_NOT_ALLOWED_NRUS` |
 | `El código ingresado del establecimiento es incorrecto.` | `INVALID_ESTABLISHMENT` |
 | `No se encontró el documento con código externo {X}.` | `AFFECTED_DOCUMENT_NOT_FOUND` |
-| `El código externo {X} no fue encontrado o la fecha indica no corresponde al documento.` — al anular, por `POST /api/voided` (facturas) o por `POST /api/summaries` con `"3"` (boletas) | `AFFECTED_DOCUMENT_NOT_FOUND` |
+| `El código externo {X} no fue encontrado o la fecha indica no corresponde al documento.` — al anular, por `POST /api/voided` (facturas y sus notas) o por `POST /api/summaries` con `"3"` (boletas y sus notas) | `AFFECTED_DOCUMENT_NOT_FOUND` |
 | `No se enviaron documentos para la anulación.` | `NO_DOCUMENTS` |
 
 ### `POST /api/documents/send` — desde 2026-09-07

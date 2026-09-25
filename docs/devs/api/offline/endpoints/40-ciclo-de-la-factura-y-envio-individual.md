@@ -175,6 +175,8 @@ POST /api/voided
 - **La fecha va como `dd-mm-aaaa`**, al revés que en `/api/summaries`. Es la de emisión de la
   factura, y todas las del array deben ser de ese día.
 - Sirve para facturas y notas de factura. Una boleta aquí da 422 `AFFECTED_DOCUMENT_NOT_FOUND`.
+- Una nota va con **su** `external_id` y **su** fecha, no las de la factura →
+  [41 — Anular una nota](41-anular-notas-de-credito-y-debito.md#nota-de-factura).
 
 ```json
 { "success": true, "data": { "external_id": "c35374db-8773-44f1-95f1-1cc103915c95", "ticket": "1790033586736" } }
@@ -209,6 +211,10 @@ POST /api/voided/status
 Con `code: "0"` la factura queda en `11` (Anulado), y `links.cdr` es el CDR **de la baja**. La
 factura conserva además el suyo, el de su aceptación. A diferencia de los resúmenes, las bajas sí
 las consulta una tarea programada: «Consultar las comunicaciones de baja».
+
+Solo `code: "0"` es aceptación. Si SUNAT rechaza la baja y la empresa envía directo a SUNAT, la
+factura pasa a `11` igual, aunque para SUNAT siga aceptada: es el mismo fallo que con las notas
+([qué hacer](41-anular-notas-de-credito-y-debito.md#rechazo)).
 
 ---
 

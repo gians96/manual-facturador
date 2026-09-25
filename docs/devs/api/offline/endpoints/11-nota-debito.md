@@ -185,3 +185,12 @@ Si la nota no se remitió en el acto, `state_type_id` llega como `"01"` (Registr
 - Misma restricción que la NC: **el documento afectado tiene que estar sincronizado** para disponer de su `external_id`.
 - Las notas de débito son poco frecuentes en alta rotación, pero comparten pipeline: no necesitan tratamiento especial en el cliente offline más allá de encolarlas detrás de su documento original.
 - No mandes `cuotas[]` en una ND aunque el original fuera a crédito: se descartan sin aviso. Para corregir un calendario de pagos, el instrumento es la [nota de crédito tipo `13`](10-nota-credito.md#nota-tipo-13).
+
+---
+
+## Anular la nota {#anular}
+
+Igual que una nota de crédito: la de una factura con `POST /api/voided` (fecha `dd-mm-aaaa`) y la de
+una boleta con `POST /api/summaries` y `"3"` (fecha `aaaa-mm-dd`), con el `external_id` y la fecha
+de emisión **de la nota**. Al quedar anulada, lo que la nota descontó del almacén se devuelve.
+Detalle en [41 — Anular una nota de crédito o de débito](41-anular-notas-de-credito-y-debito.md).

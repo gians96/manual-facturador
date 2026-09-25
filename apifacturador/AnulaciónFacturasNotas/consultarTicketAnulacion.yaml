@@ -44,8 +44,16 @@ paths:
         `ticket` (basta enviar uno de los dos).
 
         Cuando SUNAT acepta la comunicación (`response.code: "0"`), las facturas o notas que la
-        conforman quedan **Anuladas** y se dispone de los enlaces de descarga del **XML** y del
-        **CDR** de la baja. Si SUNAT aún está procesando el ticket, repetir la consulta más tarde.
+        conforman quedan **Anuladas** (`11`) y se dispone de los enlaces de descarga del **XML** y
+        del **CDR** de la baja. La respuesta no lista los documentos: el estado de cada uno se
+        consulta con `GET /api/document_check_server/{external_id}` o con
+        `POST /api/documents/status`. Si SUNAT aún está procesando el ticket, responde 500 con
+        `Code: 98; …`: repetir la consulta más tarde.
+
+        **Solo `response.code: "0"` es aceptación.** Si SUNAT rechaza la baja (`status_code: 99`)
+        y la empresa envía directo a SUNAT, la baja queda en `09` pero sus documentos pasan a `11`
+        igual, aunque para SUNAT sigan aceptados. Qué hacer:
+        [Si SUNAT rechaza la anulación](/devs/api/offline/endpoints/anular-notas-de-credito-y-debito#rechazo).
 
         ***Ejemplo:***
          - **Método:** POST
@@ -73,23 +81,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorNoAutenticado'
         '403':
-          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          description: Tenant suspendido por licencia (`LICENSE_TENANT_BLOCKED`)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorLicencia'
-        '422':
-          description: Error de validación de campos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorValidacion'
         '500':
           description: |
             Error de negocio. Mensajes típicos:
             - `Es requerido el código externo o ticket` (no se envió ninguno de los dos)
             - `El código externo {external_id} es inválido, no se encontró anulación relacionada`
+              (casi siempre: se mandó el `external_id` del comprobante, no el de la baja)
             - `El ticket {ticket} es inválido, no se encontró anulación relacionada`
+            - `Code: 98; Description: El procesamiento del comprobante aún no ha terminado`
+              (SUNAT aún procesa el ticket: se reintenta en unos minutos)
           content:
             application/json:
               schema:
@@ -143,18 +148,28 @@ components:
           type: object
           description: Respuesta de SUNAT.
           properties:
+            sent:
+              type: boolean
+              example: true
             code:
               type: string
-              description: '"0" indica aceptación.'
+              description: '"0" indica aceptación. Cualquier otro código es un rechazo, aunque `is_accepted` o `success` digan otra cosa.'
               example: "0"
             description:
               type: string
-              example: "La Comunicación de baja RA-20260722-1, ha sido aceptada"
+              example: "La Comunicacion de baja RA-20260722-1, ha sido aceptada"
             notes:
               type: array
               items:
                 type: string
               example: []
+            is_accepted:
+              type: boolean
+              example: true
+            status_code:
+              type: integer
+              description: '`0` aceptado; `99` rechazado.'
+              example: 0
       required:
         - success
         - data
@@ -177,23 +192,10 @@ components:
           example: false
         message:
           type: string
-          example: "Emisión bloqueada por licencia."
+          example: "Operación bloqueada: tenant suspendido por licencia."
         message_code:
           type: string
-          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
-          example: "LICENSE_EMISSION_BLOCKED"
-
-    ErrorValidacion:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: false
-        message:
-          type: object
-          description: Objeto con los errores por campo.
-          example:
-            external_id: ["El campo external id debe ser una cadena de texto."]
+          example: "LICENSE_TENANT_BLOCKED"
 
     ErrorNegocio:
       type: object

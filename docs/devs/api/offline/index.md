@@ -144,6 +144,7 @@ Este documento describe el contrato de API para la aplicación offline del Factu
 | 38 | [Envío por WhatsApp](endpoints/38-envio-de-comprobantes-por-whatsapp.md) | El comprobante por el WhatsApp conectado del negocio, en cola |
 | 39 | [Ciclo de la Boleta](endpoints/39-ciclo-de-la-boleta.md) | `POST /api/summaries` + `/status`: de `01` a `05` por resumen diario, anulación hasta `11`, y el CDR, que es del resumen |
 | 40 | [Ciclo de la Factura y Envío Individual](endpoints/40-ciclo-de-la-factura-y-envio-individual.md) | Estado y CDR propio de facturas y boletas enviadas solas, `POST /api/documents/send`, y la anulación por `/api/voided` o por resumen |
+| 41 | [Anular una Nota de Crédito o de Débito](endpoints/41-anular-notas-de-credito-y-debito.md) | La de una factura por `/api/voided`, la de una boleta por resumen `"3"`: con la fecha de la nota, hasta `11`, y qué pasa con el stock y si SUNAT rechaza |
 
 ---
 

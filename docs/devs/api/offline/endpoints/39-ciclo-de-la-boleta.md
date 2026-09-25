@@ -424,7 +424,8 @@ está anulada**: falta el [paso 6](#paso-6).
 - Varias boletas de la **misma fecha** van en un solo resumen de anulación; las de fechas
   distintas, en uno por fecha.
 - Una nota de crédito o débito de boleta se anula igual: con su `external_id` y con **su** fecha de
-  emisión, no la de la boleta que modifica.
+  emisión, no la de la boleta que modifica →
+  [41 — Anular una nota](41-anular-notas-de-credito-y-debito.md#nota-de-boleta).
 - Una boleta que se envió sola (envío individual) también se anula así, no por `/api/voided`.
 
 :::danger `codigo_tipo_proceso` va como texto: `"3"`, nunca `3`

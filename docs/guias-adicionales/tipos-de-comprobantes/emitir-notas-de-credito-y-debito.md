@@ -12,7 +12,7 @@ Ingresa al **módulo de ventas** y luego ir a subcategoría **Boleta/Factura**.
 ![Alt text](img/notas_credito_debito_new_1.png)
 
 :::info IMPORTANTE:
-Recuerde que estas anulaciones solo se pueden realizar dentro de los primeros 7 días después de la emisión del comprobante, pasado el tiempo debe emitir una nota de crédito.
+Un comprobante solo se puede anular dentro de los primeros 7 días después de su emisión; pasado ese tiempo, se corrige con una nota de crédito. Una nota también se puede anular dentro de su plazo: [Anular notas de crédito y débito](anular-notas-de-credito-y-debito.md).
 :::
 
 Luego selecciona los tres puntos verticales en la parte derecha y después ingresa a la sección **Nota**.

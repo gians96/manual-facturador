@@ -448,3 +448,16 @@ El catálogo completo y qué hacer con cada uno está en [Errores de la API](../
 - Si el original se creó offline y aún no se ha sincronizado, la NC debe **quedar en cola**: no la mandes con la forma alternativa por serie/número solo para desbloquearla, porque entonces la nota nunca podrá enviarse individualmente si el original era una boleta (ver el recuadro de `documento_afectado`).
 - Los items y totales de la NC deben corresponder a lo que se corrige del original —total o parcial—. El backend no lo comprueba; SUNAT sí.
 - La idempotencia por `offline_id` funciona igual que en factura/boleta: reintentar con el mismo `offline_id` devuelve la nota ya creada en vez de duplicarla. Ver [16-idempotencia.md](16-idempotencia.md).
+
+---
+
+## Anular la nota {#anular}
+
+Una nota de crédito aceptada se anula como el comprobante que modifica: la de una factura con
+`POST /api/voided` (fecha `dd-mm-aaaa`) y la de una boleta con `POST /api/summaries` y `"3"` (fecha
+`aaaa-mm-dd`), aunque la nota se haya enviado sola. En los dos casos van el `external_id` y la fecha
+de emisión **de la nota**, no los de la factura o boleta. Al quedar anulada, lo que la nota devolvió
+al almacén se vuelve a descontar.
+
+Los cuerpos, las respuestas, los errores y qué pasa si SUNAT rechaza la baja:
+[41 — Anular una nota de crédito o de débito](41-anular-notas-de-credito-y-debito.md).

@@ -16,13 +16,15 @@ Si desea anular un comprobante lo que debe hacer es dirigirse a los 3 puntos del
 ![Alt text](img/anular_comprobante_new_1.png)
 
 
-Ya con estos pasos el comprobante queda anulado automáticamente y ese es el estado en SUNAT. Sin embargo en plataforma se visualizará con el estado **POR ANULAR**.
+Con estos pasos el sistema envía la anulación a SUNAT, que responde con un ticket. Mientras ese ticket no se consulte, el comprobante se visualiza con el estado **POR ANULAR**.
 
 ![alt text](img/anular_comprobante_new_2.png)
 
-Para cambiar el estado y sincronizarlo con el de SUNAT, debemos dirigirnos a REPORTES - VALIDADOR DE DOCUMENTOS, y colocar el comprobante a actualizar.
+Para completar la anulación, ingresa a **Comprobantes pendientes → Anulaciones** (o usa el enlace **Ir a anulaciones**) y selecciona **Enviar Baja** en la fila de la anulación. Cuando SUNAT la acepta, el comprobante queda **ANULADO**. Es el mismo paso para facturas, boletas y notas; está explicado con capturas en [Anular notas de crédito y débito](anular-notas-de-credito-y-debito.md#completar).
 
-Hacemos clic en REGULARIZAR DOCUMENTOS, y el estado en plataforma del comprobante quedará actualizado.
+También puedes sincronizar el estado con el de SUNAT en **Reportes → Validador de documentos**: coloca el comprobante a actualizar y haz clic en **Regularizar documentos**.
+
+Las notas de crédito y débito se anulan igual, desde su propia fila del listado: [Anular notas de crédito y débito](anular-notas-de-credito-y-debito.md).
 
 :::danger IMPORTANTE:
 Recuerde que estas anulaciones solo se pueden realizar dentro de los primeros 7 días después de la emisión del comprobante, pasado el tiempo debe emitir una nota de crédito.

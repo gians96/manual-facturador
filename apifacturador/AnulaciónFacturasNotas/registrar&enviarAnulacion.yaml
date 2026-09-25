@@ -45,16 +45,27 @@ paths:
         `fecha_de_emision_de_documentos`.
 
         El proceso es **asíncrono**: al registrar la baja, SUNAT devuelve un **ticket**
-        (`data.ticket`). Luego se debe consultar ese ticket con `POST /api/voided/status`
-        hasta obtener la aceptación; recién entonces los documentos quedan **Anulados** (estado `11`).
+        (`data.ticket`) y los documentos pasan a `13` **Por anular** (a `03` si la empresa envía
+        por un PSE o por el OSE SendFact). Luego se debe consultar ese ticket con
+        `POST /api/voided/status` hasta obtener la aceptación; recién entonces los documentos
+        quedan **Anulados** (estado `11`).
 
         **Notas importantes:**
         - En este endpoint la fecha se envía en formato **día-mes-año (`d-m-Y`)**, por ejemplo
           `"22-07-2026"`. Ojo: es distinto de `/api/summaries`, que usa `Y-m-d`.
         - `external_id` es el identificador devuelto al emitir el comprobante
           (`data.external_id` de `POST /api/documents`).
-        - Las **boletas** NO se anulan por este endpoint: se anulan vía resumen con
+        - Una **nota** va con **su** `external_id` y **su** fecha de emisión, no con las de la
+          factura que modifica.
+        - `motivo_anulacion` es obligatorio: viaja a SUNAT como motivo de la baja.
+        - Se anulan comprobantes **aceptados** (`05`). El panel solo ofrece «Anular» en ese estado
+          y dentro del plazo configurado (7 días por defecto); la API no comprueba ni el estado ni
+          el plazo.
+        - Las **boletas** y sus notas NO se anulan por este endpoint: se anulan vía resumen con
           `POST /api/summaries` y `codigo_tipo_proceso: "3"`.
+
+        Las notas, de la emisión al CDR de la baja:
+        [Anular una nota de crédito o de débito](/devs/api/offline/endpoints/anular-notas-de-credito-y-debito).
 
         ***Ejemplo:***
          - **Método:** POST
@@ -82,22 +93,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorNoAutenticado'
         '403':
-          description: Bloqueo por licencia (tenant suspendido o emisión bloqueada)
+          description: Tenant suspendido por licencia (`LICENSE_TENANT_BLOCKED`)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorLicencia'
-        '422':
-          description: Error de validación de campos
+        '400':
+          description: |
+            No se pudo leer el cuerpo; corrígelo antes de reintentar: `MISSING_CONTENT_TYPE`
+            (falta `Content-Type: application/json`), `EMPTY_BODY` o `INVALID_JSON`.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorValidacion'
+                $ref: '#/components/schemas/ErrorNegocio'
+        '422':
+          description: |
+            La baja no se envió a SUNAT. No se reintenta:
+            - `NO_DOCUMENTS` — `No se enviaron documentos para la anulación.` (falta `documentos`
+              o va vacío)
+            - `AFFECTED_DOCUMENT_NOT_FOUND` — `El código externo {external_id} no fue encontrado o
+              la fecha indica no corresponde al documento.` (la fecha no es la de emisión de ese
+              comprobante, el `external_id` no existe en esta empresa, o es de una boleta o nota
+              de boleta: esas van por `POST /api/summaries`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorAnulacion'
         '500':
           description: |
-            Error de negocio. Mensajes típicos:
-            - `No se enviaron documentos para la anulación.`
-            - `El código externo {external_id} no fue encontrado o la fecha indica no corresponde al documento.`
+            Nada se envió a SUNAT si el mensaje es uno de estos (corrige el cuerpo):
+            - `Undefined array key "fecha_de_emision_de_documentos"`: falta la fecha.
+            - `The separation symbol could not be found` / `Trailing data`: la fecha no va en `d-m-Y`.
+            - `SQLSTATE[23000]: … Column 'description' cannot be null`: falta `motivo_anulacion`.
+
+            Con `Code: …; Description: …`, SUNAT no pudo atender la baja: no se guarda nada y se
+            puede reintentar.
           content:
             application/json:
               schema:
@@ -177,23 +207,24 @@ components:
           example: false
         message:
           type: string
-          example: "Emisión bloqueada por licencia."
+          example: "Operación bloqueada: tenant suspendido por licencia."
         message_code:
           type: string
-          description: '"LICENSE_TENANT_BLOCKED" (tenant suspendido) o "LICENSE_EMISSION_BLOCKED" (emisión bloqueada).'
-          example: "LICENSE_EMISSION_BLOCKED"
+          example: "LICENSE_TENANT_BLOCKED"
 
-    ErrorValidacion:
+    ErrorAnulacion:
       type: object
       properties:
         success:
           type: boolean
           example: false
         message:
-          type: object
-          description: Objeto con los errores por campo.
-          example:
-            fecha_de_emision_de_documentos: ["El campo fecha de emision de documentos es obligatorio."]
+          type: string
+          example: "El código externo 46c6ce9d-aaae-4b8d-8e94-a6f94c964b47 no fue encontrado o la fecha indica no corresponde al documento."
+        error_code:
+          type: string
+          description: '"NO_DOCUMENTS" o "AFFECTED_DOCUMENT_NOT_FOUND".'
+          example: "AFFECTED_DOCUMENT_NOT_FOUND"
 
     ErrorNegocio:
       type: object
@@ -203,7 +234,7 @@ components:
           example: false
         message:
           type: string
-          example: "No se enviaron documentos para la anulación."
+          example: "Undefined array key \"fecha_de_emision_de_documentos\""
 
   securitySchemes:
     bearerAuth:
