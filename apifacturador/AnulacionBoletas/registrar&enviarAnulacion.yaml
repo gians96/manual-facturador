@@ -62,8 +62,9 @@ paths:
           de `/api/voided`, que usa `d-m-Y`.
         - `external_id` es el identificador devuelto al emitir la boleta
           (`data.external_id` de `POST /api/documents` o de la fila de `sync-batch`).
-        - Se anulan boletas **aceptadas** (`05`), declaradas en un resumen o enviadas solas. El
-          panel solo ofrece «Anular» en ese estado; la API no lo comprueba.
+        - Se anulan boletas **aceptadas** (`05`) u **observadas** (`07`), declaradas en un resumen o
+          enviadas solas. Con otro estado responde 422 `DOCUMENT_NOT_VOIDABLE` (desde el
+          2026-09-25): una boleta en `01` se declara primero.
         - Una nota de boleta se anula con **su** fecha de emisión, no la de la boleta.
         - `motivo_anulacion` es opcional y queda en el registro, pero no viaja a SUNAT: el
           resumen no tiene campo de motivo.
@@ -127,6 +128,8 @@ paths:
               nota de factura: esas van por `POST /api/voided`)
             - `MISSING_FIELDS` / `INVALID_PROCESS_TYPE` — falta la fecha o el tipo, o el tipo no es
               del catálogo (desde el 2026-09-21)
+            - `DOCUMENT_NOT_VOIDABLE` — la boleta o nota no está en `05` ni `07`; `errors.estado`
+              dice en cuál (desde el 2026-09-25)
           content:
             application/json:
               schema:
@@ -310,7 +313,7 @@ components:
           example: "El código externo 46c6ce9d-aaae-4b8d-8e94-a6f94c964b47 no fue encontrado o la fecha indica no corresponde al documento."
         error_code:
           type: string
-          description: '"NO_DOCUMENTS" o "AFFECTED_DOCUMENT_NOT_FOUND".'
+          description: '"NO_DOCUMENTS", "AFFECTED_DOCUMENT_NOT_FOUND" o "DOCUMENT_NOT_VOIDABLE".'
           example: "AFFECTED_DOCUMENT_NOT_FOUND"
 
     ErrorNegocio:

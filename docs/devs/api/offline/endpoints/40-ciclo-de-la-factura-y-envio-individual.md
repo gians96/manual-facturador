@@ -177,6 +177,8 @@ POST /api/voided
 - Sirve para facturas y notas de factura. Una boleta aquí da 422 `AFFECTED_DOCUMENT_NOT_FOUND`.
 - Una nota va con **su** `external_id` y **su** fecha, no las de la factura →
   [41 — Anular una nota](41-anular-notas-de-credito-y-debito.md#nota-de-factura).
+- Solo se anula una factura o nota aceptada (`05`) u observada (`07`). Si no, 422
+  `DOCUMENT_NOT_VOIDABLE`, antes de enviar nada. Desde el 2026-09-25; antes se aceptaba cualquier estado.
 
 ```json
 { "success": true, "data": { "external_id": "c35374db-8773-44f1-95f1-1cc103915c95", "ticket": "1790033586736" } }
@@ -212,9 +214,10 @@ Con `code: "0"` la factura queda en `11` (Anulado), y `links.cdr` es el CDR **de
 factura conserva además el suyo, el de su aceptación. A diferencia de los resúmenes, las bajas sí
 las consulta una tarea programada: «Consultar las comunicaciones de baja».
 
-Solo `code: "0"` es aceptación. Si SUNAT rechaza la baja y la empresa envía directo a SUNAT, la
-factura pasa a `11` igual, aunque para SUNAT siga aceptada: es el mismo fallo que con las notas
-([qué hacer](41-anular-notas-de-credito-y-debito.md#rechazo)).
+Solo `code: "0"` es aceptación. Si SUNAT rechaza la baja, la factura vuelve a `05` (o `07`) y la baja
+queda en `09`. Volver a consultar una baja ya resuelta no cambia nada. Hasta el 2026-09-25, con envío
+directo a SUNAT, una baja rechazada dejaba la factura en `11` aunque para SUNAT siguiera aceptada
+([41 — Si SUNAT rechaza](41-anular-notas-de-credito-y-debito.md#rechazo)).
 
 ---
 

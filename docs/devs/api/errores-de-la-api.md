@@ -170,6 +170,7 @@ texto. **Los mensajes no han cambiado**: si tu integración los compara, sigue f
 | `No se encontró el documento con código externo {X}.` | `AFFECTED_DOCUMENT_NOT_FOUND` |
 | `El código externo {X} no fue encontrado o la fecha indica no corresponde al documento.` — al anular, por `POST /api/voided` (facturas y sus notas) o por `POST /api/summaries` con `"3"` (boletas y sus notas) | `AFFECTED_DOCUMENT_NOT_FOUND` |
 | `No se enviaron documentos para la anulación.` | `NO_DOCUMENTS` |
+| `No se puede anular el comprobante {X}: {estado y qué hacer}. Solo se anula un comprobante Aceptado (05) u Observado (07).` — al anular, desde 2026-09-25 ([detalle](offline/endpoints/41-anular-notas-de-credito-y-debito.md#no-anulable)) | `DOCUMENT_NOT_VOIDABLE` |
 
 ### `POST /api/documents/send` — desde 2026-09-07
 

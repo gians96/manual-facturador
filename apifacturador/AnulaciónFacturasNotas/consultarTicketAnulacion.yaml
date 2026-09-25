@@ -50,9 +50,12 @@ paths:
         `POST /api/documents/status`. Si SUNAT aún está procesando el ticket, responde 500 con
         `Code: 98; …`: repetir la consulta más tarde.
 
-        **Solo `response.code: "0"` es aceptación.** Si SUNAT rechaza la baja (`status_code: 99`)
-        y la empresa envía directo a SUNAT, la baja queda en `09` pero sus documentos pasan a `11`
-        igual, aunque para SUNAT sigan aceptados. Qué hacer:
+        **Solo `response.code: "0"` es aceptación.** Si SUNAT rechaza la baja (`status_code: 99`, o
+        por PSE un código de CDR entre `2000` y `3999`),
+        la baja queda en `09` y sus documentos vuelven a `05` (o `07`), que es lo que siguen siendo
+        para SUNAT. Volver a consultar una baja ya resuelta no cambia ningún documento, salvo
+        terminar los que se quedaron en `13` si fue aceptada. Hasta el
+        2026-09-25, con envío directo a SUNAT, una baja rechazada los dejaba en `11`:
         [Si SUNAT rechaza la anulación](/devs/api/offline/endpoints/anular-notas-de-credito-y-debito#rechazo).
 
         ***Ejemplo:***

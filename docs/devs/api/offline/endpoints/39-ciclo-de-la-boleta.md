@@ -303,19 +303,18 @@ en `01` hasta que la declaró el `RC-20260922-2`.
 | HTTP 200 **sin** `response.code`, con `response.description` | Lo mismo en una empresa que envía por un PSE: todavía no hay CDR | Consulta otra vez más tarde |
 | HTTP 500 `Undefined variable $cdrResponse` | Lo mismo con el OSE SendFact: todavía no hay CDR. Es un fallo conocido del servidor | Trátalo como el 98 |
 | `response.code` distinto de `"0"`, con `status_code: 99` | Envío directo a SUNAT: SUNAT **rechazó** el resumen. El resumen queda en `09` y sus boletas vuelven a `01`, y así salen en `documents` | Lee `response.description`, corrige y declara otra vez: un `POST /api/summaries` con la misma fecha las recoge |
-| `response.code` distinto de `"0"`, con `status_code` igual a ese código | Envío por PSE: SUNAT rechazó, pero **nada cambia de estado**: el resumen y sus boletas siguen en `03`, e `is_accepted` sale `true` igual | No uses `is_accepted`. Un resumen nuevo no las recoge porque no están en `01`: pide a soporte que las destrabe |
+| `response.code` distinto de `"0"`, con `status_code` igual a ese código | Envío por PSE u OSE SendFact. Desde el 2026-09-25, un código entre `2000` y `3999` es un rechazo y pasa lo mismo que con envío directo: el resumen queda en `09` y sus boletas vuelven a `01`. Antes no cambiaba nada y todo se quedaba en `03` | No uses `is_accepted`: sale `true` igual. Corrige y declara otra vez |
 | HTTP 500 `Code: 0127; Description: El ticket no existe` | SUNAT ya no reconoce el ticket. En beta pasó al volver a consultar un resumen que ya había respondido | Si ya tienes el `0` guardado, ignóralo: la consulta falla antes de tocar las boletas |
 | HTTP 500 con otro `Code:` entre `0100` y `1999`, o `Code: HTTP` | SUNAT no pudo atender, o no hubo conexión | Si dice «El sistema no puede responder su solicitud» (0100, 0109, 0130–0138, 02xx) o es `Code: HTTP`, consulta más tarde. Si es de usuario o clave (0101–0113), corrígelo: reintentar no cambia nada |
 
 **Regla corta: solo `response.code === "0"` es aceptación.** Lo demás, o se consulta más tarde, o
 se corrige.
 
-:::caution No vuelvas a consultar un resumen ya aceptado
-Si SUNAT vuelve a contestar con `0`, el sistema pone otra vez en `05` **todas** las boletas del
-resumen, estén como estén: una que anulaste después ([paso 5](#paso-5)) vuelve a `05` aunque en
-SUNAT siga anulada. En la prueba en beta, la reconsulta respondió `0127` y la boleta siguió en
-`11`; no cuentes con ninguna de las dos respuestas. Consulta hasta tener el `0` y guarda el
-resultado: la tarea programada ya trabaja así, solo consulta resúmenes que siguen en `03`.
+:::info Volver a consultar un resumen ya resuelto no cambia nada (desde el 2026-09-25)
+Las boletas de un resumen solo cambian si el resumen estaba en `03` antes de consultarlo. Antes, si
+SUNAT volvía a contestar con `0`, el sistema ponía otra vez en `05` **todas** las boletas del
+resumen, también una que anulaste después ([paso 5](#paso-5)). En beta, la reconsulta responde
+`0127`. Consulta hasta tener el `0` y guarda el resultado.
 :::
 
 ---
@@ -418,9 +417,10 @@ son las que mandaste. La boleta pasa a `13` (Por anular) si la empresa envía di
 un OSE, o a `03` (Enviado) si envía por un PSE o por el OSE SendFact. En los dos casos **todavía no
 está anulada**: falta el [paso 6](#paso-6).
 
-- **Anula solo boletas en `05`.** El panel solo ofrece «Anular» en una boleta aceptada; la API no
-  lo comprueba y acepta cualquier boleta de esa fecha. Si la venta se anuló antes de declararla,
-  declárala primero (pasos 2 y 3) y después anúlala.
+- **Anula solo boletas aceptadas (`05`) u observadas (`07`).** Desde el 2026-09-25 la API lo
+  comprueba, como el panel: una boleta en `01` da 422 `DOCUMENT_NOT_VOIDABLE` (antes se aceptaba
+  cualquier boleta de esa fecha). Si la venta se anuló antes de declararla, declárala primero
+  (pasos 2 y 3) y después anúlala.
 - Varias boletas de la **misma fecha** van en un solo resumen de anulación; las de fechas
   distintas, en uno por fecha.
 - Una nota de crédito o débito de boleta se anula igual: con su `external_id` y con **su** fecha de
@@ -456,6 +456,7 @@ Todos son `422` y ninguno se reintenta: no se envió nada a SUNAT.
 | `AFFECTED_DOCUMENT_NOT_FOUND` | `El código externo … no fue encontrado o la fecha indica no corresponde al documento.` | La fecha no es la de emisión de ese comprobante, el `external_id` no existe en esta empresa, o es de una factura o de una nota de factura (esas se anulan con `POST /api/voided`) |
 | `MISSING_FIELDS` | `Faltan campos obligatorios: …` | Falta la fecha o el tipo. Desde el 2026-09-21; antes, 500 `Undefined array key` |
 | `INVALID_PROCESS_TYPE` | `'codigo_tipo_proceso' llegó como … Envía "1" … o "3" …` | Un tipo fuera del catálogo. Desde el 2026-09-21 |
+| `DOCUMENT_NOT_VOIDABLE` | `No se puede anular el comprobante B001-1: está Registrado: … Solo se anula un comprobante Aceptado (05) u Observado (07).` | La boleta no está en `05` ni `07`; `errors.estado` dice en cuál. Desde el 2026-09-25 |
 
 ---
 
@@ -522,9 +523,10 @@ hace una anulación es el `"3"` que enviaste, que vuelve en `summary_status_type
 la respuesta.
 
 Las respuestas posibles son las del [paso 3](#qué-puede-volver), con una diferencia si SUNAT
-**rechaza** la anulación y la empresa envía directo a SUNAT: la boleta no vuelve a `05` sino a
-**`01`**, aunque para SUNAT siga aceptada. No la dejes así, porque el siguiente resumen diario de
-esa fecha la declararía otra vez: corrige lo que diga `response.description` y repite el paso 5.
+**rechaza** la anulación: la boleta vuelve a `05` (o `07`), que es lo que sigue siendo para SUNAT, y
+el resumen queda en `09`. Corrige lo que diga `response.description` y repite el paso 5. Hasta el
+2026-09-25 volvía a `01`, y el siguiente resumen diario de esa fecha la declaraba otra vez
+([41 — Si SUNAT rechaza](41-anular-notas-de-credito-y-debito.md#rechazo)).
 
 :::warning Nada consulta la anulación por ti
 La tarea que consulta resúmenes solo mira los de tipo `"1"`, y «Consultar las comunicaciones de

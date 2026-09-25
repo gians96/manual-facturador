@@ -24,6 +24,10 @@ Contra SUNAT beta. Notas de la factura FF01-6, del 24: la FC01-1 y la FD01-1, em
 anularon juntas con la baja `RA-20260925-1`. Notas de la boleta BB01-15: la BC01-2 y la BD01-2, del
 24, se declararon en el `RC-20260925-4` y se anularon juntas con el resumen `RC-20260925-5`. Desde el
 panel se repitió con la FC01-3 (`RA-20260925-3`) y la BD01-3 (`RC-20260925-7`).
+
+Con el cambio del mismo día, se repitió: la FC01-4, en `01`, dio 422 `DOCUMENT_NOT_VOIDABLE`; la
+FC01-5 y la FD01-3 se anularon con `RA-20260925-4`, y la BC01-3 y la BD01-4 con `RC-20260925-9`, con un
+solo movimiento de stock cada una. Volver a consultar las dos anulaciones no cambió nada.
 :::
 
 ---
@@ -47,10 +51,10 @@ misma llamada si se emitieron el mismo día.
 
 ## Antes de anular {#antes}
 
-- **La nota tiene que estar aceptada (`05`).** El panel solo ofrece *Anular* en ese estado. La API
-  no lo comprueba: la FC01-2, que nunca se había enviado (`01`), se dio de baja sin error y SUNAT beta
-  aceptó la baja. En producción SUNAT rechaza la baja de un comprobante que no tiene, y ese rechazo
-  deja la nota [en un estado engañoso](#rechazo).
+- **La nota tiene que estar aceptada (`05`) u observada (`07`).** Si no, la API responde 422
+  `DOCUMENT_NOT_VOIDABLE` antes de enviar nada, con el estado en que está y qué hacer
+  ([ejemplo](#no-anulable)). El panel solo ofrece *Anular* en `05`, y desde el 2026-09-25 también lo
+  comprueba en el servidor.
 - **Plazo.** El panel no envía la anulación de un comprobante emitido hace más de 7 días
   (*Configuración → Empresa → Avanzado*, pestaña *Contable*: «Días de plazo de envío de la
   comunicación de baja»). La API no aplica ese plazo: queda a lo que responda SUNAT al consultar el
@@ -58,6 +62,28 @@ misma llamada si se emitieron el mismo día.
 - **La fecha es la de la nota.** Con la de la factura, la FC01-1 (del 25) dio 422
   `AFFECTED_DOCUMENT_NOT_FOUND` al mandarla con el `24-09-2026` de la FF01-6.
 - **Anular la factura o la boleta no anula sus notas.** Cada comprobante se da de baja por su cuenta.
+
+### Una nota que no se puede anular {#no-anulable}
+
+```json
+{
+    "success": false,
+    "message": "No se puede anular el comprobante FC01-4: está Registrado: todavía no llegó a SUNAT. Envíalo (una boleta, en su resumen diario) y anúlalo cuando esté aceptado. Solo se anula un comprobante Aceptado (05) u Observado (07).",
+    "error_code": "DOCUMENT_NOT_VOIDABLE",
+    "errors": {
+        "external_id": "f7dd957f-1aa1-4490-a81f-3aeae3397ccb",
+        "numero": "FC01-4",
+        "estado": "01",
+        "valores_validos": ["05", "07"]
+    }
+}
+```
+
+:::info Cambio de comportamiento (2026-09-25)
+Antes la API aceptaba una nota en cualquier estado. La FC01-2, que nunca se había enviado (`01`), se
+dio de baja sin error y SUNAT beta aceptó esa baja; en producción, SUNAT la rechaza al consultar el
+ticket. Con una nota en `11` se podía pedir otra baja de algo ya anulado.
+:::
 
 ---
 
@@ -144,8 +170,12 @@ anulada.
 Si SUNAT todavía procesa el ticket, la consulta responde HTTP 500 con
 `Code: 98; Description: El procesamiento del comprobante aún no ha terminado`: consulta otra vez en
 unos minutos. El resto de respuestas posibles son las de un resumen
-([39 — Qué puede volver](39-ciclo-de-la-boleta.md#qué-puede-volver)), salvo el rechazo, que
-[aquí es distinto](#rechazo).
+([39 — Qué puede volver](39-ciclo-de-la-boleta.md#qué-puede-volver)). Si SUNAT rechaza,
+[ver abajo](#rechazo).
+
+Volver a consultar una baja ya resuelta no cambia ninguna nota. La excepción es una baja aceptada con
+alguna nota que se quedó en `13`: la reconsulta la termina. En beta, la reconsulta respondió 500
+`Code: 0127; Description: El ticket no existe`.
 
 ---
 
@@ -313,9 +343,9 @@ unos minutos. Las demás respuestas (PSE, OSE SendFact, `0127`, fallos de conexi
 - **Nada consulta este resumen por ti.** La tarea programada de resúmenes solo mira los de tipo
   `"1"`, y «Consultar las comunicaciones de baja» solo las bajas `RA`. Si no lo consultas, la nota se
   queda en `13`.
-- **Consulta el resumen de anulación, no el que declaró la nota.** Si SUNAT volviera a contestar `0`
-  al resumen `"1"` que la declaró, el sistema devolvería la nota a `05` aunque siga anulada
-  ([39, el aviso del paso 3](39-ciclo-de-la-boleta.md#qué-puede-volver)).
+- **Volver a consultar un resumen ya resuelto no cambia ninguna nota**, salvo terminar las que se
+  quedaron en vuelo si fue aceptado. Hasta el 2026-09-25,
+  reconsultar el resumen `"1"` que declaró la nota la devolvía a `05` aunque ya estuviera anulada.
 - **En el panel** es el botón *Enviar Baja* de la fila `RC-…` en *Comprobantes pendientes →
   Anulaciones*.
 
@@ -343,23 +373,31 @@ nota, la opción vuelve.
 
 ## Si SUNAT rechaza la anulación {#rechazo}
 
-Solo `response.code === "0"` confirma la anulación. Con un rechazo, la nota **sigue aceptada en
-SUNAT**, pero el sistema no la deja como estaba:
+Solo `response.code === "0"` confirma la anulación. Con un rechazo la anulación no ocurrió, y el
+sistema lo refleja:
 
-| | Envío directo a SUNAT o por un OSE | Envío por un PSE o por el OSE SendFact |
-|---|---|---|
-| Baja de una nota de factura (`/api/voided`) | La baja queda en `09`, pero **la nota pasa a `11` igual**, y el stock se mueve como si estuviera anulada | La baja y la nota se quedan en `03` |
-| Resumen de una nota de boleta (`"3"`) | El resumen queda en `09` y la nota vuelve a `01`: el siguiente resumen diario de esa fecha la declararía otra vez | El resumen y la nota se quedan en `03` |
+- La baja o el resumen queda en `09` (Rechazado).
+- Cada nota que seguía en `13` vuelve al estado de antes: `05`, o `07` si su propio CDR traía
+  observaciones. No se mueve stock.
+- El servidor lo anota en su log con el código de SUNAT.
 
-La nota en `11` tras un rechazo es un fallo conocido del servidor: `document_check_server` dice
-`11` de una nota que SUNAT no anuló. No te fíes del estado. Lee `response.code` y
-`response.description` de la consulta, corrige lo que diga SUNAT y pide la anulación otra vez: la API
-acepta una nota en `11` o en `01`, porque no comprueba el estado.
+Lee `response.code` y `response.description`, corrige lo que diga SUNAT y pide la anulación otra vez.
+El CDR del rechazo sale en `links.cdr` de la consulta.
 
-Si ya no se puede anular, la nota tiene que volver a `05`. El
-[Validador de documentos](../../../../modulos/Complementarios/reportes/General/validador-de-documentos.md)
-del panel toma el estado de SUNAT y lo regulariza. Si era una nota de factura, el stock que movió la
-anulación rechazada no se revierte con él: se ajusta con un movimiento de inventario.
+Con un PSE o con el OSE SendFact pasa lo mismo: un código de CDR entre `2000` y `3999` cuenta como
+rechazo y la nota vuelve desde `03`. Hasta el 2026-09-25 no se detectaba, y la anulación y la nota se
+quedaban en `03`.
+
+:::info Cambio de comportamiento (2026-09-25)
+Hasta esa fecha, con envío directo a SUNAT o por un OSE, una baja rechazada dejaba la nota en `11`,
+con el stock movido como si estuviera anulada. Un resumen `"3"` rechazado la devolvía a `01`, y el
+resumen diario de la madrugada la volvía a declarar.
+
+Para los comprobantes que quedaron así en tu servidor, `php artisan tenancy:run anulaciones:audit`
+los lista sin tocar nada. Cada uno se regulariza con el
+[Validador de documentos](../../../../modulos/Complementarios/reportes/General/validador-de-documentos.md),
+que toma el estado de SUNAT, y un ajuste de inventario para el stock que movió la anulación.
+:::
 
 ---
 
@@ -371,6 +409,7 @@ llamar. En las dos consultas, solo el `Code: 98` se reintenta tal cual.
 | Llamada | HTTP | Mensaje | Causa |
 |---|---|---|---|
 | Las dos | 422 `NO_DOCUMENTS` | `No se enviaron documentos para la anulación.` | Falta `documentos`, o va vacío |
+| Las dos | 422 `DOCUMENT_NOT_VOIDABLE` | `No se puede anular el comprobante … Solo se anula un comprobante Aceptado (05) u Observado (07).` | La nota está en `01`, `03`, `09`, `11` o `13`: `errors.estado` dice en cuál ([ejemplo](#no-anulable)). Desde el 2026-09-25 |
 | Las dos | 422 `AFFECTED_DOCUMENT_NOT_FOUND` | `El código externo … no fue encontrado o la fecha indica no corresponde al documento.` | La fecha no es la de emisión de esa nota, la nota es del otro grupo (una de boleta por `/api/voided`, una de factura por `/api/summaries`), o el `external_id` no existe en esta empresa |
 | `voided` | 500 | `Undefined array key "fecha_de_emision_de_documentos"` | Falta la fecha |
 | `voided` | 500 | `The separation symbol could not be found` / `Trailing data` | La fecha no va en `dd-mm-aaaa`: por ejemplo, `2026-09-25` |
@@ -391,7 +430,8 @@ Los errores propios de `/api/summaries` con `"3"` están en
 
 El panel hace lo mismo: *Anular* en el menú ••• de la nota crea la baja o el resumen según el grupo,
 y el botón *Enviar Baja* de *Comprobantes pendientes → Anulaciones* es la consulta. En una nota de
-factura el panel exige el motivo; en una de boleta, no. Paso a paso y con capturas:
+factura el panel exige el motivo; en una de boleta, no. Con un rechazo, el aviso dice «SUNAT rechazó
+la anulación: …» y la fila queda en *Rechazado*, sin *Enviar Baja* y con su CDR. Paso a paso y con capturas:
 [Anular notas de crédito y débito](../../../../guias-adicionales/tipos-de-comprobantes/anular-notas-de-credito-y-debito.md).
 
 ---
@@ -435,7 +475,7 @@ SET @Body = (SELECT @ExternalIdAnulacion AS external_id FOR JSON PATH, WITHOUT_A
 |---|---|
 | `external_id` de la nota | La emisión de la nota (`data.external_id`, o su fila de `sync-batch`) |
 | `external_id` y `ticket` de la anulación | La respuesta de `POST /api/voided` o de `POST /api/summaries` |
-| `state_type_id` de la nota | `05` → `13` → `11` (`05` → `03` → `11` con un PSE o el OSE SendFact). Por `document_check_server` o `documents/status` |
+| `state_type_id` de la nota | `05` → `13` → `11` (`05` → `03` → `11` con un PSE o el OSE SendFact). Si SUNAT rechaza, vuelve a `05`/`07`. Por `document_check_server` o `documents/status` |
 | CDR de la anulación | `links.cdr` de la consulta con `code: "0"` |
 
 Ver también [10 — Nota de crédito](10-nota-credito.md), [11 — Nota de débito](11-nota-debito.md),

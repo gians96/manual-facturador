@@ -16,7 +16,7 @@ Una nota de crédito o de débito aceptada por SUNAT se anula igual que el compr
 El panel elige el camino solo; tú haces lo mismo en los dos casos. La anulación tiene **dos pasos**: pedirla desde el listado de comprobantes y completarla en **Anulaciones**. Entre uno y otro, la nota queda **Por anular**.
 
 :::info Antes de anular
-- Solo se anula una nota **Aceptada**. Si está *Registrada* o *Rechazada*, la opción no aparece.
+- Solo se anula una nota **Aceptada**. Si está *Registrada*, *Rechazada* o ya *Anulada*, la opción no aparece, y el sistema tampoco la acepta por otra vía.
 - El panel da **7 días** desde la emisión de la nota; el plazo se configura ([plazo](#plazo)).
 - Cada comprobante se anula por su cuenta: anular la nota no toca la factura o boleta que modifica, y anular esa factura o boleta no anula sus notas.
 :::
@@ -58,7 +58,7 @@ Selecciona **Enviar Baja**: el sistema consulta el ticket en SUNAT y muestra su 
 
 - *La Comunicacion de baja RA-…, ha sido aceptada* o *El Resumen diario RC-…, ha sido aceptado*: la fila pasa a **Aceptado**, muestra su **CDR** y la nota queda **Anulada**.
 - *El procesamiento del comprobante aún no ha terminado*: SUNAT sigue procesando el ticket. Vuelve a intentarlo en unos minutos.
-- Otro texto de SUNAT, con la fila en **Rechazado**: SUNAT rechazó la anulación ([ver abajo](#rechazo)).
+- *SUNAT rechazó la anulación: …*, con la fila en **Rechazado**: SUNAT no la aceptó ([ver abajo](#rechazo)).
 - Un error de conexión: la fila no cambia. Vuelve a intentarlo más tarde.
 
 ![Las notas quedan Anuladas en el listado de comprobantes](img/anular_notas_6_anuladas.png)
@@ -86,16 +86,18 @@ Pasado el plazo, la nota ya no se anula. Lo que se hace es emitir otra nota sobr
 
 ## Si SUNAT rechaza la anulación {#rechazo}
 
-Solo *ha sido aceptada* (o *aceptado*) completa la anulación. Si la fila queda en **Rechazado**, SUNAT no anuló la nota y, para SUNAT, sigue aceptada. Pero en el sistema no se queda igual:
+Solo *ha sido aceptada* (o *aceptado*) completa la anulación. Si SUNAT la rechaza, **Enviar Baja** avisa *SUNAT rechazó la anulación:* seguido del motivo, y:
 
-- **Nota de factura:** la nota aparece **Anulada** igualmente, y su stock se movió como si lo estuviera.
-- **Nota de boleta:** la nota vuelve a **Registrado**. Así, el siguiente resumen diario de esa fecha la declararía otra vez.
+- la fila de *Anulaciones* queda en **Rechazado**, sin **Enviar Baja** y con el **CDR** del rechazo para descargar;
+- la nota vuelve a **Aceptado**, que es lo que sigue siendo para SUNAT. No se mueve el stock.
 
-Eso pasa si la empresa envía directo a SUNAT o por un OSE. Si envía por un PSE o por el OSE SendFact, la fila y la nota se quedan en **Enviado**.
+Lee el motivo del rechazo, corrígelo y, si sigue dentro del plazo, vuelve a anular la nota desde su menú **•••**.
 
-En los dos casos el menú de la nota ya no ofrece **Anular**, que solo aparece en una nota **Aceptada**. Primero devuelve la nota a su estado real: en **Reportes → Validador de documentos**, busca la nota y selecciona **Regularizar documentos**, que toma el estado de SUNAT y la deja **Aceptada** ([Validador de documentos](../../modulos/Complementarios/reportes/General/validador-de-documentos.md)). Después corrige lo que diga el rechazo y, si sigue dentro del plazo, anúlala otra vez.
+Pasa lo mismo si la empresa envía por un PSE o por el OSE SendFact. Hasta el 2026-09-25, en ese caso el rechazo no se detectaba: la fila y la nota se quedaban en **Enviado**.
 
-Si era una nota de factura, el validador no revierte el stock que movió la anulación rechazada: ajústalo con un movimiento de inventario.
+:::info Cambio de comportamiento (2026-09-25)
+Antes, con una anulación rechazada, la nota de factura aparecía **Anulada** igualmente (y su stock se movía como si lo estuviera), y la de boleta volvía a **Registrado**, así que el siguiente resumen diario la declaraba otra vez. Si tienes notas que quedaron así, devuélvelas a su estado real con el [Validador de documentos](../../modulos/Complementarios/reportes/General/validador-de-documentos.md) (**Reportes → Validador de documentos**, **Regularizar documentos**), y ajusta con un movimiento de inventario el stock que movió la anulación.
+:::
 
 ## Por API
 

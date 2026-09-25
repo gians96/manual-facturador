@@ -61,9 +61,13 @@ paths:
           (envío directo a SUNAT), o HTTP 200 sin `response.code` (envío por PSE) → SUNAT aún
           procesa: repetir la consulta en unos minutos.
         - `response.code` distinto de `"0"` → SUNAT rechazó la anulación. Si la empresa envía
-          directo a SUNAT (`status_code: 99`), las boletas vuelven a `01` Registrado —no a `05`—
-          aunque para SUNAT sigan aceptadas: corregir y enviar la anulación otra vez antes de que
-          un resumen diario las vuelva a declarar. Por un PSE no cambia ningún estado.
+          directo a SUNAT (`status_code: 99`), las boletas vuelven a `05` (o `07`), que es lo que
+          siguen siendo para SUNAT: corregir y enviar la anulación otra vez. Hasta el 2026-09-25
+          volvían a `01`, y un resumen diario las volvía a declarar. Por un PSE o por el OSE
+          SendFact, un código de CDR entre `2000` y `3999` cuenta igual como rechazo (antes no
+          cambiaba ningún estado).
+        - Volver a consultar un resumen ya resuelto no cambia ninguna boleta, salvo terminar las
+          que se quedaron en vuelo si fue aceptado (desde el 2026-09-25).
 
         **Ninguna tarea programada consulta estos resúmenes:** la de resúmenes solo mira los de
         tipo `"1"`, y «Consultar las comunicaciones de baja», solo las bajas de facturas. Lo
