@@ -14,7 +14,7 @@ Seguido, aparecera la siguiente alerta:
 
 ![Alt text](../img/notadecreditodesc3.jpg)
 
-1. **Documento relacionado:** Seleccionando este botón podrá visualizar los productos que se encuentran en el comprobante.
+1. **Documento relacionado:** Este botón, en el resumen del documento afectado (arriba del formulario), permite visualizar los productos que se encuentran en el comprobante.
 
 ![Alt text](../notadecredito224.jpg)
 
@@ -24,7 +24,7 @@ El precio que debe tener el producto debe ser con el descuento aplicado.
 
 ![Alt text](../notadecredito200.jpg)
 
-Seguido seleccione el botón **Generar**.
+Seguido seleccione el botón **Generar nota de crédito**.
 
 :::info
 Los productos con tipo de afectación diferente también se podrá agregar desde el tipo de afectación, en el siguiente apartado:

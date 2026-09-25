@@ -31,13 +31,15 @@ Una **nota de débito** es un documento emitido por un vendedor a un comprador p
 
 ![Alt text](img/notas_credito_debito_new_4.png)
 
-Los campos más importantes a llenar en ambos formularios,son los siguientes:
+Arriba del formulario verás un resumen del **documento afectado**: su número, el cliente, la fecha, la moneda y el total. La nota se emite siempre al mismo cliente y en la misma moneda.
+
+Los campos más importantes a llenar en ambos formularios, en la sección **Tipo de nota**, son los siguientes:
 
 - **Tipo comprobante:** Seleccionar el tipo de comprobante.
 - **Tipo de nota de crédito/débito:** Seleccione el motivo que más se amolde a su caso.
-- **Descripción:** Ingresar a detalle el problema sucedido.
+- **Motivo o sustento:** Ingresar a detalle el problema sucedido. Es obligatorio, igual que el tipo de nota.
 
-En caso el motivo sea modificar la cantidad del monto, cantidad del producto o agregar uno nuevo. Selecciona el botón **Agregar producto** y posteriormente se encontrará el formulario para realizar estas acciones.
+En caso el motivo sea modificar la cantidad del monto, cantidad del producto o agregar uno nuevo, selecciona el botón **Agregar producto** de la sección **Productos** y posteriormente se encontrará el formulario para realizar estas acciones.
 
 ![Alt text](img/notas_credito_debito_new_5.png)
 
@@ -51,4 +53,4 @@ Se procederá a ingresar los siguientes datos:
 
 Después selecciona el botón **Guardar**, donde visualizará la descripción del comprobante.
 
-Finalmente selecciona el botón **Generar**, para visualizar la nota creada.
+Finalmente selecciona el botón **Generar nota de crédito** (o **Generar nota de débito**), para visualizar la nota creada. Si el botón está desactivado, a su lado se indica qué falta; si algún dato no es válido, el campo se marca en rojo y los mensajes aparecen en el recuadro **No se pudo generar la nota**.
