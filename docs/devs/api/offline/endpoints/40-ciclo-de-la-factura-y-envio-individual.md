@@ -165,15 +165,20 @@ POST /api/voided
 
 ```json
 {
-    "fecha_de_emision_de_documentos": "21-09-2026",
+    "fecha_de_emision_de_documentos": "2026-09-26",
     "documentos": [
-        { "external_id": "10c8046d-08a5-408f-9d6f-1dc1642ff1e6", "motivo_anulacion": "Venta anulada" }
+        { "external_id": "3ab040b8-00e5-4548-9e90-767e9feb85b9", "motivo_anulacion": "Venta anulada" }
     ]
 }
 ```
 
-- **La fecha va como `dd-mm-aaaa`**, al revés que en `/api/summaries`. Es la de emisión de la
-  factura, y todas las del array deben ser de ese día.
+- **La fecha va en `aaaa-mm-dd` o en `dd-mm-aaaa`** (`"26-09-2026"`): valen las dos. Es la de
+  emisión de la factura, y todas las del array deben ser de ese día. Hasta el 2026-09-26 solo valía
+  `dd-mm-aaaa` y `aaaa-mm-dd` respondía 500 `The separation symbol could not be found`: en un
+  servidor sin actualizar, usa `dd-mm-aaaa`.
+- `motivo_anulacion` es obligatorio y es texto libre: viaja a SUNAT en la baja. Sin él, 422
+  `MISSING_FIELDS`.
+- El `external_id` puede ir en mayúsculas, como lo guarda un `uniqueidentifier` de SQL Server.
 - Sirve para facturas y notas de factura. Una boleta aquí da 422 `AFFECTED_DOCUMENT_NOT_FOUND`.
 - Una nota va con **su** `external_id` y **su** fecha, no las de la factura →
   [41 — Anular una nota](41-anular-notas-de-credito-y-debito.md#nota-de-factura).
@@ -181,38 +186,96 @@ POST /api/voided
   `DOCUMENT_NOT_VOIDABLE`, antes de enviar nada. Desde el 2026-09-25; antes se aceptaba cualquier estado.
 
 ```json
-{ "success": true, "data": { "external_id": "c35374db-8773-44f1-95f1-1cc103915c95", "ticket": "1790033586736" } }
+{
+    "success": true,
+    "data": {
+        "external_id": "45dd304a-3873-4e54-9470-26b61cfc0fb0",
+        "ticket": "1790434357925",
+        "filename": "20123456789-RA-20260926-1",
+        "date_of_reference": "2026-09-26",
+        "state_type_id": "03",
+        "state_type_description": "Enviado",
+        "documents": [
+            {
+                "id": 68,
+                "external_id": "3ab040b8-00e5-4548-9e90-767e9feb85b9",
+                "offline_id": null,
+                "document_type_id": "01",
+                "series": "F001",
+                "number": 12,
+                "number_full": "F001-12",
+                "currency_type_id": "PEN",
+                "total": "118.00",
+                "state_type_id": "13",
+                "state_type_description": "Por anular"
+            }
+        ]
+    }
+}
 ```
 
-Es el `external_id` **de la baja**. La factura pasa a `13` (Por anular); a `03` si la empresa envía por un PSE o por el OSE SendFact. Después se consulta:
+`external_id`, `ticket` y `state_type_id` son **de la baja** (`03`, Enviado). La factura está en
+`documents`: pasa a `13` (Por anular); a `03` si la empresa envía por un PSE o por el OSE SendFact.
+Un servidor sin actualizar (antes del 2026-09-26) solo devuelve `external_id` y `ticket`. Después se
+consulta:
 
 ```
 POST /api/voided/status
 ```
 
 ```json
-{ "external_id": "c35374db-8773-44f1-95f1-1cc103915c95" }
+{ "external_id": "45dd304a-3873-4e54-9470-26b61cfc0fb0" }
 ```
 
 ```json
 {
     "success": true,
-    "data": { "filename": "20123456789-RA-20260921-1", "external_id": "c35374db-8773-44f1-95f1-1cc103915c95" },
+    "data": {
+        "external_id": "45dd304a-3873-4e54-9470-26b61cfc0fb0",
+        "ticket": "1790434357925",
+        "filename": "20123456789-RA-20260926-1",
+        "date_of_reference": "2026-09-26",
+        "state_type_id": "05",
+        "state_type_description": "Aceptado",
+        "documents": [
+            {
+                "id": 68,
+                "external_id": "3ab040b8-00e5-4548-9e90-767e9feb85b9",
+                "offline_id": null,
+                "document_type_id": "01",
+                "series": "F001",
+                "number": 12,
+                "number_full": "F001-12",
+                "currency_type_id": "PEN",
+                "total": "118.00",
+                "state_type_id": "11",
+                "state_type_description": "Anulado"
+            }
+        ]
+    },
     "links": {
-        "xml": "https://tu-dominio.com/downloads/voided/xml/c35374db-8773-44f1-95f1-1cc103915c95",
-        "cdr": "https://tu-dominio.com/downloads/voided/cdr/c35374db-8773-44f1-95f1-1cc103915c95"
+        "xml": "https://tu-dominio.com/downloads/voided/xml/45dd304a-3873-4e54-9470-26b61cfc0fb0",
+        "cdr": "https://tu-dominio.com/downloads/voided/cdr/45dd304a-3873-4e54-9470-26b61cfc0fb0"
     },
     "response": {
         "sent": true, "code": "0",
-        "description": "La Comunicacion de baja RA-20260921-1, ha sido aceptada",
+        "description": "La Comunicacion de baja RA-20260926-1, ha sido aceptada",
         "notes": [], "is_accepted": true, "status_code": 0
     }
 }
 ```
 
-Con `code: "0"` la factura queda en `11` (Anulado), y `links.cdr` es el CDR **de la baja**. La
-factura conserva además el suyo, el de su aceptación. A diferencia de los resúmenes, las bajas sí
-las consulta una tarea programada: «Consultar las comunicaciones de baja».
+Con `code: "0"` la factura queda en `11` (Anulado): es el `state_type_id` de su fila en `documents`.
+El de arriba, `05`, es el de la baja, que nunca pasa a `11`. `links.cdr` es el CDR **de la baja**; la
+factura conserva además el suyo, el de su aceptación. A diferencia de los resúmenes, las bajas sí las
+consulta una tarea programada: «Consultar las comunicaciones de baja».
+
+:::info Probado el 2026-09-26 contra SUNAT beta
+F001-12 con `"2026-09-26"` y el `external_id` en mayúsculas (`RA-20260926-1`), y F001-13 con
+`"26-09-2026"` (`RA-20260926-2`), consultada por `ticket`: las dos pasaron de `13` a `11`. Sin fecha,
+con `2026/09/26`, con `2026-02-30`, con `documentos: null` o sin motivo, la llamada respondió 422 y
+no se creó ninguna baja.
+:::
 
 Solo `code: "0"` es aceptación. Si SUNAT rechaza la baja, la factura vuelve a `05` (o `07`) y la baja
 queda en `09`. Volver a consultar una baja ya resuelta no cambia nada. Hasta el 2026-09-25, con envío
@@ -238,5 +301,5 @@ sin cambios.
 | Si quedó en `01` | `POST /api/documents/send` | Solo desde el panel | `POST /api/summaries` con `"1"` |
 | Estado | `document_check_server`, o `documents/status` por serie-número | `document_check_server`, o `documents/status` por serie-número | `document_check_server`, o `documents/status` por serie-número |
 | CDR | Propio: `/downloads/document/cdr/{external_id}` o `file_cdr` | Propio: `/downloads/document/cdr/{external_id}` | El del resumen |
-| Anular | `POST /api/voided` (fecha `dd-mm-aaaa`) + `/api/voided/status` | `POST /api/summaries` con `"3"` + `/status` | `POST /api/summaries` con `"3"` + `/status` |
+| Anular | `POST /api/voided` (fecha `aaaa-mm-dd` o `dd-mm-aaaa`) + `/api/voided/status` | `POST /api/summaries` con `"3"` + `/status` | `POST /api/summaries` con `"3"` + `/status` |
 | CDR de la anulación | `links.cdr` de la baja | `links.cdr` del resumen de anulación | `links.cdr` del resumen de anulación |

@@ -50,14 +50,20 @@ paths:
         `POST /api/voided/status` hasta obtener la aceptación; recién entonces los documentos
         quedan **Anulados** (estado `11`).
 
+        La respuesta trae el estado de la **baja** (`data.state_type_id`: `03` Enviado) y, en
+        `data.documents`, cada comprobante con **su** estado (`13` Por anular). Desde el
+        2026-09-26; antes solo traía `external_id` y `ticket`.
+
         **Notas importantes:**
-        - En este endpoint la fecha se envía en formato **día-mes-año (`d-m-Y`)**, por ejemplo
-          `"22-07-2026"`. Ojo: es distinto de `/api/summaries`, que usa `Y-m-d`.
+        - La fecha va en **`aaaa-mm-dd`** (`"2026-09-25"`), como en el resto de la API, o en
+          **`dd-mm-aaaa`** (`"25-09-2026"`): valen las dos. Hasta el 2026-09-26 solo valía
+          `dd-mm-aaaa`, y `aaaa-mm-dd` respondía 500.
         - `external_id` es el identificador devuelto al emitir el comprobante
-          (`data.external_id` de `POST /api/documents`).
+          (`data.external_id` de `POST /api/documents`). Da igual en mayúsculas o minúsculas.
         - Una **nota** va con **su** `external_id` y **su** fecha de emisión, no con las de la
           factura que modifica.
-        - `motivo_anulacion` es obligatorio: viaja a SUNAT como motivo de la baja.
+        - `motivo_anulacion` es obligatorio: es texto libre, no un código de catálogo, y viaja a
+          SUNAT como motivo de la baja (`VoidReasonDescription`). Vacío, SUNAT la rechaza.
         - Se anulan comprobantes **aceptados** (`05`) u **observados** (`07`). Con otro estado
           responde 422 `DOCUMENT_NOT_VOIDABLE` antes de enviar nada (desde el 2026-09-25). El plazo
           (7 días por defecto) solo lo aplica el panel.
@@ -108,9 +114,14 @@ paths:
                 $ref: '#/components/schemas/ErrorNegocio'
         '422':
           description: |
-            La baja no se envió a SUNAT. No se reintenta:
-            - `NO_DOCUMENTS` — `No se enviaron documentos para la anulación.` (falta `documentos`
-              o va vacío)
+            La baja no se envió a SUNAT. No se reintenta: se corrige el cuerpo.
+            - `MISSING_FIELDS` — falta `fecha_de_emision_de_documentos`, o en una fila
+              `external_id` o `motivo_anulacion` (null o en blanco). `errors.faltantes` los nombra,
+              por ejemplo `documentos[1].motivo_anulacion` (contando desde 1). Desde el 2026-09-26
+            - `INVALID_DATE_FORMAT` — la fecha no es una fecha real en `aaaa-mm-dd` ni en
+              `dd-mm-aaaa`: con barras, con hora, o imposible como `31-02-2026`. Desde el 2026-09-26
+            - `NO_DOCUMENTS` — `No se enviaron documentos para la anulación.` (falta `documentos`,
+              va vacío o no es una lista)
             - `AFFECTED_DOCUMENT_NOT_FOUND` — `El código externo {external_id} no fue encontrado o
               la fecha indica no corresponde al documento.` (la fecha no es la de emisión de ese
               comprobante, el `external_id` no existe en esta empresa, o es de una boleta o nota
@@ -123,13 +134,13 @@ paths:
                 $ref: '#/components/schemas/ErrorAnulacion'
         '500':
           description: |
-            Nada se envió a SUNAT si el mensaje es uno de estos (corrige el cuerpo):
-            - `Undefined array key "fecha_de_emision_de_documentos"`: falta la fecha.
-            - `The separation symbol could not be found` / `Trailing data`: la fecha no va en `d-m-Y`.
-            - `SQLSTATE[23000]: … Column 'description' cannot be null`: falta `motivo_anulacion`.
-
             Con `Code: …; Description: …`, SUNAT no pudo atender la baja: no se guarda nada y se
             puede reintentar.
+
+            En un servidor sin actualizar (antes del 2026-09-26), estos 500 son del cuerpo y no se
+            envió nada: `Undefined array key "fecha_de_emision_de_documentos"` (falta la fecha),
+            `The separation symbol could not be found` / `Trailing data` (la fecha no va en
+            `dd-mm-aaaa`) y `Column 'description' cannot be null` (falta `motivo_anulacion`).
           content:
             application/json:
               schema:
@@ -145,9 +156,10 @@ components:
         fecha_de_emision_de_documentos:
           type: string
           description: |-
-            Fecha de emisión de los documentos a anular, en formato **d-m-Y** (día-mes-año).
-            Todos los documentos del array deben haber sido emitidos en esta fecha.
-          example: "22-07-2026"
+            Fecha de emisión de los documentos a anular, en **aaaa-mm-dd** o en **dd-mm-aaaa**
+            (valen las dos desde el 2026-09-26; antes, solo dd-mm-aaaa). Todos los documentos del
+            array deben haber sido emitidos en esta fecha.
+          example: "2026-09-25"
         documentos:
           type: array
           description: Documentos (facturas o notas de factura) que conforman la comunicación de baja.
@@ -164,7 +176,7 @@ components:
                 example: "46c6ce9d-aaae-4b8d-8e94-a6f94c964b47"
               motivo_anulacion:
                 type: string
-                description: Motivo de la anulación que se informará a SUNAT.
+                description: Motivo de la anulación que se informará a SUNAT. Texto libre, no un código de catálogo.
                 example: "Se duplicó documento"
       required:
         - fecha_de_emision_de_documentos
@@ -181,15 +193,80 @@ components:
           properties:
             external_id:
               type: string
-              description: Identificador único de la comunicación de baja. Guardarlo para consultar el estado.
-              example: "f7f2f1c5-526f-4cb8-8320-f2df3cc8765c"
+              description: Identificador único de la comunicación de baja (no el del comprobante). Guardarlo para consultar el estado.
+              example: "45dd304a-3873-4e54-9470-26b61cfc0fb0"
             ticket:
               type: string
-              description: Ticket asignado por SUNAT. Consultarlo después con `POST /api/voided/status`.
-              example: "1784778800651"
+              nullable: true
+              description: Ticket asignado por SUNAT. Consultarlo después con `POST /api/voided/status`. Puede ser `null` con PSE.
+              example: "1790434357925"
+            filename:
+              type: string
+              description: Nombre del archivo de la baja (RUC-RA-fecha del envío-correlativo). Desde el 2026-09-26.
+              example: "20123456789-RA-20260926-1"
+            date_of_reference:
+              type: string
+              description: Fecha de emisión de los comprobantes, en `aaaa-mm-dd`. Desde el 2026-09-26.
+              example: "2026-09-26"
+            state_type_id:
+              type: string
+              description: Estado de la **baja**, no de los comprobantes. Al registrarla, `03` (Enviado). Desde el 2026-09-26.
+              example: "03"
+            state_type_description:
+              type: string
+              example: "Enviado"
+            documents:
+              type: array
+              description: Los comprobantes de la baja, en el orden del XML, con el estado que tienen después de enviarla. Desde el 2026-09-26.
+              items:
+                $ref: '#/components/schemas/ComprobanteDeLaBaja'
       required:
         - success
         - data
+
+    ComprobanteDeLaBaja:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 68
+        external_id:
+          type: string
+          description: El que devolvió la emisión del comprobante.
+          example: "3ab040b8-00e5-4548-9e90-767e9feb85b9"
+        offline_id:
+          type: string
+          nullable: true
+          description: El que mandó la integración a `sync-batch`; `null` si no vino por ahí.
+          example: null
+        document_type_id:
+          type: string
+          description: '`01` factura, `07` nota de crédito, `08` nota de débito.'
+          example: "01"
+        series:
+          type: string
+          example: "F001"
+        number:
+          type: integer
+          example: 12
+        number_full:
+          type: string
+          example: "F001-12"
+        currency_type_id:
+          type: string
+          example: "PEN"
+        total:
+          type: string
+          example: "118.00"
+        state_type_id:
+          type: string
+          description: |-
+            Estado del comprobante: `13` (Por anular) al enviar la baja directo a SUNAT; `03` por un
+            PSE o por el OSE SendFact.
+          example: "13"
+        state_type_description:
+          type: string
+          example: "Por anular"
 
     ErrorNoAutenticado:
       type: object
@@ -225,8 +302,12 @@ components:
           example: "El código externo 46c6ce9d-aaae-4b8d-8e94-a6f94c964b47 no fue encontrado o la fecha indica no corresponde al documento."
         error_code:
           type: string
-          description: '"NO_DOCUMENTS", "AFFECTED_DOCUMENT_NOT_FOUND" o "DOCUMENT_NOT_VOIDABLE".'
+          description: '"MISSING_FIELDS", "INVALID_DATE_FORMAT", "NO_DOCUMENTS", "AFFECTED_DOCUMENT_NOT_FOUND" o "DOCUMENT_NOT_VOIDABLE".'
           example: "AFFECTED_DOCUMENT_NOT_FOUND"
+        errors:
+          type: object
+          description: 'Detalle, según el código: `faltantes` (MISSING_FIELDS), `invalidas` (INVALID_DATE_FORMAT) o `estado` (DOCUMENT_NOT_VOIDABLE).'
+          example: { "faltantes": ["documentos[1].motivo_anulacion"] }
 
     ErrorNegocio:
       type: object

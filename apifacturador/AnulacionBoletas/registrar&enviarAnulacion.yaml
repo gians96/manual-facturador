@@ -58,8 +58,8 @@ paths:
 
         **Notas importantes:**
         - En este endpoint la fecha se envía en formato **`Y-m-d`** (año-mes-día), por ejemplo
-          `"2026-07-22"`, y es la de **emisión de las boletas** que se anulan. Ojo: es distinto
-          de `/api/voided`, que usa `d-m-Y`.
+          `"2026-07-22"`, y es la de **emisión de las boletas** que se anulan. `/api/voided`
+          también la acepta así desde el 2026-09-26 (antes solo aceptaba `d-m-Y`).
         - `external_id` es el identificador devuelto al emitir la boleta
           (`data.external_id` de `POST /api/documents` o de la fila de `sync-batch`).
         - Se anulan boletas **aceptadas** (`05`) u **observadas** (`07`), declaradas en un resumen o

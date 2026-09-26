@@ -190,7 +190,7 @@ Si la nota no se remitió en el acto, `state_type_id` llega como `"01"` (Registr
 
 ## Anular la nota {#anular}
 
-Igual que una nota de crédito: la de una factura con `POST /api/voided` (fecha `dd-mm-aaaa`) y la de
-una boleta con `POST /api/summaries` y `"3"` (fecha `aaaa-mm-dd`), con el `external_id` y la fecha
+Igual que una nota de crédito: la de una factura con `POST /api/voided` (fecha `aaaa-mm-dd` o
+`dd-mm-aaaa`) y la de una boleta con `POST /api/summaries` y `"3"` (fecha `aaaa-mm-dd`), con el `external_id` y la fecha
 de emisión **de la nota**. Al quedar anulada, lo que la nota descontó del almacén se devuelve.
 Detalle en [41 — Anular una nota de crédito o de débito](41-anular-notas-de-credito-y-debito.md).

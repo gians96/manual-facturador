@@ -45,10 +45,15 @@ paths:
 
         Cuando SUNAT acepta la comunicación (`response.code: "0"`), las facturas o notas que la
         conforman quedan **Anuladas** (`11`) y se dispone de los enlaces de descarga del **XML** y
-        del **CDR** de la baja. La respuesta no lista los documentos: el estado de cada uno se
-        consulta con `GET /api/document_check_server/{external_id}` o con
-        `POST /api/documents/status`. Si SUNAT aún está procesando el ticket, responde 500 con
+        del **CDR** de la baja. Si SUNAT aún está procesando el ticket, responde 500 con
         `Code: 98; …`: repetir la consulta más tarde.
+
+        Desde el 2026-09-26, `data` trae el estado de la **baja** (`state_type_id`: `05` aceptada,
+        `09` rechazada; nunca `11`) y `documents`, cada comprobante con **su** estado (`11`
+        Anulado si SUNAT aceptó). Para saber si una factura quedó anulada, búscala en
+        `data.documents` por su `external_id`. Antes la respuesta no los listaba y había que
+        preguntar cada uno con `GET /api/document_check_server/{external_id}` o
+        `POST /api/documents/status`.
 
         **Solo `response.code: "0"` es aceptación.** Si SUNAT rechaza la baja (`status_code: 99`, o
         por PSE un código de CDR entre `2000` y `3999`),
@@ -72,7 +77,7 @@ paths:
         required: true
       responses:
         '200':
-          description: Estado de la comunicación de baja (aceptada por SUNAT)
+          description: Estado de la comunicación de baja y de cada comprobante que lleva
           content:
             application/json:
               schema:
@@ -92,7 +97,8 @@ paths:
         '500':
           description: |
             Error de negocio. Mensajes típicos:
-            - `Es requerido el código externo o ticket` (no se envió ninguno de los dos)
+            - `Es requerido el código externo o ticket` (no se envió ninguno de los dos, o van
+              vacíos)
             - `El código externo {external_id} es inválido, no se encontró anulación relacionada`
               (casi siempre: se mandó el `external_id` del comprobante, no el de la baja)
             - `El ticket {ticket} es inválido, no se encontró anulación relacionada`
@@ -129,24 +135,51 @@ components:
         data:
           type: object
           properties:
+            external_id:
+              type: string
+              description: Identificador de la comunicación de baja.
+              example: "45dd304a-3873-4e54-9470-26b61cfc0fb0"
+            ticket:
+              type: string
+              nullable: true
+              description: Ticket de la baja. Desde el 2026-09-26.
+              example: "1790434357925"
             filename:
               type: string
               description: Nombre del archivo de la comunicación de baja (RUC-RA-fecha-correlativo).
-              example: "20123456789-RA-20260722-1"
-            external_id:
+              example: "20123456789-RA-20260926-1"
+            date_of_reference:
               type: string
-              example: "f7f2f1c5-526f-4cb8-8320-f2df3cc8765c"
+              description: Fecha de emisión de los comprobantes, en `aaaa-mm-dd`. Desde el 2026-09-26.
+              example: "2026-09-26"
+            state_type_id:
+              type: string
+              description: |-
+                Estado de la **baja**: `05` si SUNAT la aceptó, `09` si la rechazó (`03` si sigue en
+                proceso por un PSE). Nunca `11`: ese es el de los comprobantes. Desde el 2026-09-26.
+              example: "05"
+            state_type_description:
+              type: string
+              example: "Aceptado"
+            documents:
+              type: array
+              description: |-
+                Los comprobantes de la baja, con el estado que tienen **después** de consultar:
+                `11` (Anulado) si SUNAT aceptó; si la rechazó, el de antes (`05`, o `07`). Desde el
+                2026-09-26.
+              items:
+                $ref: '#/components/schemas/ComprobanteDeLaBaja'
         links:
           type: object
           properties:
             xml:
               type: string
               description: URL de descarga del XML firmado de la baja.
-              example: "https://tu-dominio.com/downloads/voided/xml/f7f2f1c5-526f-4cb8-8320-f2df3cc8765c"
+              example: "https://tu-dominio.com/downloads/voided/xml/45dd304a-3873-4e54-9470-26b61cfc0fb0"
             cdr:
               type: string
               description: URL de descarga del CDR emitido por SUNAT.
-              example: "https://tu-dominio.com/downloads/voided/cdr/f7f2f1c5-526f-4cb8-8320-f2df3cc8765c"
+              example: "https://tu-dominio.com/downloads/voided/cdr/45dd304a-3873-4e54-9470-26b61cfc0fb0"
         response:
           type: object
           description: Respuesta de SUNAT.
@@ -160,7 +193,7 @@ components:
               example: "0"
             description:
               type: string
-              example: "La Comunicacion de baja RA-20260722-1, ha sido aceptada"
+              example: "La Comunicacion de baja RA-20260926-1, ha sido aceptada"
             notes:
               type: array
               items:
@@ -176,6 +209,47 @@ components:
       required:
         - success
         - data
+
+    ComprobanteDeLaBaja:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 68
+        external_id:
+          type: string
+          description: El que devolvió la emisión del comprobante.
+          example: "3ab040b8-00e5-4548-9e90-767e9feb85b9"
+        offline_id:
+          type: string
+          nullable: true
+          description: El que mandó la integración a `sync-batch`; `null` si no vino por ahí.
+          example: null
+        document_type_id:
+          type: string
+          description: '`01` factura, `07` nota de crédito, `08` nota de débito.'
+          example: "01"
+        series:
+          type: string
+          example: "F001"
+        number:
+          type: integer
+          example: 12
+        number_full:
+          type: string
+          example: "F001-12"
+        currency_type_id:
+          type: string
+          example: "PEN"
+        total:
+          type: string
+          example: "118.00"
+        state_type_id:
+          type: string
+          example: "11"
+        state_type_description:
+          type: string
+          example: "Anulado"
 
     ErrorNoAutenticado:
       type: object

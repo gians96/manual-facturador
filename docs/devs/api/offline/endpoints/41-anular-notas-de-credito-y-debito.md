@@ -36,8 +36,11 @@ solo movimiento de stock cada una. Volver a consultar las dos anulaciones no cam
 
 | La nota modifica… | Grupo | Anular | Fecha | Consultar | La consulta una tarea programada |
 |---|---|---|---|---|---|
-| Una factura (serie `F…`) | `01` | `POST /api/voided` | `dd-mm-aaaa` | `POST /api/voided/status` | Sí: «Consultar las comunicaciones de baja» |
+| Una factura (serie `F…`) | `01` | `POST /api/voided` | `aaaa-mm-dd` o `dd-mm-aaaa` | `POST /api/voided/status` | Sí: «Consultar las comunicaciones de baja» |
 | Una boleta (serie `B…`) | `02` | `POST /api/summaries` con `"3"` | `aaaa-mm-dd` | `POST /api/summaries/status` | No |
+
+Hasta el 2026-09-26, `/api/voided` solo aceptaba `dd-mm-aaaa`: si tu servidor no está actualizado,
+usa ese formato, que vale en los dos.
 
 Lo decide el documento afectado, no la nota: la nota hereda el grupo de la factura o boleta que
 modifica ([cómo](10-nota-credito.md#como-llega-a-sunat)). Por el camino equivocado la API responde
@@ -105,26 +108,62 @@ POST /api/voided
 
 | Campo | Qué va |
 |---|---|
-| `fecha_de_emision_de_documentos` | La fecha de emisión **de las notas**, en `dd-mm-aaaa`: al revés que en `/api/summaries` |
-| `documentos[].external_id` | El `external_id` **de la nota**, el que devolvió su emisión |
-| `documentos[].motivo_anulacion` | **Obligatorio.** Viaja a SUNAT en la baja (`VoidReasonDescription`). Sin él, la llamada falla con un 500 y no se envía nada |
+| `fecha_de_emision_de_documentos` | La fecha de emisión **de las notas**, en `aaaa-mm-dd` o en `dd-mm-aaaa` (hasta el 2026-09-26, solo `dd-mm-aaaa`) |
+| `documentos[].external_id` | El `external_id` **de la nota**, el que devolvió su emisión. Da igual en mayúsculas |
+| `documentos[].motivo_anulacion` | **Obligatorio.** Texto libre, no un código de catálogo: viaja a SUNAT en la baja (`VoidReasonDescription`), que la rechaza si va vacío. Sin él, 422 `MISSING_FIELDS` y no se envía nada |
 
 ### Response (200 OK)
+
+Desde el 2026-09-26 la respuesta trae, además del `external_id` y el `ticket` de la baja, su estado
+y la lista `documents` con cada nota y el suyo, como `/api/summaries`:
 
 ```json
 {
     "success": true,
     "data": {
         "external_id": "639ab380-d7d4-49dd-b24f-54d0fcc4198a",
-        "ticket": "1790346580134"
+        "ticket": "1790346580134",
+        "filename": "20123456789-RA-20260925-1",
+        "date_of_reference": "2026-09-25",
+        "state_type_id": "03",
+        "state_type_description": "Enviado",
+        "documents": [
+            {
+                "id": 41,
+                "external_id": "236ef1fe-9837-45ed-b5d5-41215bc79e42",
+                "offline_id": null,
+                "document_type_id": "07",
+                "series": "FC01",
+                "number": 1,
+                "number_full": "FC01-1",
+                "currency_type_id": "PEN",
+                "total": "59.00",
+                "state_type_id": "13",
+                "state_type_description": "Por anular"
+            },
+            {
+                "id": 42,
+                "external_id": "481af678-154e-4a9a-acab-0851bab35e59",
+                "offline_id": null,
+                "document_type_id": "08",
+                "series": "FD01",
+                "number": 1,
+                "number_full": "FD01-1",
+                "currency_type_id": "PEN",
+                "total": "59.00",
+                "state_type_id": "13",
+                "state_type_description": "Por anular"
+            }
+        ]
     }
 }
 ```
 
-Es el `external_id` **de la baja**, no el de la nota: guárdalo con cada nota que lleva. Las notas
-pasan a `13` (Por anular), o a `03` (Enviado) si la empresa envía por un PSE o por el OSE SendFact.
-En ese estado `GET /api/document_check_server/{external_id}` de la nota responde
-`"state_type_id": "13"` y `"file_cdr": null`.
+Es el `external_id` **de la baja**, no el de la nota: guárdalo con cada nota que lleva.
+`data.state_type_id` también es el de la baja (`03`, Enviado); el de cada nota está en `documents`:
+`13` (Por anular), o `03` (Enviado) si la empresa envía por un PSE o por el OSE SendFact. En ese
+estado `GET /api/document_check_server/{external_id}` de la nota responde `"state_type_id": "13"` y
+`"file_cdr": null`. En un servidor sin actualizar, la respuesta solo trae `external_id` y `ticket`.
 
 La baja lleva una línea por nota, con su tipo (`07` o `08`), su serie, su número y el motivo.
 
@@ -140,8 +179,40 @@ Con el `external_id` o con el `ticket` de la baja:
 {
     "success": true,
     "data": {
+        "external_id": "639ab380-d7d4-49dd-b24f-54d0fcc4198a",
+        "ticket": "1790346580134",
         "filename": "20123456789-RA-20260925-1",
-        "external_id": "639ab380-d7d4-49dd-b24f-54d0fcc4198a"
+        "date_of_reference": "2026-09-25",
+        "state_type_id": "05",
+        "state_type_description": "Aceptado",
+        "documents": [
+            {
+                "id": 41,
+                "external_id": "236ef1fe-9837-45ed-b5d5-41215bc79e42",
+                "offline_id": null,
+                "document_type_id": "07",
+                "series": "FC01",
+                "number": 1,
+                "number_full": "FC01-1",
+                "currency_type_id": "PEN",
+                "total": "59.00",
+                "state_type_id": "11",
+                "state_type_description": "Anulado"
+            },
+            {
+                "id": 42,
+                "external_id": "481af678-154e-4a9a-acab-0851bab35e59",
+                "offline_id": null,
+                "document_type_id": "08",
+                "series": "FD01",
+                "number": 1,
+                "number_full": "FD01-1",
+                "currency_type_id": "PEN",
+                "total": "59.00",
+                "state_type_id": "11",
+                "state_type_description": "Anulado"
+            }
+        ]
     },
     "links": {
         "xml": "https://tu-dominio.com/downloads/voided/xml/639ab380-d7d4-49dd-b24f-54d0fcc4198a",
@@ -158,10 +229,11 @@ Con el `external_id` o con el `ticket` de la baja:
 }
 ```
 
-Con `code: "0"` las notas pasan a `11` (Anulado). Esta respuesta, a diferencia de la de
-`/api/summaries/status`, **no** trae la lista de comprobantes: el estado de cada nota se pregunta
-con `GET /api/document_check_server/{external_id}` o con `POST /api/documents/status`
-(`"status_id": "11"`, `"status": "Anulado"`).
+Con `code: "0"` las notas de `documents` quedan en `11` (Anulado). Ese es el estado de cada nota;
+`data.state_type_id` (`05`) es el de la baja, que nunca pasa a `11`. En un servidor sin actualizar
+(antes del 2026-09-26) la respuesta no trae la lista: el estado de cada nota se pregunta con
+`GET /api/document_check_server/{external_id}` o con `POST /api/documents/status`
+(`"status_id": "11"`, `"status": "Anulado"`), que siguen valiendo.
 
 `links.cdr` es el CDR **de la baja** (`R-20123456789-RA-20260925-1.zip`). La nota conserva el suyo,
 el de su aceptación, en `/downloads/document/cdr/{external_id}`, que se sigue descargando después de
@@ -408,13 +480,15 @@ llamar. En las dos consultas, solo el `Code: 98` se reintenta tal cual.
 
 | Llamada | HTTP | Mensaje | Causa |
 |---|---|---|---|
-| Las dos | 422 `NO_DOCUMENTS` | `No se enviaron documentos para la anulación.` | Falta `documentos`, o va vacío |
+| Las dos | 422 `NO_DOCUMENTS` | `No se enviaron documentos para la anulación.` | Falta `documentos`, o va vacío. En `voided`, también si no es una lista (`null`) |
+| `voided` | 422 `MISSING_FIELDS` | `Faltan campos obligatorios: documentos[1].motivo_anulacion. …` | Falta la fecha, o en una fila el `external_id` o el `motivo_anulacion` (null o en blanco). `errors.faltantes` los nombra, contando las filas desde 1. Desde el 2026-09-26 |
+| `voided` | 422 `INVALID_DATE_FORMAT` | `'fecha_de_emision_de_documentos' llegó como "2026/09/25". Envíala en formato aaaa-mm-dd …` | La fecha no es una fecha real en `aaaa-mm-dd` ni en `dd-mm-aaaa`: barras, hora, o imposible como `31-02-2026`. Desde el 2026-09-26 |
 | Las dos | 422 `DOCUMENT_NOT_VOIDABLE` | `No se puede anular el comprobante … Solo se anula un comprobante Aceptado (05) u Observado (07).` | La nota está en `01`, `03`, `09`, `11` o `13`: `errors.estado` dice en cuál ([ejemplo](#no-anulable)). Desde el 2026-09-25 |
 | Las dos | 422 `AFFECTED_DOCUMENT_NOT_FOUND` | `El código externo … no fue encontrado o la fecha indica no corresponde al documento.` | La fecha no es la de emisión de esa nota, la nota es del otro grupo (una de boleta por `/api/voided`, una de factura por `/api/summaries`), o el `external_id` no existe en esta empresa |
-| `voided` | 500 | `Undefined array key "fecha_de_emision_de_documentos"` | Falta la fecha |
-| `voided` | 500 | `The separation symbol could not be found` / `Trailing data` | La fecha no va en `dd-mm-aaaa`: por ejemplo, `2026-09-25` |
-| `voided` | 500 | `SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'description' cannot be null …` | Falta `motivo_anulacion` en alguna nota. No se guarda nada |
-| `voided/status` | 500 | `Es requerido el código externo o ticket` | El cuerpo no trae ni `external_id` ni `ticket` |
+| `voided` | 500 | `Undefined array key "fecha_de_emision_de_documentos"` | Servidor sin actualizar (antes del 2026-09-26): falta la fecha |
+| `voided` | 500 | `The separation symbol could not be found` / `Trailing data` | Servidor sin actualizar: la fecha no va en `dd-mm-aaaa` (por ejemplo, `2026-09-25`) |
+| `voided` | 500 | `SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'description' cannot be null …` | Servidor sin actualizar: falta `motivo_anulacion` en alguna nota. No se guarda nada |
+| `voided/status` | 500 | `Es requerido el código externo o ticket` | El cuerpo no trae ni `external_id` ni `ticket`, o van vacíos |
 | `voided/status` | 500 | `El código externo … es inválido, no se encontró anulación relacionada` | Casi siempre: mandaste el `external_id` de la **nota**, no el de la baja |
 | `voided/status` | 500 | `Code: 98; Description: El procesamiento del comprobante aún no ha terminado` | SUNAT aún procesa el ticket. **Este sí se reintenta**, en unos minutos |
 | `summaries/status` | 500 | `El código externo … es inválido, no se encontró resumen relacionado` | Casi siempre: mandaste el `external_id` de la **nota**, no el del resumen de anulación |
@@ -438,13 +512,14 @@ la anulación: …» y la fila queda en *Rechazado*, sin *Enviar Baja* y con su 
 
 ## Desde SQL Server
 
-La fecha de `/api/voided` sale en `dd-mm-aaaa` con el estilo `105` de `CONVERT`; la de
-`/api/summaries`, en `aaaa-mm-dd` con el `23`. Escríbelas como texto, igual que el `"3"`:
+Las fechas van como texto, igual que el `"3"`. La de `/api/summaries`, en `aaaa-mm-dd`, con el
+estilo `23` de `CONVERT`. `/api/voided` acepta el `23` desde el 2026-09-26, y el `105`
+(`dd-mm-aaaa`) en cualquier servidor, actualizado o no:
 
 ```sql
 -- Nota de una factura.  URL: …/api/voided
 DECLARE @Body NVARCHAR(MAX) = (
-    SELECT CONVERT(CHAR(10), @FechaEmisionNota, 105) AS fecha_de_emision_de_documentos,  -- dd-mm-aaaa
+    SELECT CONVERT(CHAR(10), @FechaEmisionNota, 105) AS fecha_de_emision_de_documentos,  -- dd-mm-aaaa (o 23)
            (SELECT LOWER(@ExternalIdNota) AS external_id,
                    @Motivo                AS motivo_anulacion                             -- obligatorio
             FOR JSON PATH)                          AS documentos
@@ -475,7 +550,7 @@ SET @Body = (SELECT @ExternalIdAnulacion AS external_id FOR JSON PATH, WITHOUT_A
 |---|---|
 | `external_id` de la nota | La emisión de la nota (`data.external_id`, o su fila de `sync-batch`) |
 | `external_id` y `ticket` de la anulación | La respuesta de `POST /api/voided` o de `POST /api/summaries` |
-| `state_type_id` de la nota | `05` → `13` → `11` (`05` → `03` → `11` con un PSE o el OSE SendFact). Si SUNAT rechaza, vuelve a `05`/`07`. Por `document_check_server` o `documents/status` |
+| `state_type_id` de la nota | `05` → `13` → `11` (`05` → `03` → `11` con un PSE o el OSE SendFact). Si SUNAT rechaza, vuelve a `05`/`07`. En `data.documents` de la anulación y de su consulta (desde el 2026-09-26 en `/api/voided`), o por `document_check_server` o `documents/status` |
 | CDR de la anulación | `links.cdr` de la consulta con `code: "0"` |
 
 Ver también [10 — Nota de crédito](10-nota-credito.md), [11 — Nota de débito](11-nota-debito.md),

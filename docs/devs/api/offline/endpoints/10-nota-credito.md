@@ -454,8 +454,8 @@ El catálogo completo y qué hacer con cada uno está en [Errores de la API](../
 ## Anular la nota {#anular}
 
 Una nota de crédito aceptada se anula como el comprobante que modifica: la de una factura con
-`POST /api/voided` (fecha `dd-mm-aaaa`) y la de una boleta con `POST /api/summaries` y `"3"` (fecha
-`aaaa-mm-dd`), aunque la nota se haya enviado sola. En los dos casos van el `external_id` y la fecha
+`POST /api/voided` (fecha `aaaa-mm-dd` o `dd-mm-aaaa`) y la de una boleta con `POST /api/summaries` y
+`"3"` (fecha `aaaa-mm-dd`), aunque la nota se haya enviado sola. En los dos casos van el `external_id` y la fecha
 de emisión **de la nota**, no los de la factura o boleta. Al quedar anulada, lo que la nota devolvió
 al almacén se vuelve a descontar.
 
