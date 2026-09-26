@@ -238,11 +238,38 @@ echo "Cloning the repository"
 rm -rf "$PATH_INSTALL/$DIR"
 git clone "$PROYECT" "$PATH_INSTALL/$DIR"
 
+# Pool de PHP-FPM (15 workers, slowlog de 10 s) y crontab del scheduling (una sola
+# linea schedule:run) versionados en el proyecto: scripts/stack/. Los mismos que
+# scripts/lib/update-common.sh mantiene en los servidores ya instalados. Si el
+# proyecto clonado no los trae, se usan los de la imagen: montar un archivo que no
+# existe haria que Docker cree un directorio y PHP-FPM no arrancaria.
+FPM_STACK_VOLUME=""
+FPM_STACK_CAPS=""
+SCHED_STACK=""
+if [ -f "$PATH_INSTALL/$DIR/scripts/stack/php-fpm/zz-pool.conf" ]; then
+    FPM_STACK_VOLUME="            - ./scripts/stack/php-fpm/zz-pool.conf:/usr/local/etc/php-fpm.d/zz-pool.conf:ro"
+    # El slowlog de PHP-FPM necesita ptrace para sacar la traza.
+    FPM_STACK_CAPS="        cap_add:
+            - SYS_PTRACE"
+else
+    echo "ADVERTENCIA: el proyecto no trae scripts/stack/php-fpm/zz-pool.conf; PHP-FPM queda con el pool de la imagen."
+fi
+if [ -f "$PATH_INSTALL/$DIR/scripts/stack/scheduling/crontab" ]; then
+    # exec + init: el contenedor para con la senal, sin esperar al SIGKILL.
+    SCHED_STACK='        command: ["bash","-c","crontab /var/www/html/scripts/stack/scheduling/crontab && cron && exec php-fpm"]
+        init: true'
+else
+    echo "ADVERTENCIA: el proyecto no trae scripts/stack/scheduling/crontab; el scheduling queda con el crontab de la imagen."
+fi
+
 mkdir -p $PATH_INSTALL/proxy/fpms/$DIR
 
 cat << EOF > $PATH_INSTALL/proxy/fpms/$DIR/default
 # Configuracin de PHP para Nginx
+# pro8-stack: log de acceso con tiempos (lo agrega scripts/lib/update-common.sh)
+log_format timed '\$remote_addr - [\$time_local] "\$request" \$status \$body_bytes_sent "\$http_referer" "\$http_user_agent" "\$http_x_forwarded_for" \$upstream_response_time \$request_time'; # pro8-stack
 server {
+    access_log /var/www/html/storage/logs/nginx-access.log timed; # pro8-stack
     listen 80 default_server;
     root /var/www/html/public;
     index index.html index.htm index.php;
@@ -331,6 +358,8 @@ services:
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
+$FPM_STACK_VOLUME
+$FPM_STACK_CAPS
         restart: always
         healthcheck:
             test: ["CMD-SHELL", "kill -0 1 2>/dev/null && grep -q ':2328' /proc/net/tcp /proc/net/tcp6 2>/dev/null"]
@@ -353,6 +382,11 @@ services:
         ports:
             - "\${MYSQL_PORT_HOST}:3306"
         restart: always
+        # open_files_limit = 65535 en my.cnf: sin este techo se queda en el del contenedor.
+        ulimits:
+            nofile:
+                soft: 65535
+                hard: 65535
     redis_$SERVICE_NUMBER:
         image: redis:alpine
         container_name: redis_$DIR_MODIFIED
@@ -381,6 +415,7 @@ services:
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
+$SCHED_STACK
         restart: always
     supervisor_$SERVICE_NUMBER:
         build:
@@ -443,6 +478,8 @@ sed -i "/APP_URL_BASE=/c\APP_URL_BASE=$HOST" .env
 sed -i '/APP_URL=/c\APP_URL=http://${APP_URL_BASE}' .env
 sed -i '/FORCE_HTTPS=/c\FORCE_HTTPS=false' .env
 sed -i '/APP_DEBUG=/c\APP_DEBUG=false' .env
+# .env.example trae APP_ENV=local, y en local se registran las rutas de Laravel Dusk (/_dusk/...).
+sed -i '/APP_ENV=/c\APP_ENV=production' .env
 
 # CONFIGURACIONES DE REDIS  CACHE_DRIVER=file es CRITICO (redis_tenancy rompe CLI)
 sed -i '/CACHE_DRIVER=/c\CACHE_DRIVER=file' .env
@@ -585,10 +622,24 @@ tmp_table_size                  = 64M
 max_heap_table_size             = 64M
 query_cache_type                = 0
 query_cache_size                = 0
-table_open_cache                = 2000
 thread_cache_size               = 16
 character-set-server            = utf8mb4
 collation-server                = utf8mb4_unicode_ci
+
+# >>> pro8-stack: capacidad para muchos tenants. Lo mantiene scripts/lib/update-common.sh
+# (ensure_mariadb_tuning_and_slowlog) y se regenera en cada actualizacion: no lo edites.
+# Va al FINAL a proposito: en MariaDB gana la ultima aparicion de cada opcion.
+# Un valor MAYOR puesto a mano arriba se respeta: este bloque sube, nunca baja.
+# Se aplica al reiniciar/recrear MariaDB (el slow log ademas se activa en caliente).
+[mysqld]
+table_definition_cache          = 40000
+table_open_cache                = 10000
+open_files_limit                = 65535
+innodb_open_files               = 10000
+slow_query_log                  = 1
+log_output                      = TABLE
+long_query_time                 = 2
+# <<< pro8-stack
 EOFMYCNF
 
 echo "Configurando proyecto"
@@ -624,7 +675,9 @@ docker compose exec -T fpm_$SERVICE_NUMBER composer install
 echo "Ejecutando migraciones y seeds..."
 docker compose exec -T fpm_$SERVICE_NUMBER php artisan migrate:refresh --seed --force
 
-docker compose exec -T fpm_$SERVICE_NUMBER php artisan key:generate
+# --force: con APP_ENV=production, key:generate pide confirmacion y sin terminal se
+# cancela, dejando la APP_KEY publica del .env.example.
+docker compose exec -T fpm_$SERVICE_NUMBER php artisan key:generate --force
 docker compose exec -T fpm_$SERVICE_NUMBER php artisan storage:link
 docker compose exec -T fpm_$SERVICE_NUMBER git checkout .
 docker compose exec -T fpm_$SERVICE_NUMBER git config --global core.fileMode false

@@ -31,7 +31,16 @@ docker ps --filter "name=scheduling_nt-suite_pro" --format "{{.Names}} {{.Status
 
 # ¿Qué tiene programado y cuándo toca?
 docker exec fpm_nt-suite_pro sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan schedule:list"
+
+# ¿Una sola línea de scheduler? (debe salir exactamente una, y ninguna con tenancy:run)
+docker exec scheduling_nt-suite_pro crontab -l | grep -v '^#'
 ```
+
+El crontab del contenedor viene del repositorio (`scripts/stack/scheduling/crontab`) y se
+instala al arrancar. La imagen trae además `artisan tenancy:run schedule:run`, que ejecuta el
+scheduler **completo una vez por empresa cada minuto**: puso la CPU al 95 % y volvía con cada
+recreación del contenedor. Si reaparece, el contenedor no está usando el `command` del compose
+(ver [Capacidad y visibilidad del stack](#capacidad-y-visibilidad-del-stack)).
 
 ## Tareas programadas (contenedor `scheduling_*`)
 
@@ -45,9 +54,9 @@ docker exec fpm_nt-suite_pro sh -c "cd /var/www/html && CACHE_DRIVER=file php ar
 | `telescope:prune --hours=12` | Poda `telescope_entries`, que si no crece sin límite. **Solo se programa con `TELESCOPE_ENABLED=true`**: con Telescope apagado la tabla no existe y la poda fallaba en cada pasada, duplicando el mismo stacktrace en `telescope_prune.log` y en `laravel-FECHA.log` | cada 6 h | `docker exec fpm_… php artisan schedule:list \| grep telescope` (no aparece si está apagado, y es lo correcto) | `telescope_prune.log` |
 | `backup:tick` | Decide si toca copia y **encarga** la orden al runner del host | cada 15 min | `tail storage/logs/backup_tick.log` | `backup_tick.log` |
 | `backup:watch` | Reconcilia el historial con lo que dejó el runner y **avisa por correo** si falla | cada 15 min | `tail storage/logs/backup_watch.log` | `backup_watch.log` |
-| `tenants:usage --flush` | Vuelca el consumo por tenant y refresca tamaños de BD y disco | cada 20 min | `php artisan tenants:usage --days=7` | `tenant_usage.log` |
+| `tenants:usage --flush` | Vuelca el consumo por tenant y refresca tamaños de BD y disco. Cada pasada recorre `information_schema.TABLES` de **todas** las bases (miles de tablas), por eso no corre más a menudo. El panel no se queda atrás: *Consumo por tenant* vuelca antes de calcular, y los contadores aguantan 3 días en caché | cada 6 h (minuto 7) | `php artisan schedule:list \| grep tenants:usage` → `7 */6 * * *`; `php artisan tenants:usage --days=7` | `tenant_usage.log` |
 | `backup:prune-runs --days=180` | Poda el historial de copias | lunes 05:30 | `SELECT COUNT(*) FROM backup_runs` | `backup_prune_runs.log` |
-| `logs:prune --max-mb=20 --keep-mb=5` | Recorta los logs que Monolog **no** rota: la salida de estas mismas tareas y `laravel.log` del canal `single`. Conserva la cola, no vacía | lunes 05:45 | `docker exec fpm_… php artisan logs:prune --dry-run` (lista lo que recortaría sin tocar nada) | `logs_prune.log` |
+| `logs:prune --max-mb=20 --keep-mb=5` | Recorta los logs que Monolog **no** rota: la salida de estas mismas tareas, `laravel.log` del canal `single`, el log de acceso de nginx (`nginx-access.log`) y el slowlog de PHP-FPM (`php-fpm-slow.log`). Conserva la cola, no vacía. Además **vacía `mysql.slow_log`** (el slow log de MariaDB), solo si la tabla existe y `log_output` es `TABLE` | lunes 05:45 | `docker exec fpm_… php artisan logs:prune --dry-run` (lista lo que recortaría y cuántas filas del slow log vaciaría, sin tocar nada) | `logs_prune.log` |
 | `tenancy:run print-orders:prune` | Borra órdenes de impresión ya impresas (`pdf_b64` es pesado) | diaria 04:00 | `tail storage/logs/print_orders_prune.log` | `print_orders_prune.log` |
 | `order:payments` | Procesa pagos pendientes | cada 2 min | `tail storage/logs/order_create.log` | `order_create.log` |
 
@@ -120,6 +129,106 @@ trabajos en cola —incluidos los WhatsApp de comprobantes— se quedan esperand
   del superadmin. Al cambiar de servidor, cada negocio debe volver a escanear su QR.
 - La API del envío está en
   [38 — Envío de comprobantes por WhatsApp](../api/offline/endpoints/38-envio-de-comprobantes-por-whatsapp.md).
+
+## Capacidad y visibilidad del stack
+
+`docker-compose.yml`, el `my.cnf` de MariaDB y el sitio de nginx **no llegan con `git pull`**:
+los genera el instalador y están fuera del repositorio. Para que un servidor ya instalado quede
+igual que uno nuevo, cada actualización (`scripts/prod-update.sh`, y también `onprem-update.sh` y
+`local-update.sh`) los reconcilia con `ensure_stack_capacity` de `scripts/lib/update-common.sh`,
+dentro del paso *Reiniciando contenedores PHP y nginx*:
+
+- solo cambia lo que falta, y dos actualizaciones seguidas no cambian nada la segunda vez;
+- antes de tocar un archivo lo respalda como `<archivo>.backup-before-<cambio>-<fecha>`;
+- valida antes de aplicar (`docker compose config`, `php-fpm -tt`, `nginx -t` y `mysqld --help`
+  en un contenedor desechable) y, si algo falla, restaura el original;
+- **nunca aborta la actualización**: si algo no cuadra (un `command` propio en el scheduling, una
+  línea desconocida en el crontab, una imagen distinta de la que corre…), avisa con ⚠️ y no toca
+  esa pieza;
+- recrea **solo** `fpm` y `scheduling` cuando hace falta (unos segundos sin PHP) y reinicia nginx
+  después, porque nginx fija la IP de PHP-FPM al arrancar;
+- **MariaDB no se reinicia ni se recrea nunca**: el `my.cnf` y el límite de archivos quedan
+  listos y el script imprime el comando para aplicarlos (ver abajo).
+
+| Pieza | Qué queda | Cómo verificar |
+|---|---|---|
+| PHP-FPM | Pool versionado `scripts/stack/php-fpm/zz-pool.conf`, montado en `/usr/local/etc/php-fpm.d/zz-pool.conf`: 15 workers (`pm = dynamic`), `pm.max_requests = 500`, `request_terminate_timeout = 3600s` y slowlog de peticiones de más de 10 s. El contenedor lleva `cap_add: [SYS_PTRACE]` para poder sacar la traza | `docker exec fpm_… php-fpm -tt 2>&1 \| grep -E 'max_children\|slowlog'` → `pm.max_children = 15` |
+| Slowlog de PHP-FPM | Cada petición que pasa de 10 s deja su traza (qué función PHP estaba corriendo) en `storage/logs/php-fpm-slow.log` | `tail -50 storage/logs/php-fpm-slow.log` |
+| Log de acceso de nginx | `storage/logs/nginx-access.log`, con formato `timed`: el **último campo es `$request_time`** (segundos) y el penúltimo, `$upstream_response_time` | `tail -3 storage/logs/nginx-access.log` |
+| Slow log de MariaDB | Consultas de más de 2 s en la tabla `mysql.slow_log` (`log_output = TABLE`). Se activa en caliente, sin reiniciar | `SHOW GLOBAL VARIABLES LIKE 'slow_query_log';` → `ON` |
+| Cachés de MariaDB para muchas tablas | Bloque marcado `# >>> pro8-stack` **al final** del `my.cnf` montado (`/etc/mysql/conf.d/custom.cnf`): `table_definition_cache = 40000`, `table_open_cache = 10000`, `open_files_limit = 65535`, `innodb_open_files = 10000`, y `ulimits nofile 65535` en el compose | `SHOW GLOBAL VARIABLES LIKE 'table_definition_cache';` (vale 40000 tras el reinicio) |
+| Scheduling | `command` que instala el crontab del repositorio, `exec php-fpm` e `init: true` (el contenedor se detiene en cuanto recibe la señal, sin acabar en `SIGKILL`) | `docker exec scheduling_… crontab -l` → una sola línea `schedule:run` |
+
+:::note Por qué el bloque de MariaDB va al final y no reescribe lo afinado a mano
+En MariaDB, dentro de las opciones leídas, **gana la última aparición**. El bloque se agrega al
+final y deja intactas las líneas de arriba (en un servidor afinado a mano, por ejemplo
+`table_open_cache = 3000`); un comentario del propio bloque dice sobre qué valores prevalece.
+Nunca baja un valor: si arriba hay uno **mayor**, ese número no entra en el bloque. Y si el
+operador ya definió `slow_query_log`, `log_output` o `long_query_time`, se respetan.
+:::
+
+**Aplicar lo de MariaDB.** La actualización termina con un aviso ⏳ que lista lo pendiente y el
+comando exacto. Hazlo en una ventana tranquila (la base se corta unos 10-20 s):
+
+```bash
+cd /ruta/del/proyecto && docker compose up -d --no-deps mariadb_1
+```
+
+`docker restart mariadb_…` aplica el `my.cnf` pero **no** el límite de archivos del compose, y un
+`docker compose up -d` sin nombre de servicio también recrea MariaDB.
+
+**Para no tocar un servidor afinado a mano:** `STACK_CAPACITY_ENSURE=false` en el `.env`. Para ver
+qué cambiaría, sin aplicar nada ni actualizar el código, desde la carpeta del proyecto:
+
+```bash
+bash -c '. scripts/lib/update-common.sh; ENSURE_DRY_RUN=1 ensure_stack_capacity "$PWD/docker-compose.yml" "$PWD"'
+```
+
+### Leer los logs
+
+```bash
+# p95 del tiempo de respuesta de las últimas 20 000 peticiones (último campo = $request_time)
+tail -n 20000 storage/logs/nginx-access.log | awk '{print $NF}' | sort -n \
+  | awk '{a[NR]=$1} END {i=int(NR*0.95); if (i<1) i=1; if (NR) print "p95:", a[i], "s en", NR, "peticiones"}'
+
+# Lo mismo, solo para una pantalla (por ejemplo, el dashboard)
+grep '"GET /dashboard' storage/logs/nginx-access.log | awk '{print $NF}' | sort -n \
+  | awk '{a[NR]=$1} END {i=int(NR*0.95); if (i<1) i=1; if (NR) print "p95:", a[i], "s en", NR, "peticiones"}'
+
+# Las 20 peticiones más lentas
+awk '{print $NF, $0}' storage/logs/nginx-access.log | sort -rn | head -20
+
+# Consultas lentas de MariaDB (la contraseña se lee dentro del contenedor)
+docker exec mariadb_… sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "
+  SELECT start_time, query_time, rows_examined, db, LEFT(sql_text, 200) AS consulta
+  FROM mysql.slow_log ORDER BY query_time DESC LIMIT 20"'
+```
+
+:::warning Léelos antes del lunes
+`logs:prune` recorta cada lunes el log de acceso y el slowlog de PHP-FPM a sus últimos 5 MB
+(cuando pasan de 20 MB) y vacía `mysql.slow_log`. Para medir una semana entera, guarda lo que
+necesites antes. El log de acceso incluye las URL con sus parámetros: trátalo como dato
+interno.
+:::
+
+### Monitor externo y evidencia antes de reiniciar
+
+- **`GET /health`** responde `200` si la base de datos contesta y `503` si no; en el cuerpo dice
+  además si el scheduler sigue vivo. Lo vigila UptimeRobot cada 5 minutos y avisa por Telegram:
+  [Monitoreo de disponibilidad](./monitoreo-uptime.md).
+- **Si el servidor se satura, antes de reiniciar**, guarda la evidencia: es lo único que dice
+  qué petición o qué consulta lo provocó, y un reinicio la borra. Solo lee, tarda unos segundos
+  y se puede repetir:
+
+  ```bash
+  sudo bash scripts/prod-evidencia.sh
+  ```
+
+  Deja un archivo en `/var/log/pro8-evidencia/<fecha>.txt` (permisos `0600`, porque el
+  processlist puede llevar datos de clientes) con la carga, `top`, el `SHOW FULL PROCESSLIST` y
+  los hilos de MariaDB, `docker stats --no-stream`, la memoria, el OOM killer y las últimas
+  líneas de Laravel, del log de acceso y del slowlog de PHP-FPM. El prefijo de los contenedores
+  se detecta solo; `--prefix`, `--dir` y `--out` lo cambian.
 
 ## Servicios del host (fuera de Docker)
 
@@ -597,3 +706,16 @@ en **esa** actualización y no en la siguiente. Lo compartido vive en
 - **`APP_DEBUG` y `DEBUGBAR_ENABLED`.** Con Debugbar activo se escribe un archivo JSON por
   cada petición en `storage/debugbar/`, para siempre. Suele agotar los inodes antes que
   cualquier otra cosa. En producción ambos deben estar en `false`.
+- **Aplicar el ajuste de MariaDB.** La actualización lo deja listo pero no reinicia la base: hay
+  que recrearla en una ventana tranquila (ver [Capacidad y visibilidad del
+  stack](#capacidad-y-visibilidad-del-stack)).
+- **El monitor externo.** UptimeRobot y el aviso por Telegram se configuran una vez, a mano:
+  [Monitoreo de disponibilidad](./monitoreo-uptime.md).
+- **La memoria de intercambio (swap).** Sin swap, un pico de memoria termina en el OOM killer.
+  Se crea una vez, como root (4 GB es un margen razonable):
+
+  ```bash
+  fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  swapon --show
+  ```
