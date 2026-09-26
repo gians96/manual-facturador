@@ -153,6 +153,7 @@ dentro del paso *Reiniciando contenedores PHP y nginx*:
 | Pieza | Qué queda | Cómo verificar |
 |---|---|---|
 | PHP-FPM | Pool versionado `scripts/stack/php-fpm/zz-pool.conf`, montado en `/usr/local/etc/php-fpm.d/zz-pool.conf`: 15 workers (`pm = dynamic`), `pm.max_requests = 500`, `request_terminate_timeout = 3600s` y slowlog de peticiones de más de 10 s. El contenedor lleva `cap_add: [SYS_PTRACE]` para poder sacar la traza | `docker exec fpm_… php-fpm -tt 2>&1 \| grep -E 'max_children\|slowlog'` → `pm.max_children = 15` |
+| OPcache | Solo en servidores cuya imagen de PHP no lo trae activo (esquema de instalación viejo): la actualización monta `scripts/stack/php-fpm/zz-opcache.ini` en fpm (512 MB, revalida cada 60 s). Sin OPcache, PHP recompila todo el código en cada petición; con él, una página típica responde unas 2,5–3 veces más rápido. Las instalaciones nuevas ya lo traen en su imagen | `docker exec fpm_… php -m \| grep -i opcache` → `Zend OPcache` |
 | Slowlog de PHP-FPM | Cada petición que pasa de 10 s deja su traza (qué función PHP estaba corriendo) en `storage/logs/php-fpm-slow.log` | `tail -50 storage/logs/php-fpm-slow.log` |
 | Log de acceso de nginx | `storage/logs/nginx-access.log`, con formato `timed`: el **último campo es `$request_time`** (segundos) y el penúltimo, `$upstream_response_time` | `tail -3 storage/logs/nginx-access.log` |
 | Slow log de MariaDB | Consultas de más de 2 s en la tabla `mysql.slow_log` (`log_output = TABLE`). Se activa en caliente, sin reiniciar | `SHOW GLOBAL VARIABLES LIKE 'slow_query_log';` → `ON` |
