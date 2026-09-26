@@ -60,6 +60,7 @@ bun run docusaurus gen-api-docs   guia_remision --plugin-id facturador
   - **Conservar** etiquetas de **versión/edición**: "Pro 7", "Pro 8.1/8.2", "ProX", migraciones "Pro5→Pro6".
   - **No tocar** dominios/URLs/hostnames/`package name`/nombres de assets (`manual.pro8.uio.la`, `pro8-logo.svg`, `soporte@pro8.pe`, `projectName: pro8`) salvo decisión explícita — cambiarlos afecta el deploy.
 - Documentación de instalación/operación/API-offline migrada desde el retirado `codeplant/facturador-pro/` vive en `docs/devs/{despliegue/instalacion-scripts, devops, operacion, api/offline}`.
+- **Commits: solo lo que se hizo.** El mensaje dice qué cambió, por qué y cómo se verificó, **sin nombrar clientes, empresas ni personas**: ni quién lo reportó ni para quién es. Si el caso importa, se describe por lo que pasó («una integración que enviaba la fecha en aaaa-mm-dd»), no por quién. Vale también para lo que el commit agrega: páginas, ejemplos y capturas nuevos. Lo que ya existe no se reescribe por esto.
 - **Servicios en producción:** todo servicio que se dé por culminado y funcional (comando programado, timer de systemd, demonio) se registra en [`docs/devs/operacion/servicios-operativos.md`](docs/devs/operacion/servicios-operativos.md) **con su comando de verificación**, antes de dar el trabajo por cerrado. Una tarea programada que deja de funcionar no avisa: sin una forma de comprobarla, nadie se entera hasta que hace falta.
 
 ## 5. Qué NO tocar sin autorización
