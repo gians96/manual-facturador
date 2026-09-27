@@ -337,6 +337,11 @@ Se gestionan **desde el panel**, en `/backup`, con el mismo modelo que Dokploy:
 - **Trabajos**: N tareas independientes, cada una con su destino, alcance (todo / bases /
   archivos / una base concreta), horario, carpeta y retención. Se activan por separado y se
   pueden lanzar a mano sin tocar su horario.
+  La carpeta de cada trabajo se fija al crearlo: renombrarlo no la mueve. Si esa carpeta
+  desaparece (se movió o renombró en el servidor, cambió la carpeta del destino o se desmontó
+  el disco) y ya tenía copias, la copia **se detiene** en vez de empezar de cero en una
+  carpeta vacía. Se arregla corrigiendo el destino o, si se borraron a propósito, con
+  «Empezar de cero» en «Copias guardadas».
 
 Así se pueden tener a la vez «bases cada 6 h al Drive» y «todo completo, semanal, a otro
 proveedor», que es lo que una sola programación no permitía.
