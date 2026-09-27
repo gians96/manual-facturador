@@ -46,8 +46,10 @@ Se abre un panel con todo lo que puedes cambiar de ese bloque:
 - **Ancho:** **1/3**, **1/2**, **2/3** o **Todo**. Vehículos, Conductores, Documentos relacionados y Bienes son tablas y van siempre a lo ancho.
 - **Letra:** **A−** y **A+** achican o agrandan la letra solo de ese bloque; el botón del medio muestra el tamaño y lo devuelve al general.
 - **Título:** escribe otro título (hasta 40 caracteres; vacío = el de siempre). También puedes hacer **doble clic** sobre el bloque. Los dos cuadros de color cambian el **fondo** y el **texto** del título de ese bloque.
+- **Etiquetas:** **En línea** (así vienen: «**Razón social:** …» seguidas) o **En columna**: las etiquetas alineadas en su columna, los dos puntos alineados y, si un dato ocupa más de una línea, sigue debajo de su columna. Está en los bloques de datos: Destinatario, Remitente, Datos del traslado, Pagador del flete, Comprador, Datos aduaneros y de carga, Transportista, Referencias internas y Campos personalizados.
 - **Alinear:** izquierda, centro o derecha. En las tablas alinea solo el título.
-- **Mostrar:** los datos opcionales del bloque, por ejemplo **Vendedor** o **Teléfono del destinatario**. En **Bienes** está además **Columnas de la tabla…**.
+- **Mostrar:** los datos opcionales del bloque, por ejemplo **Dirección del destinatario**, **Teléfono del destinatario** o **Vendedor**. En **Bienes** está además **Columnas de la tabla…**.
+- **Incluir** (solo en **Destinatario**): **Punto de partida** y **Punto de llegada**. Marcados, se imprimen como líneas del destinatario y dejan de salir en su propio recuadro. El lápiz de al lado cambia el rótulo de la línea, por ejemplo «Dir. de Partida».
 - **↑ / ↓:** sube o baja el bloque una posición.
 - **Restablecer:** devuelve ese bloque a como venía.
 - **Ocultar:** solo en los bloques que no van a SUNAT.
@@ -62,6 +64,8 @@ Los anchos suman una fila completa: por ejemplo **1/3 + 1/3 + 1/3**, **1/2 + 1/2
 
 Los bloques con datos que viajan a SUNAT se pueden mover, cambiar de ancho, renombrar y dar formato, pero **no se ocultan**: Remitente, Destinatario, Datos del traslado, Pagador del flete, Punto de partida, Punto de llegada, Comprador, Datos aduaneros y de carga, Transportista, Vehículos, Conductores, Documentos relacionados y Bienes. El PDF es la representación impresa de la guía firmada y no puede decir menos que ella.
 
+**Punto de partida** y **Punto de llegada** pueden ir **dentro del Destinatario** (**Incluir**): cambian de recuadro, pero se siguen imprimiendo siempre.
+
 :::
 
 ### Bloques ocultos
@@ -72,14 +76,36 @@ Para una empresa que nunca los cambió, los datos opcionales vienen así:
 
 | Bloque | Dato opcional | De fábrica |
 |---|---|---|
+| Destinatario (guía remitente) | Dirección del destinatario | Se muestra |
 | Destinatario (guía remitente) | Teléfono del destinatario | Se muestra |
 | Destinatario (guía remitente) | Vendedor | Se muestra |
+| Destinatario (las dos guías) | Punto de partida y Punto de llegada dentro del recuadro (**Incluir**) | No: cada uno en su recuadro |
 | Vehículos | Marca y modelo del vehículo | No se muestra |
 | Conductores | Teléfono del conductor | No se muestra |
 | Bienes | Serie, modelo, marca, lote y vencimiento de los productos | Se muestran |
 | Cierre | Términos y condiciones | Se muestra |
 | Referencias internas y Campos personalizados | Todo el bloque | Se muestra |
 | Observaciones | Todo el bloque | **No se muestra** |
+
+La **dirección del destinatario** no viaja a SUNAT: la guía solo declara su documento y su nombre. Por eso se puede apagar.
+
+### Partida y llegada dentro del destinatario
+
+Si tu guía de antes llevaba la dirección de partida y la de llegada dentro del recuadro del destinatario, puedes armarla igual:
+
+1. Haz clic sobre **Destinatario** y, en **Incluir**, marca **Punto de partida** y **Punto de llegada**. Sus recuadros desaparecen de la hoja y del PDF.
+2. Si no quieres repetir la dirección del destinatario (en una venta suele ser la misma que la llegada), desmarca **Dirección del destinatario** en **Mostrar**.
+3. Para alinear los datos como en una ficha, elige **Etiquetas: En columna**.
+4. Pon **Destinatario** en **2/3** y **Datos del traslado** en **1/3**: quedan lado a lado y del mismo alto.
+5. Revisa con **Vista previa PDF** y **Guarda**.
+
+Con el lápiz de **Incluir** cambias el rótulo de cada línea, por ejemplo «Dir. de Partida» y «Dom. Llegada». Para volver al diseño de antes, desmarca las casillas o usa **Restablecer** en el Destinatario.
+
+:::tip Etiquetas en columna en otros bloques
+
+**Etiquetas: En columna** también sirve en **Transportista** y **Datos del traslado**, así el resto de la guía se ve igual. En un bloque de **1/3** las etiquetas largas (por ejemplo «Fecha de entrega de bienes al transportista») se parten en dos o tres líneas: ahí suele verse mejor **En línea**.
+
+:::
 
 ### Columnas de la tabla de bienes
 
