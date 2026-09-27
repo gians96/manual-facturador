@@ -54,7 +54,8 @@ recreación del contenedor. Si reaparece, el contenedor no está usando el `comm
 | `telescope:prune --hours=12` | Poda `telescope_entries`, que si no crece sin límite. **Solo se programa con `TELESCOPE_ENABLED=true`**: con Telescope apagado la tabla no existe y la poda fallaba en cada pasada, duplicando el mismo stacktrace en `telescope_prune.log` y en `laravel-FECHA.log` | cada 6 h | `docker exec fpm_… php artisan schedule:list \| grep telescope` (no aparece si está apagado, y es lo correcto) | `telescope_prune.log` |
 | `backup:tick` | Decide si toca copia y **encarga** la orden al runner del host | cada 15 min | `tail storage/logs/backup_tick.log` | `backup_tick.log` |
 | `backup:watch` | Reconcilia el historial con lo que dejó el runner y **avisa por correo** si falla | cada 15 min | `tail storage/logs/backup_watch.log` | `backup_watch.log` |
-| `tenants:usage --flush` | Vuelca el consumo por tenant y refresca tamaños de BD y disco. Cada pasada recorre `information_schema.TABLES` de **todas** las bases (miles de tablas), por eso no corre más a menudo. El panel no se queda atrás: *Consumo por tenant* vuelca antes de calcular, y los contadores aguantan 3 días en caché | cada 6 h (minuto 7) | `php artisan schedule:list \| grep tenants:usage` → `7 */6 * * *`; `php artisan tenants:usage --days=7` | `tenant_usage.log` |
+| `tenants:usage --flush` | Vuelca el consumo por tenant y refresca tamaños de BD y disco. Cada pasada recorre `information_schema.TABLES` de **todas** las bases (miles de tablas), por eso no corre más a menudo. El panel no se queda atrás: *Consumo por tenant* vuelca los contadores al abrir su pestaña (sin volver a medir tamaños: `--skip-sizes`) y guarda el resultado 10 min; los contadores aguantan 3 días en caché | cada 6 h (minuto 7) | `php artisan schedule:list \| grep tenants:usage` → `7 */6 * * *`; `php artisan tenants:usage --days=7` | `tenant_usage.log` |
+| `requests:flush` | Suma en `request_usage_daily` los tiempos por pantalla que anota cada petición (`storage/app/request-timings/`, un archivo por tramo de 10 min) para la tarjeta *Rendimiento por pantalla* de `/information`. Solo toma tramos cerrados; poda lo de más de 90 días (`--keep-days`) | cada 10 min (minuto 2 de cada decena) | `tail -3 storage/logs/requests_flush.log` (una línea «N tramo(s), M petición(es) volcadas» cada 10 min); en `storage/app/request-timings/` no debe haber tramos de hace más de 20 min | `requests_flush.log` |
 | `backup:prune-runs --days=180` | Poda el historial de copias | lunes 05:30 | `SELECT COUNT(*) FROM backup_runs` | `backup_prune_runs.log` |
 | `logs:prune --max-mb=20 --keep-mb=5` | Recorta los logs que Monolog **no** rota: la salida de estas mismas tareas, `laravel.log` del canal `single`, el log de acceso de nginx (`nginx-access.log`) y el slowlog de PHP-FPM (`php-fpm-slow.log`). Conserva la cola, no vacía. Además **vacía `mysql.slow_log`** (el slow log de MariaDB), solo si la tabla existe y `log_output` es `TABLE` | lunes 05:45 | `docker exec fpm_… php artisan logs:prune --dry-run` (lista lo que recortaría y cuántas filas del slow log vaciaría, sin tocar nada) | `logs_prune.log` |
 | `tenancy:run print-orders:prune` | Borra órdenes de impresión ya impresas (`pdf_b64` es pesado) | diaria 04:00 | `tail storage/logs/print_orders_prune.log` | `print_orders_prune.log` |
@@ -418,6 +419,33 @@ restic snapshots --tag db | tail -5
 restic check                      # integridad, semanal
 restic stats --mode raw-data      # lo que ocupa de verdad, ya deduplicado
 ```
+
+## Rendimiento por pantalla (qué optimizar)
+
+En el panel: **Información → Rendimiento por pantalla**. Dice qué pantallas consumen el
+servidor, sin entrar por SSH:
+- la parte del tiempo total que se lleva cada una (**peso**);
+- cuántas pasan de 1 s;
+- cuántas consultas a la base hace cada apertura y qué parte del tiempo espera a MariaDB;
+- la memoria y los errores 5xx;
+- al expandir la fila, a qué cliente le pesa.
+
+La pestaña **Consultas lentas de la base** (solo el administrador maestro) agrupa
+`mysql.slow_log` por consulta, con cada valor cambiado por `?`.
+
+- **Qué se guarda:** solo el patrón de la ruta (`documents/records/{id}`). No se guardan IP, URL
+  ni parámetros.
+- **Cuándo se escribe:** en `terminate()`, con la respuesta ya enviada, y cuesta unos 0,01 ms
+  por petición.
+- **Cuándo se suma:** `requests:flush` lo suma cada 10 minutos. Si la tarjeta dice «Datos
+  hasta» hace más de 20 minutos, revisa esa tarea.
+
+:::tip Primero la tarjeta, después los logs
+La tarjeta dice **dónde** mirar; los logs de [Leer los logs](#leer-los-logs) dicen **por qué** y
+**cuándo** (la URL, la hora exacta, la traza de PHP, la consulta). Prioriza por **peso**, no por
+el máximo: una pantalla de 300 ms abierta 20 000 veces cuesta más que un informe de 30 s que se
+abre una vez al mes.
+:::
 
 ## Consumo por tenant (para revisar planes)
 
