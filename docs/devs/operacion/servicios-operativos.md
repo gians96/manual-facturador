@@ -240,6 +240,8 @@ un proceso que viviera dentro moriría a mitad.
 | Servicio | Qué hace | Frecuencia | Cómo verificar que está vivo |
 |---|---|---|---|
 | `nt-suite-runner.service` / `.timer` | Recoge las órdenes que deja el panel (`/auto-update`, `/backup`) y las ejecuta | cada minuto | `systemctl status nt-suite-runner.timer` — debe decir `active (waiting)` y traer hora en `Trigger:` |
+| Latido del ejecutor (`storage/app/system/host-status.json`) | En cada pasada, el ejecutor anota la hora, las versiones de rclone y restic y el disco libre. El panel de copias lo usa para su lista de revisión | cada minuto (no se escribe mientras ejecuta una orden) | `cat storage/app/system/host-status.json` — `checked_at` de hace menos de 3 min, o una orden en curso |
+| rclone en el host | Lo usan **todas** las copias en modo archivos, también las de un disco del propio servidor. Desde 2026-09-27 la actualización lo instala si falta (`ensure_backup_tools`, con apt) | — | `rclone version \| head -1` |
 | ~~`logrotate` de `storage/logs/*.log`~~ | **Ya no hace falta.** Lo sustituye `logs:prune` dentro del scheduler (tabla de arriba): viaja con el código, funciona igual en on-prem y corre donde los permisos de `storage/logs` son los correctos, que es dentro del contenedor | — | — |
 | `docker system prune` | Libera las capas huérfanas que deja cada despliegue (suelen ser la causa real de quedarse sin inodes) | semanal | `docker system df` |
 
@@ -324,7 +326,10 @@ que 30 días de copias diarias son ~14 GB.
 Se gestionan **desde el panel**, en `/backup`, con el mismo modelo que Dokploy:
 
 - **Destinos**: el catálogo de sitios donde dejar copias (Google Drive, S3/B2/R2, SFTP, disco
-  montado). Se crean una vez y los comparten todos los trabajos. Sus credenciales se guardan
+  montado). Se crean una vez y los comparten todos los trabajos. La carpeta de un disco montado
+  tiene que ser **absoluta** y estar fuera del proyecto (por ejemplo `/var/backups/copias`,
+  creada con `sudo install -d -m 700 /var/backups/copias`): una ruta relativa acababa dentro de
+  la carpeta del sistema, y el panel ya no la acepta. Sus credenciales se guardan
   **cifradas** con la `APP_KEY`, y hay un botón **Probar** que escribe un archivo y lo lee de
   vuelta: comprobar solo que la carpeta existe dejaría pasar un token de solo lectura, que
   fallaría en la primera copia real.
