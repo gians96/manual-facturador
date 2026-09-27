@@ -21,6 +21,18 @@ Los ejemplos usan el prefijo de contenedor `nt-suite_pro`; sustitúyelo por el d
 
 ## Comprobación rápida
 
+Sin entrar al servidor: en el panel del sistema, **Información**. Arriba hay una franja con
+servicios, procesador, RAM, disco e inodes; si algo falla, esa cifra sale en rojo. Debajo, una
+sección por tema:
+- **Resumen:** gráficas y servicios;
+- **Rendimiento;**
+- **Almacenamiento;**
+- **Consumo por tenant;**
+- **PHP y versión:** incluye si OPcache está activo.
+
+La franja solo lee lo que dejan las tareas de abajo. Si una cifra no se mueve, esa tarea es la
+que hay que revisar.
+
 Todo lo programado depende de un solo proceso: el `schedule:run` del contenedor
 `scheduling_*`. Si ese contenedor está parado, **nada de la tabla de abajo se ejecuta** y no
 hay ningún aviso.
@@ -427,7 +439,7 @@ restic stats --mode raw-data      # lo que ocupa de verdad, ya deduplicado
 
 ## Rendimiento por pantalla (qué optimizar)
 
-En el panel: **Información → Rendimiento por pantalla**. Dice qué pantallas consumen el
+En el panel: **Información → Rendimiento**. Dice qué pantallas consumen el
 servidor, sin entrar por SSH:
 - la parte del tiempo total que se lleva cada una (**peso**);
 - cuántas pasan de 1 s;
