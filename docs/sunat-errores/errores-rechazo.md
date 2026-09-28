@@ -116,6 +116,21 @@ Estos errores **invalidan el comprobante electrónico**.
 | 2670 | Razón Social ≠ RUC |
 | 2752 | Ítem duplicado |
 
+### 🗑️ Comunicación de baja (anulaciones)
+
+:::info Lo rechazado es la anulación, no el comprobante
+Cuando SUNAT rechaza una comunicación de baja o un resumen de anulación, el comprobante **sigue vigente**. El sistema deja la anulación en **RECHAZADO** y el comprobante vuelve a **ACEPTADO**, salvo que SUNAT diga que ya está de baja: entonces queda **POR ANULAR**. Ver [Anular comprobantes](../guias-adicionales/tipos-de-comprobantes/anular-comprobantes.md).
+:::
+
+| Código | Descripción | Qué hacer |
+|--------|-------------|-----------|
+| 2105 | Comprobante a dar de baja no registrado en SUNAT | Revisarlo en el Validador de documentos: SUNAT no lo tiene |
+| 2106 | Factura ya está en baja | El comprobante queda Por anular: verificarlo en el Validador de documentos |
+| 2323 | Documento ya informado en otra comunicación de baja | Igual que 2106 |
+| 2324 | El archivo de la comunicación de baja ya se presentó | Igual que 2106 |
+| 2957 | Baja fuera de plazo, contado desde la emisión | Emitir una nota de crédito (tipo 01) |
+| 2958 | Baja fuera de plazo, contado desde la recepción | Emitir una nota de crédito (tipo 01) |
+
 ---
 
 ### Características:
