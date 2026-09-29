@@ -275,7 +275,8 @@ momento.
 ### La fila de un comprobante no trae el estado
 
 Lo que ves arriba es todo lo que devuelve una fila de boleta, factura o nota: `id`, `number`,
-`external_id` y `warnings`. **No hay `state_type_id`, ni `links`, ni la respuesta de SUNAT.**
+`external_id` y `warnings`. **No hay `state_type_id`, ni `links`, ni la respuesta de SUNAT, ni el
+`qr`.** Para el QR, ver [la tabla de abajo](#estado-xml-pdf-y-cdr).
 
 Eso no significa que el comprobante no se haya enviado. `sync-batch` reutiliza por dentro el
 mismo motor que `POST /api/documents`: una **factura** sale hacia SUNAT si el envío automático
@@ -335,6 +336,8 @@ devuelve:
 | `links.pdf` | `GET /downloads/document/pdf/{external_id}`, o con el formato: `…/a4`, `…/ticket` |
 | `links.cdr` | `GET /downloads/document/cdr/{external_id}`, **solo si el comprobante tiene CDR propio** (tabla de abajo) |
 | `data.print_ticket` | `GET /print/document/{external_id}/ticket` (o `/a4`) |
+| `data.qr` y `data.number_to_letter` | `POST /api/documents/status` con `{"external_id": "…"}` (con token): vienen en `data.qr` y `data.number_to_letter`, para facturas, boletas y sus notas → [26](26-envio-diferido-update-estado.md#por-serie-numero) |
+| `data.hash` | Ninguna consulta lo devuelve suelto. Es el `<ds:DigestValue>` del XML, y ya va dentro del QR |
 | `response` (lo que contestó SUNAT) | Está dentro del CDR: `ResponseCode` y `Description` |
 
 **Las URL de `/downloads` y `/print` las armas tú**: son siempre iguales, cambia solo el
@@ -394,6 +397,21 @@ SELECT CONCAT(@Base, '/downloads/document/xml/', @ExternalId)       AS url_xml,
 
 Y el estado, con la misma llamada que ya haces al lote pero por `GET` a
 `/api/document_check_server/{external_id}`, leyendo `JSON_VALUE(@Resp, '$.state_type_id')`.
+
+El QR, por `POST` a `/api/documents/status` con el cuerpo `{"external_id": "…"}`. Son unos
+90 000 caracteres, así que **no sirve `JSON_VALUE`**: pasados los 4000 devuelve `NULL` sin avisar
+(o un error, en modo `strict`). Léelo con `OPENJSON` y guárdalo en una columna `VARCHAR(MAX)`:
+
+```sql
+-- @Resp: la respuesta de POST /api/documents/status, en NVARCHAR(MAX).
+SELECT qr, number_to_letter
+FROM OPENJSON(@Resp, '$.data')
+WITH (qr               NVARCHAR(MAX) '$.qr',
+      number_to_letter NVARCHAR(200) '$.number_to_letter');
+```
+
+Lo mismo al leer el `qr` de la respuesta de `POST /api/documents`. Formato y contenido del QR:
+[El QR](09-boleta-factura.md#qr).
 
 #### Sin pasar por la API
 

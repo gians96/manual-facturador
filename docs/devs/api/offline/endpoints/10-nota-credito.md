@@ -401,6 +401,9 @@ Misma estructura que boleta/factura:
         "external_id": "uuid-nc",
         "state_type_id": "05",
         "state_type_description": "Aceptado",
+        "number_to_letter": "Tres  con 69/100 ",
+        "hash": "v4kNs+x3AQlhN/VaSqj7CnK6DPU=",
+        "qr": "iVBORw0KGgoAAAANSUhEUgAAAJYAAACW…",
         "id": 456,
         "print_ticket": "https://demo.nt-suite.pro/print/document/uuid-nc/ticket"
     },
@@ -415,6 +418,12 @@ Misma estructura que boleta/factura:
     }
 }
 ```
+
+`qr`, `hash` y `number_to_letter` vienen en toda nota de crédito, sea de una factura o de una
+boleta, y aunque la nota quede en `01` sin enviarse. El QR es un PNG en base64 sin prefijo, de
+unos 90 000 caracteres; qué lleva dentro y cómo guardarlo:
+[El QR](09-boleta-factura.md#qr). Si la nota se emitió por `sync-batch`, su fila no lo trae: se
+pide con `POST /api/documents/status`.
 
 Con `state_type_id: "01"` el bloque `response` llega como `[]` —un arreglo vacío, no un objeto— y `links.cdr` como `""`: ver [Qué ves en la respuesta](#como-llega-a-sunat).
 

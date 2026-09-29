@@ -161,6 +161,9 @@ Idéntico a la nota de crédito, y conviene no darlo por supuesto: **la ruta la 
         "external_id": "uuid-nd",
         "state_type_id": "05",
         "state_type_description": "Aceptado",
+        "number_to_letter": "Sesenta  con 00/100 ",
+        "hash": "phOnqx2ptstSua6gQm21a0VjpQU=",
+        "qr": "iVBORw0KGgoAAAANSUhEUgAAAJYAAACW…",
         "id": 789,
         "print_ticket": "https://demo.nt-suite.pro/print/document/uuid-nd/ticket"
     },
@@ -177,6 +180,11 @@ Idéntico a la nota de crédito, y conviene no darlo por supuesto: **la ruta la 
 ```
 
 Si la nota no se remitió en el acto, `state_type_id` llega como `"01"` (Registrado), `links.cdr` vacío y `response` como `[]` (arreglo vacío, no objeto). Es una emisión correcta pendiente de envío, no un error.
+
+`qr`, `hash` y `number_to_letter` vienen siempre, igual que en la nota de crédito: sea la nota de
+una factura o de una boleta, y esté o no enviada. El QR es un PNG en base64 sin prefijo, de unos
+90 000 caracteres; qué lleva dentro y cómo guardarlo: [El QR](09-boleta-factura.md#qr). Si la nota
+se emitió por `sync-batch`, su fila no lo trae: se pide con `POST /api/documents/status`.
 
 ---
 

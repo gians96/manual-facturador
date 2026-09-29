@@ -305,11 +305,39 @@ Detalle y seguimiento en
 | `data.external_id` | string | UUID del documento. Se usa para NC/ND y links |
 | `data.filename` | string | `{RUC}-{tipo}-{serie}-{numero}` |
 | `data.state_type_id` | string | `"01"` Registrado, `"03"` Enviado, `"05"` Aceptado |
+| `data.number_to_letter` | string | El total en letras, tal como sale en el PDF: `"Ciento cinco  con 69/100 "` (con el doble espacio y el espacio final) |
+| `data.hash` | string | Valor resumen del XML firmado (`<ds:DigestValue>`). Es el último campo del QR |
+| `data.qr` | string | El QR del comprobante: PNG en base64. Ver [El QR](#qr) |
 | `data.print_ticket` | string | URL para imprimir ticket |
 | `links.pdf` | string | URL para descargar PDF |
 | `links.xml` | string | URL para descargar XML |
 | `links.cdr` | string | URL para descargar CDR (constancia SUNAT) |
 | `warnings` | array | Avisos sobre datos enviados que no son válidos; el comprobante ya está emitido. `[]` si no hay. Ver [avisos](../../errores-de-la-api.md#avisos) |
+
+### El QR — `data.qr` {#qr}
+
+Viene en **toda** emisión por `POST /api/documents`: factura, boleta, nota de crédito y nota de
+débito, sea la nota de una factura o de una boleta. Llega desde el primer momento, aunque el
+comprobante siga en `01` (Registrado) y no se haya enviado a SUNAT.
+
+- Es un **PNG de 150 × 150 px en base64, sin el prefijo** `data:image/png;base64,`: para mostrarlo en
+  HTML, anteponlo tú. Empieza siempre por `iVBORw0KGgo`.
+- Ocupa **unos 90 000 caracteres**. Si lo guardas en SQL Server, la columna tiene que ser
+  `VARCHAR(MAX)` o `NVARCHAR(MAX)`: en un `VARCHAR(8000)` se corta y la imagen queda inservible.
+  Y léelo con `OPENJSON … WITH (qr NVARCHAR(MAX) '$.qr')`, no con `JSON_VALUE`, que pasados los
+  4000 caracteres devuelve `NULL` sin avisar ([ejemplo](15-sync-batch.md#desde-sql-server)).
+- Codifica el texto del formato de SUNAT, separado por `|` y con un `|` final:
+
+  ```
+  RUC|tipo|serie|número|IGV|total|fecha de emisión|tipo doc. cliente|nro. doc. cliente|hash|
+  ```
+
+  Por ejemplo, el de una nota de crédito de boleta:
+  `12312312313|07|BC01|5|1.80|11.80|2026-09-29|1|76251607|v4kNs+x3AQlhN/VaSqj7CnK6DPU=|`
+
+Si el comprobante se creó por [`sync-batch`](15-sync-batch.md), la fila no trae el QR: se pide
+después con [`POST /api/documents/status`](26-envio-diferido-update-estado.md#por-serie-numero), que
+lo devuelve en `data.qr` para los cuatro tipos.
 
 ---
 
