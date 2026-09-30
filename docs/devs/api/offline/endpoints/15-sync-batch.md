@@ -187,7 +187,8 @@ Authorization: Bearer {token}
 Manda `cash_id` cuando la caja ya se sincronizó y conoces su ID de servidor. Manda
 `cash_offline_id` cuando la caja se abrió sin conexión y viaja en el mismo lote, dentro de
 `cash_openings[]`: el backend resuelve el UUID contra la caja recién creada. Puedes mandar
-los dos; se intenta primero `cash_id`.
+los dos; se intenta primero `cash_id`. Con el [contexto de caja](#contexto-de-caja) activado en
+el servidor es al revés: si llega `cash_offline_id`, manda él.
 
 Si no mandas ninguno, la venta se registra en la caja que ese usuario tenga abierta en ese
 momento.
@@ -564,10 +565,20 @@ syncBatch(Request $request)
 
 ### Documento duplicado (filename unique constraint)
 
-Si un documento `01`/`03`/`07`/`08` tiene un filename que ya existe, el backend:
-1. Captura el error MySQL 1062 (duplicate entry)
-2. Busca el documento existente por filename
-3. Retorna los datos del documento existente como éxito con `was_duplicate: true`
+Si al guardar un `01`/`03`/`07`/`08` la base rechaza el número porque ya existe (MySQL 1062, lo
+normal cuando dos envíos del mismo comprobante llegan a la vez), el backend busca el comprobante
+que ya está guardado y lo compara con la fila:
+
+- **Mismo `offline_id`:** es tu venta. La fila sale como éxito con el comprobante que ya estaba
+  guardado, y no se emite otro.
+- **Otro `offline_id`:** el número es de otra venta. Sale `CONFLICT_NUMBER`.
+- **La fila no trae `offline_id`:** no hay con qué comparar, y se devuelve el comprobante existente
+  como éxito.
+
+:::info Desde el 2026-09-30
+Antes, con `offline_id`, se devolvía el comprobante existente como éxito aunque fuera de otra
+venta, y además se le cambiaba el `offline_id` por el tuyo.
+:::
 
 ### Nota de Venta duplicada
 
@@ -602,6 +613,7 @@ tener que leer el texto del `message`. Es un campo **añadido**: si tu integraci
 | `DISPATCH_NOT_FOUND` · `DISPATCH_ALREADY_ACCEPTED` · `DISPATCH_NUMBER_TAKEN` | Solo guías: una corrección con `external_id` que no se puede aplicar, porque la guía no existe, SUNAT ya la aceptó, o SUNAT ya tiene su número (`1032`/`1033`) → [corregir una guía rechazada por el lote](#corregir-una-guía-rechazada-por-el-lote) | ❌ No |
 | `DATABASE_ERROR` | Fallo de base de datos **del servidor**, no de tu payload. Desde el 2026-09-15 `errors.tipo` dice cuál (ver abajo) | ⚠️ Según `errors.tipo` |
 | `PROCESSING_ERROR` | Excepción que el servidor no sabe atribuir. **Ya no incluye campos ausentes del payload** | ⚠️ Uno, y escalar con el `offline_id` |
+| `CASH_NONE_OPEN` | Solo con el [contexto de caja](#contexto-de-caja) activado: la venta no pidió caja y el usuario no tiene ninguna abierta. **No se emitió.** Sin el contexto, este caso sale como `PROCESSING_ERROR` | ✅ Abrir caja y reintentar |
 
 :::warning Si reintentas `PROCESSING_ERROR` sin límite, ponle tope
 Hasta el 2026-09-09 **un campo ausente del payload salía con este código**, y con este texto:
@@ -691,7 +703,7 @@ Cada fila de `results[]` lleva estos dos campos:
 | Campo | Tipo | Significa |
 |---|---|---|
 | `cash_registered` | bool | `true` si la venta está en una caja, ya sea porque se registró ahora o porque ya lo estaba |
-| `cash_error_code` | string \| null | `null` cuando `cash_registered` es `true`. Si no, cuál de los cuatro fallos fue |
+| `cash_error_code` | string \| null | `null` cuando `cash_registered` es `true`. Si no, cuál fue el fallo ([los códigos](#los-codigos-de-caja)) |
 | `cash_message` | string \| null | Frase lista para enseñar al cajero: nombra la caja concreta y dice si hay que reintentar |
 
 Ejemplo de una fila con fallo de caja. Fíjate en que `success` es `true`:
@@ -734,6 +746,11 @@ JSON corregido, pero **sin su `external_id`**, vuelve como `was_duplicate` y la 
 aplica. Con el `external_id`, desde el 2026-09-18, se corrige →
 [corregir una guía rechazada por el lote](#corregir-una-guía-rechazada-por-el-lote).
 
+**Si la misma venta llega a la vez por `POST /api/documents` y por el lote** (desde el
+2026-09-30), el lote espera a que termine el `POST` y devuelve el comprobante que emitió este, en
+una fila de éxito. No emite otro, y la venta se queda en la caja donde la registró el `POST`,
+aunque el lote pida otra. Antes podía salir un segundo comprobante o un `CONFLICT_NUMBER` falso.
+
 ### `cash_summary` — el recuento del lote
 
 `data.cash_summary` trae cuántas ventas cayeron en cada desenlace, para ver de un vistazo si
@@ -745,7 +762,7 @@ el lote entero choca contra lo mismo sin recorrer `results[]`:
 
 Las claves son los `cash_error_code` más `ok`, `already_registered` y `not_applicable`.
 
-### Los cuatro códigos
+### Los códigos {#los-codigos-de-caja}
 
 | `cash_error_code` | Significa | Qué debe hacer el app |
 |---|---|---|
@@ -753,6 +770,7 @@ Las claves son los `cash_error_code` más `ok`, `already_registered` y `not_appl
 | `CASH_OTHER_USER` | La caja existe pero pertenece a otro usuario | ❌ No reintentar. Es un error de datos del app |
 | `CASH_CLOSED` | La caja existe y es tuya, pero ya se cerró | ❌ No reintentar. Ver abajo |
 | `CASH_NONE_OPEN` | No mandaste caja y el usuario no tiene ninguna abierta | Abrir caja y reintentar |
+| `CASH_DUPLICATE_NOT_IN_CASH` | Desde el 2026-09-30. La venta ya estaba emitida (la creó un `POST` directo con el mismo `offline_id` mientras llegaba el lote) y no figura en ninguna caja. No se registra en la caja del lote, para no contarla dos veces. No debería darse, porque la emisión directa exige caja abierta | ❌ No reintentar. Revisar a mano en qué caja corresponde |
 
 ### Regla que evita el bucle infinito
 
@@ -775,6 +793,42 @@ cerrarlo. En ese caso la venta **ya quedó registrada** en la caja que estuviera
 sincronizar, así que su importe no se ha perdido: cuenta en el arqueo del día en que se
 sincronizó, no en el del turno en que se hizo. Volver a engancharla a su caja original la
 contaría dos veces.
+
+Con el [contexto de caja](#contexto-de-caja) activado es distinto: la venta no cae en la caja
+abierta, sino que queda sin caja.
+
+### Con el contexto de caja (`offline_sync_cash_context`) {#contexto-de-caja}
+
+:::note Apagado por defecto
+Es una opción del servidor, por empresa. Si no te dijeron que está activada, no lo está y nada de
+esta sección aplica.
+:::
+
+Con el contexto de caja, una venta `01`/`03`/`07`/`08`/`80` que trae `cash_id` o `cash_offline_id`
+se registra **en esa caja**, no en la que el usuario tenga abierta al subirla. Así, una venta
+hecha sin conexión cuenta en el arqueo del turno en que se hizo.
+
+- **Qué caja cuenta.** Si llega `cash_offline_id`, manda él. `cash_id` solo cuenta cuando no llega
+  `cash_offline_id`.
+- **Los códigos cambian de sentido.** Con `CASH_NOT_FOUND`, `CASH_OTHER_USER` y `CASH_CLOSED`, la
+  venta se emitió y **quedó sin caja**. Sin el contexto, caía en la caja abierta.
+- **El pago en efectivo va a la caja pedida.** Si esa caja no se puede usar, la venta se emite igual,
+  pero su pago en efectivo no suma en ninguna caja, y la fila trae en `data.warnings`:
+
+  ```json
+  { "codigo": "PAGO_SIN_CAJA", "campo": "pagos", "mensaje": "1 pago(s) en efectivo sin pago de caja: la caja pedida no se puede usar (CASH_CLOSED). La venta está emitida; ese ingreso no suma en ninguna caja de Finanzas (ver offline:cash-audit)." }
+  ```
+
+  Con `CASH_NOT_FOUND`, cuando llega la apertura y reintentas la venta (por el lote o por
+  [`cash_document`](07-caja.md)), se registra en su caja y se crea ese pago, una sola vez. Con la
+  caja cerrada o de otro usuario, no se recupera.
+- **Sin caja abierta.** Si una venta no pide caja y el usuario no tiene ninguna abierta, falla con
+  `error_code: CASH_NONE_OPEN` y no se emite. Sin el contexto, sale como `PROCESSING_ERROR`.
+
+Con **una caja abierta por usuario** (`single_open_cash_per_user`, también apagado por defecto),
+cada apertura de `cash_openings[]` se crea igual. Pero si el usuario ya tenía otra caja abierta
+(sin contar las que cierra el mismo lote), su fila de `cash_results` trae
+`open_cash_conflict: {"cash_id": N}`.
 
 ### Comprobantes que no pasan por caja
 

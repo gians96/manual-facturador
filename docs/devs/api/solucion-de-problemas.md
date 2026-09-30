@@ -366,6 +366,7 @@ el síntoma viejo en servidores anteriores.
 | 2026-09-17 | La dirección de llegada de la guía `09` deja de fallar con MySQL 1452; el ubigeo enviado como número es un 422 antes de emitir, en vez de viajar crudo al XML; nace `restriccion_no_atribuible` |
 | 2026-09-18 | Una guía se corrige por el lote con su mismo `offline_id` si trae su `external_id` (`was_corrected: true`); el `was_duplicate` de una guía trae su estado y, si está rechazada, lo avisa |
 | 2026-09-21 | En `POST /api/summaries`, `"codigo_tipo_proceso": 3` como número vale lo mismo que `"3"` (antes anulaba todo lo de la fecha en `01`); un tipo fuera de catálogo es 422 `INVALID_PROCESS_TYPE`, y la falta de fecha o tipo, 422 `MISSING_FIELDS` (antes 500). `POST /api/documents/status` exige el token (antes respondía sin él) y sus errores son 422 con `error_code` (antes 500) |
+| 2026-09-30 | Dos envíos a la vez con el mismo `offline_id` devuelven la misma venta en vez de emitir dos. En el lote, un número que choca con otra venta es `CONFLICT_NUMBER` (antes se devolvía esa venta como tuya) y nace `CASH_DUPLICATE_NOT_IN_CASH`. `POST /api/cash/open` solo abre: con `id` responde `CASH_OPEN_WITH_ID` (antes editaba la caja). `POST /api/cash/cash_document` ya no duplica el crédito ni los pagos de caja |
 
 ## Ver también
 

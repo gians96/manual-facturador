@@ -265,8 +265,7 @@ Backend: para cada sale
     ├── SELECT WHERE offline_id = ?
     │   ├── ENCONTRADO → response { success: true, was_duplicate: true, data: {...} }
     │   └── NO ENCONTRADO
-    │       ├── Crear comprobante
-    │       ├── UPDATE SET offline_id = ?
+    │       ├── Crear comprobante y guardar su offline_id (misma transacción)
     │       └── response { success: true, data: {...} }
     │
     ▼
@@ -284,6 +283,33 @@ JSON corregido **no se aplicó**. Para que se aplique, la fila tiene que traer e
 la guía, y entonces vuelve con `was_corrected: true` en vez de `was_duplicate` →
 [corregir una guía rechazada por el lote](15-sync-batch.md#corregir-una-guía-rechazada-por-el-lote).
 :::
+
+---
+
+## Dos envíos a la vez con el mismo `offline_id` {#dos-envios-a-la-vez}
+
+:::info Desde el 2026-09-30
+`POST /api/documents` y `POST /api/sale-note` reconocen también un `offline_id` que **está llegando
+en ese momento**, no solo uno que ya estaba guardado.
+:::
+
+Pasa cuando el app corta la espera y reintenta, o cuando encola la venta y la sube por el lote
+mientras el primer envío sigue esperando a SUNAT. Antes, durante esa espera, la venta todavía no
+tenía guardado su `offline_id`, así que el segundo envío no la reconocía: salía un segundo
+comprobante o un `CONFLICT_NUMBER` falso.
+
+Ahora el `offline_id` se guarda en el mismo momento en que se crea la venta, y el segundo envío
+espera a que termine el primero:
+
+- Por `POST /api/documents` o `POST /api/sale-note`, recibe la venta del primero con
+  `was_duplicate: true` y HTTP 200.
+- Por el lote, recibe una fila de éxito con ese comprobante, sin un segundo registro en caja →
+  [sync-batch](15-sync-batch.md#la-idempotencia-se-comprueba-antes-que-el-payload).
+
+Si el primer envío tarda más de lo que la base de datos deja esperar (unos 50 segundos, por
+ejemplo porque SUNAT no responde), el segundo termina con un error y sin emitir nada. En el lote es
+`DATABASE_ERROR` con `errors.tipo: bloqueo_temporal`. Reintenta una vez y recibirás la venta que
+emitió el primero.
 
 ---
 
