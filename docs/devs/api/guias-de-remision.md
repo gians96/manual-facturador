@@ -66,7 +66,7 @@ Por eso el recorrido es este:
 |---|---|---|---|---|
 | 1. `POST /api/dispatches` | `01` Registrado | Firmado, ya existe | Ya existe | ❌ No |
 | 2. `POST /api/dispatches/send` | `03` Enviado | Igual | Igual | ❌ No, SUNAT solo acusó recepción |
-| 3. `POST /api/dispatches/status_ticket` con `codRespuesta 0` | `05` Aceptada | Igual | Sigue sin QR en disco | ✅ Sí, en la guía |
+| 3. `POST /api/dispatches/status_ticket` con `codRespuesta 0` | `05` Aceptada | Igual | Se regenera con QR (A4) | ✅ Sí, en la guía y en la respuesta |
 
 El paso 3 no es una sola llamada. Mientras SUNAT responda `98`, la guía sigue en proceso y hay
 que volver a consultar. El QR aparece en la consulta que trae el CDR aceptado, no antes.
@@ -89,16 +89,61 @@ puedan enlazar el documento sin autenticarse.
 Ese PDF temprano es un **borrador interno**. Sirve para revisar el contenido antes de enviar,
 y no vale ante un control en carretera: sin QR, el fiscalizador no tiene qué escanear.
 
+### Hash, QR y enlace de SUNAT en la respuesta
+
+Desde el 2026-10-01 la respuesta de las guías trae lo mismo que la de facturas y boletas, más el
+enlace que manda SUNAT. Solo se añadieron claves: lo que ya leías no cambió.
+
+| Campo | `POST /api/dispatches` | `status_ticket` aceptada (`05`) u observada (`07`) | Qué es |
+|---|---|---|---|
+| `data.hash` | ✅ | ✅ | Valor resumen (`DigestValue`) de la firma del XML |
+| `data.qr` | `null` | ✅ | PNG en base64 del QR, el mismo que se imprime en el PDF |
+| `data.qr_url` | `null` | ✅ | La URL que SUNAT manda en el CDR |
+| `links.pdf_a4` | ✅ | ✅ | PDF en A4 |
+| `links.pdf_ticket` | ✅ | ✅ | PDF en ticket de 80 mm |
+
+```json
+{
+    "success": true,
+    "data": {
+        "number": "T001-5",
+        "filename": "20123456789-09-T001-5",
+        "external_id": "2ce392d5-6aa5-4003-809c-fcd8203f4d5b",
+        "state_type_id": "05",
+        "hash": "Fgwxc5NFjM67qIrgNnNkSFNBB1w=",
+        "qr": "iVBORw0KGgoAAAANSUhEUgAAAJYAAACW...",
+        "qr_url": "https://e-factura.sunat.gob.pe/v1/contribuyente/gre/comprobantes/descargaqr?hashqr=..."
+    },
+    "links": {
+        "xml": "https://tu-dominio.com/downloads/dispatch/xml/2ce392d5-...",
+        "pdf": "https://tu-dominio.com/downloads/dispatch/pdf/2ce392d5-...",
+        "cdr": "https://tu-dominio.com/downloads/dispatch/cdr/2ce392d5-...",
+        "pdf_a4": "https://tu-dominio.com/downloads/dispatch/pdf/2ce392d5-.../a4",
+        "pdf_ticket": "https://tu-dominio.com/downloads/dispatch/pdf/2ce392d5-.../ticket"
+    },
+    "message": "El Comprobante numero T001-5, ha sido aceptado"
+}
+```
+
+**`qr_url` es el enlace de SUNAT, no del Facturador.** Abre la consulta de la guía en SUNAT, desde
+donde se descarga la representación impresa que genera SUNAT. Es lo que codifica el QR y lo que
+lee el fiscalizador en carretera. Solo existe con CDR: con la guía registrada (`01`) o en proceso
+(`03`), `qr` y `qr_url` salen `null`. Las respuestas de error también traen estos campos.
+
+Si tu sistema imprime su propio formato, puedes usar `qr` tal cual (base64 de un PNG) o generar el
+QR a partir de `qr_url`.
+
 ### Cómo obtener el PDF ya con QR
 
-La descarga se **autorepara**. Cada vez que se pide el PDF de una guía remitente que ya tiene
-QR, el sistema lo vuelve a generar antes de entregarlo. La receta para el integrador es la de
-siempre:
+Al consultar el ticket con resultado aceptado, el PDF guardado se regenera con el QR. Ese PDF es
+**A4**, aunque la guía se haya emitido con `formato_pdf: ticket`. Para cada formato usa su enlace:
 
 1. Consultar el ticket hasta que el estado sea `05`.
-2. Volver a llamar a `GET /downloads/dispatch/pdf/{external_id}`.
+2. Descargar `links.pdf_a4` o `links.pdf_ticket` (`GET /downloads/dispatch/pdf/{external_id}/a4`
+   o `/ticket`). La descarga genera el PDF en ese formato, con QR.
 
-No hace falta ningún endpoint especial de "refrescar PDF", ni volver a emitir la guía.
+`links.pdf` (sin formato) devuelve el A4 con QR. No hace falta ningún endpoint especial de
+"refrescar PDF", ni volver a emitir la guía.
 
 :::note El diseño sale de la plantilla vigente
 Cada vez que se regenera, el PDF A4 usa la plantilla de guía que la empresa tenga asignada en ese
@@ -107,37 +152,10 @@ a descargar saldrán con el diseño nuevo; los datos no cambian. →
 [Plantillas PDF - Guías de remisión](../../modulos/configuracion-y-mas/configuracion-globales/Plantillas/Plantillas-pdf-guias.md)
 :::
 
-:::warning Consultar el ticket NO deja el QR en el archivo guardado
-Por ningún camino. Medido sobre guías reales contra el emulador: tras emitir, enviar y
-consultar el ticket una vez, la guía vuelve aceptada y el `qr_url` queda guardado, pero el PDF
-en disco pesa unos 31 KB y **no contiene ninguna imagen**. Tras volver a pedirlo pasa a unos
-99 KB con el QR dentro.
-
-La causa está en cómo se encadenan dos líneas. `POST /api/dispatches/status_ticket` carga la
-guía en memoria **antes** de consultar a SUNAT, y luego le pasa a la generación del PDF ese
-mismo objeto, que sigue teniendo el `qr_url` vacío. Llama a regenerar, pero con datos viejos.
-El botón *Consultar ticket* del panel llega al mismo controlador, así que le pasa lo mismo. El
-modal que aparece al terminar de emitir va por otra ruta que ni siquiera intenta regenerar.
-
-Lo que sí funciona es la descarga, y es lo único que hace falta:
-
-- `GET /downloads/dispatch/pdf/{external_id}` vuelve a generar el PDF con datos frescos cada
-  vez que la guía ya tiene QR. Esta es la vía normal.
-- `GET /print/dispatch/{external_id}/{formato}` regenera siempre, y a diferencia de la
-  descarga también cubre la guía transportista (`31`), que hoy queda fuera de esa
-  regeneración automática.
-
-El QR nunca se pierde: está guardado en la guía. Lo que puede quedar viejo es el archivo.
-:::
-
-:::danger El correo de la guía sale sin QR, siempre
-El envío automático por correo se dispara al **emitir**, en el paso 1, cuando SUNAT todavía no
-ha respondido nada. Y adjunta el archivo que hay en disco, sin pasar por la descarga que lo
-regenera. El resultado es que el destinatario recibe un PDF sin código QR aunque la guía
-acabe aceptada minutos después.
-
-Si el cliente necesita el PDF con QR por correo, hay que reenviarlo a mano desde *Opciones*
-una vez la guía figure como aceptada, y **después** de haberla descargado al menos una vez.
+:::warning El correo de la emisión sale sin QR
+El envío por correo de la emisión (paso 1) sale cuando SUNAT todavía no respondió, así que ese
+PDF no puede tener QR. Cuando la consulta del ticket deja la guía aceptada, se envía otra vez,
+ya con QR, si la empresa tiene activo el envío automático de comprobantes por correo.
 :::
 
 ### Enviar sola no basta

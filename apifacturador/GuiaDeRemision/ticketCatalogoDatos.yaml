@@ -154,6 +154,28 @@ components:
               type: string
               description: '"01" Registrado, "03" Enviado/En proceso, "05" Aceptado, "07" Observado, "09" Rechazado.'
               example: "05"
+            hash:
+              type: string
+              nullable: true
+              description: >-
+                Valor resumen (DigestValue) de la firma del XML, igual que en facturas y boletas. Sale desde
+                que la guía está firmada. Si firmó el PSE, es el hash que devolvió el PSE.
+              example: "Fgwxc5NFjM67qIrgNnNkSFNBB1w="
+            qr:
+              type: string
+              nullable: true
+              description: >-
+                Imagen PNG del QR en base64 (150 px), la misma que se imprime en el PDF. Codifica `qr_url`.
+                `null` mientras la guía no tenga CDR (registrada "01" o en proceso "03").
+              example: "iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAIAAACzY+a1AAAACXBIWXMAAA7EAAAOxAGVKw4b..."
+            qr_url:
+              type: string
+              nullable: true
+              description: >-
+                Enlace que SUNAT manda en el CDR de la guía aceptada (u observada): la consulta de la guía en
+                SUNAT, desde la que se descarga su representación impresa. Es lo que codifica el QR.
+                `null` mientras la guía no tenga CDR (registrada "01" o en proceso "03").
+              example: "https://e-factura.sunat.gob.pe/v1/contribuyente/gre/comprobantes/descargaqr?hashqr=TRYaZQprVvn8Eq0vlmcFs..."
         links:
           type: object
           description: Enlaces de descarga de los archivos de la guía.
@@ -168,6 +190,14 @@ components:
               type: string
               description: Disponible una vez que SUNAT acepta la guía.
               example: "https://tu-dominio.com/downloads/dispatch/cdr/2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            pdf_a4:
+              type: string
+              description: PDF en formato A4. Se genera al descargarlo, con QR si la guía ya lo tiene.
+              example: "https://tu-dominio.com/downloads/dispatch/pdf/2c1a2e6a-680d-4b60-96fc-6eb568971e44/a4"
+            pdf_ticket:
+              type: string
+              description: PDF en formato ticket (80 mm). Se genera al descargarlo, con QR si la guía ya lo tiene.
+              example: "https://tu-dominio.com/downloads/dispatch/pdf/2c1a2e6a-680d-4b60-96fc-6eb568971e44/ticket"
         message:
           type: string
           example: "La Guia de Remision T001-1 ha sido aceptada"

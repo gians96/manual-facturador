@@ -655,6 +655,56 @@ components:
                 Identificador único de la guía. Guardarlo — se usa en
                 `POST /api/dispatches/send` y `POST /api/dispatches/status_ticket`.
               example: "2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            state_type_id:
+              type: string
+              description: '"01" Registrado. Pasa a "03", "05", "07" o "09" al enviar y consultar el ticket.'
+              example: "01"
+            hash:
+              type: string
+              nullable: true
+              description: >-
+                Valor resumen (DigestValue) de la firma del XML, igual que en facturas y boletas. Sale desde
+                que la guía está firmada. Si firmó el PSE, es el hash que devolvió el PSE.
+              example: "Fgwxc5NFjM67qIrgNnNkSFNBB1w="
+            qr:
+              type: string
+              nullable: true
+              description: >-
+                Imagen PNG del QR en base64 (150 px), la misma que se imprime en el PDF. Codifica `qr_url`.
+                Al emitir sale siempre `null`: SUNAT aún no devolvió el CDR. Llega en `POST /api/dispatches/status_ticket`.
+              example: "iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAIAAACzY+a1AAAACXBIWXMAAA7EAAAOxAGVKw4b..."
+            qr_url:
+              type: string
+              nullable: true
+              description: >-
+                Enlace que SUNAT manda en el CDR de la guía aceptada (u observada): la consulta de la guía en
+                SUNAT, desde la que se descarga su representación impresa. Es lo que codifica el QR.
+                Al emitir sale siempre `null`: SUNAT aún no devolvió el CDR. Llega en `POST /api/dispatches/status_ticket`.
+              example: "https://e-factura.sunat.gob.pe/v1/contribuyente/gre/comprobantes/descargaqr?hashqr=TRYaZQprVvn8Eq0vlmcFs..."
+        links:
+          type: object
+          description: >-
+            Enlaces de descarga. `cdr` sale `null` hasta que SUNAT acepte la guía. Campo aditivo.
+          properties:
+            xml:
+              type: string
+              example: "https://tu-dominio.com/downloads/dispatch/xml/2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            pdf:
+              type: string
+              description: PDF tal como está guardado (A4 o el `formato_pdf` de la emisión).
+              example: "https://tu-dominio.com/downloads/dispatch/pdf/2c1a2e6a-680d-4b60-96fc-6eb568971e44"
+            cdr:
+              type: string
+              nullable: true
+              example: null
+            pdf_a4:
+              type: string
+              description: PDF en formato A4. Se genera al descargarlo, con QR si la guía ya lo tiene.
+              example: "https://tu-dominio.com/downloads/dispatch/pdf/2c1a2e6a-680d-4b60-96fc-6eb568971e44/a4"
+            pdf_ticket:
+              type: string
+              description: PDF en formato ticket (80 mm). Se genera al descargarlo, con QR si la guía ya lo tiene.
+              example: "https://tu-dominio.com/downloads/dispatch/pdf/2c1a2e6a-680d-4b60-96fc-6eb568971e44/ticket"
       required:
         - success
         - data
