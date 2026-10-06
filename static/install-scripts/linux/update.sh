@@ -460,7 +460,7 @@ echo "-> permisos de storage y bootstrap/cache"
 # www-data ya no puede escribir: el sintoma tipico es un 500 al generar PDF.
 docker compose exec -T -u root $FPM sh -c "chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache" || true
 
-echo "-> nginx: solo /index.php ejecuta PHP"
+echo "-> nginx (solo /index.php, IP real y log de seguridad) y workers como www-data"
 # El sitio de nginx lo genero la instalacion y no llega con git pull: lo pone al
 # dia scripts/lib/update-common.sh del proyecto recien actualizado, el mismo que
 # usan los scripts de actualizacion de pro-8. Respalda, prueba con nginx -t y, si
@@ -473,6 +473,16 @@ if [ -f scripts/lib/update-common.sh ]; then
         . scripts/lib/update-common.sh
         type ensure_nginx_php_only_index >/dev/null 2>&1 || exit 3
         ensure_nginx_php_only_index "$(pwd)/$(compose_file)" "$(pwd)"
+        # Registro de seguridad (real_ip, log pro8sec fuera del proyecto y
+        # TRUSTED_PROXIES; interruptor SECURITY_LOGGING_ENSURE=false) y workers de
+        # supervisor como www-data (SUPERVISOR_USER_ENSURE=false; se aplica con el
+        # reinicio de abajo). Un proyecto anterior no los trae: se omiten.
+        if type ensure_security_logging >/dev/null 2>&1; then
+            ensure_security_logging "$(pwd)/$(compose_file)" "$(pwd)"
+        fi
+        if type ensure_supervisor_user >/dev/null 2>&1; then
+            ensure_supervisor_user "$(pwd)/$(compose_file)" "$(pwd)"
+        fi
     ) || echo "ADVERTENCIA: no se pudo comprobar que nginx solo ejecute /index.php; revisalo a mano (ver la guia de instalacion por scripts)."
 else
     echo "ADVERTENCIA: el proyecto no trae scripts/lib/update-common.sh; no se comprueba que nginx solo ejecute /index.php."

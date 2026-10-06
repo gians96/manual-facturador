@@ -212,6 +212,17 @@ if [ "$SERVICE_NUMBER" = '1' ]; then
     echo "Configurando proxy"
     docker network create proxynet 2>/dev/null || true
     mkdir -p $PATH_INSTALL/proxy
+    # Tope a los docker logs (json-file sin tope crecia sin limite) SOLO en un proxy
+    # nuevo: cambiar el compose de uno que ya corre lo recrearia, y recrear borra sus
+    # docker logs, que pueden ser evidencia (cada peticion con su IP).
+    PROXY_LOGGING=""
+    if [ ! -f "$PATH_INSTALL/proxy/docker-compose.yml" ] && [ -z "$(docker ps -aq --filter ancestor=rash07/nginx-proxy:4.0 2>/dev/null)" ]; then
+        PROXY_LOGGING='        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "3"'
+    fi
     cat << EOF > $PATH_INSTALL/proxy/docker-compose.yml
 services:
     proxy:
@@ -224,6 +235,7 @@ services:
             - /var/run/docker.sock:/tmp/docker.sock:ro
         restart: always
         privileged: true
+$PROXY_LOGGING
 networks:
     default:
         external:
@@ -340,6 +352,24 @@ server {
 }
 EOF
 
+    # Registro de seguridad: IP real del cliente (real_ip con la IP del proxy y
+    # Cloudflare) y log `pro8sec` en /var/log/pro8/<dominio>/nginx (fuera del
+    # proyecto: www-data no lo ve). Lo arma scripts/lib/update-common.sh del
+    # proyecto recien clonado, el mismo que lo mantiene en cada actualizacion. El
+    # sitio y el montaje van juntos: un access_log sin su carpeta no deja arrancar
+    # a nginx.
+    SECLOG_DIR=""
+    SECLOG_VOLUME=""
+    SECLOG_TRUSTED_PROXIES=""
+    SECLOG_LIB="$PATH_INSTALL/$DIR/scripts/lib/update-common.sh"
+    if [ -f "$SECLOG_LIB" ] && . "$SECLOG_LIB" && type seclog_prepare_new_site >/dev/null 2>&1 \
+        && seclog_prepare_new_site "$PATH_INSTALL/$DIR" "$PATH_INSTALL/proxy/fpms/$DIR/default" proxynet; then
+        SECLOG_DIR="$(seclog_prepare_host_dir "$DIR_MODIFIED")"
+        SECLOG_VOLUME="            - $SECLOG_DIR:/var/log/pro8/nginx"
+    else
+        echo "ADVERTENCIA: el proyecto no trae el registro de seguridad de nginx; queda sin real_ip ni log pro8sec."
+    fi
+
     # --- Dockerfile para Nginx (config baked-in, sin bind mount) --
     cat << 'EOFNGINXDF' > $PATH_INSTALL/proxy/fpms/$DIR/Dockerfile
 FROM rash07/nginx
@@ -350,17 +380,28 @@ EOFNGINXDF
 
     # --- docker-compose.yml ----------------------------------
     cat << EOF > $PATH_INSTALL/$DIR/docker-compose.yml
+x-logging: &default-logging
+    # El driver json-file por defecto no tiene techo: nginx escribe su access log
+    # a stdout y el fichero de /var/lib/docker/containers crecia sin limite. Esto
+    # acota cada contenedor a 30 MB. La evidencia larga va en el log pro8sec.
+    driver: json-file
+    options:
+        max-size: "10m"
+        max-file: "3"
+
 services:
     nginx_$SERVICE_NUMBER:
         build:
             context: $PATH_INSTALL/proxy/fpms/$DIR
             dockerfile: Dockerfile
         container_name: nginx_$DIR_MODIFIED
+        logging: *default-logging
         working_dir: /var/www/html
         environment:
             VIRTUAL_HOST: $HOST, *.$HOST
         volumes:
             - ./:/var/www/html
+$SECLOG_VOLUME
         restart: always
         depends_on:
             fpm_$SERVICE_NUMBER:
@@ -376,6 +417,7 @@ services:
             context: ./docker/php-fpm
             dockerfile: Dockerfile
         container_name: fpm_$DIR_MODIFIED
+        logging: *default-logging
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
@@ -396,6 +438,7 @@ $FPM_STACK_CAPS
     mariadb_$SERVICE_NUMBER:
         image: mariadb:10.5.6
         container_name: mariadb_$DIR_MODIFIED
+        logging: *default-logging
         environment:
             - MYSQL_USER=\${MYSQL_USER}
             - MYSQL_PASSWORD=\${MYSQL_PASSWORD}
@@ -422,6 +465,7 @@ $FPM_STACK_CAPS
     redis_$SERVICE_NUMBER:
         image: redis:alpine
         container_name: redis_$DIR_MODIFIED
+        logging: *default-logging
         command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
         volumes:
             - redisdata$SERVICE_NUMBER:/data
@@ -435,6 +479,7 @@ $FPM_STACK_CAPS
     soketi_$SERVICE_NUMBER:
         image: quay.io/soketi/soketi:1.6-16-debian
         container_name: $SOKETI_CONTAINER_NAME
+        logging: *default-logging
         environment:
             - SOKETI_DEBUG=0
             - SOKETI_DEFAULT_APP_ID=\${PUSHER_APP_ID}
@@ -450,6 +495,7 @@ $FPM_STACK_CAPS
             context: ./docker/scheduling
             dockerfile: Dockerfile
         container_name: scheduling_$DIR_MODIFIED
+        logging: *default-logging
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
@@ -473,6 +519,7 @@ $SCHED_STACK
             context: ./docker/supervisor
             dockerfile: Dockerfile
         container_name: supervisor_$DIR_MODIFIED
+        logging: *default-logging
         working_dir: /var/www/html
         volumes:
             - ./:/var/www/html
@@ -565,6 +612,12 @@ EOF
     set_env_var "PUSHER_CLIENT_HOST" "$SOKETI_CLIENT_HOST"
     set_env_var "PUSHER_CLIENT_PORT" "443"
     set_env_var "PUSHER_CLIENT_SCHEME" "https"
+
+    # Los mismos saltos de confianza que nginx para la app (ClientIp): si no
+    # coinciden, el log de nginx y el registro de eventos dan IPs distintas.
+    if [ -n "$SECLOG_TRUSTED_PROXIES" ] && type _stack_seclog_env_apply >/dev/null 2>&1; then
+        _stack_seclog_env_apply "$PATH_INSTALL/$DIR/.env" "$SECLOG_TRUSTED_PROXIES" >/dev/null || true
+    fi
 
     # --- DatabaseSeeder con usuario admin --------------------
     ADMIN_PASSWORD=$(gen_password)
@@ -708,6 +761,13 @@ long_query_time                 = 2
 # <<< pro8-stack
 EOFMYCNF
 
+    # supervisor.conf no viene en el repo (cada servidor lo ajusta): sin el, Docker
+    # crea un DIRECTORIO en su lugar y supervisor arranca sin workers. Se parte del
+    # ejemplo del proyecto, que corre los workers como www-data (no como root).
+    if [ ! -e "$PATH_INSTALL/$DIR/supervisor.conf" ] && [ -f "$PATH_INSTALL/$DIR/supervisor.conf.example" ]; then
+        cp "$PATH_INSTALL/$DIR/supervisor.conf.example" "$PATH_INSTALL/$DIR/supervisor.conf"
+    fi
+
     # --- Levantar containers ---------------------------------
     echo "Configurando proyecto"
     docker compose up -d --build
@@ -763,18 +823,27 @@ EOFMYCNF
 
     # --- Permisos --------------------------------------------
     # El repo ya trae storage/app/tenancy/tenants y demas subcarpetas.
-    # El chmod -R 777 garantiza que tanto root (comandos artisan) como
-    # www-data (worker php-fpm) puedan escribir en todo storage.
+    # Antes era chmod -R 777 sobre storage/, bootstrap/ y vendor/, para que root
+    # (artisan) y www-data (php-fpm) escribieran, y porque mPDF y dompdf escriben su
+    # cache de fuentes DENTRO de vendor ("mkdir(): Permission denied" al generar un
+    # PDF). Tambien dejaba a www-data reescribir codigo (vendor/, bootstrap/app.php)
+    # que despues carga root. Ahora: storage/ y bootstrap/cache de www-data (lo que
+    # cree root lo vuelve a dejar asi cada actualizacion); vendor/ de root y sin
+    # escritura para nadie mas, salvo la cache de mPDF y dompdf. Dentro del
+    # contenedor: www-data es el uid de la imagen, no el del host.
     echo "Configurando permisos"
-    chmod -R 777 "$PATH_INSTALL/$DIR/storage/" "$PATH_INSTALL/$DIR/bootstrap/"
-    if [ -d "$PATH_INSTALL/$DIR/vendor/" ]; then
-        chmod -R 777 "$PATH_INSTALL/$DIR/vendor/"
-    fi
+    docker compose exec -T -u root fpm_$SERVICE_NUMBER sh -c "chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && chmod -R ug+rwX /var/www/html/storage /var/www/html/bootstrap/cache"
+    docker compose exec -T -u root fpm_$SERVICE_NUMBER sh -c "chmod -R go-w /var/www/html/vendor; mkdir -p /var/www/html/vendor/mpdf/mpdf/tmp /var/www/html/vendor/mpdf/mpdf/ttfontdata; chown -R www-data:www-data /var/www/html/vendor/mpdf/mpdf/tmp /var/www/html/vendor/mpdf/mpdf/ttfontdata /var/www/html/vendor/dompdf/dompdf/lib/fonts 2>/dev/null; chmod -R ug+rwX /var/www/html/vendor/mpdf/mpdf/tmp /var/www/html/vendor/mpdf/mpdf/ttfontdata /var/www/html/vendor/dompdf/dompdf/lib/fonts 2>/dev/null; true"
     if [ -f "$PATH_INSTALL/$DIR/script-update.sh" ]; then
         chmod +x $PATH_INSTALL/$DIR/script-update.sh
     fi
 
     # --- Supervisor ------------------------------------------
+    # Rotacion del log pro8sec (diaria, 90 copias), si hay logrotate en WSL.
+    if [ -n "$SECLOG_DIR" ] && type _stack_seclog_logrotate >/dev/null 2>&1; then
+        _stack_seclog_logrotate "$SECLOG_DIR" "nginx_$DIR_MODIFIED" "$DIR_MODIFIED" || true
+    fi
+
     echo "Esperando que supervisor este listo..."
     sleep 5
 
