@@ -163,6 +163,85 @@ docker exec fpm_<dominio> sh -c "cd /var/www/html && CACHE_DRIVER=file php artis
 curl -sk https://<dominio>/login | grep -c "<algo-que-cambio>"
 ```
 
+## Solo `/index.php` ejecuta PHP {#solo-indexphp-ejecuta-php}
+
+`public/storage` es un enlace a `storage/app/public`, donde quedan las imágenes que suben los
+usuarios. Si nginx pasa a PHP-FPM cualquier ruta terminada en `.php`, un archivo `.php` subido
+como si fuera una imagen se ejecuta desde internet. Por eso el sitio de nginx solo manda a PHP
+`/index.php`, y cualquier otro `.php` responde 404:
+
+```nginx
+location = /index.php { # pro8-php-index
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass fpm_<dominio>:9000;
+    fastcgi_read_timeout 3600;
+}
+# pro8-php-index: ningun otro .php se ejecuta (p. ej. uno subido a storage)
+location ~* \.(php[0-9]?|phtml|phar|pht)$ { return 404; } # pro8-php-index
+```
+
+`try_files ... /index.php$is_args$args` y `error_page 404 /index.php` siguen cayendo en
+`/index.php`, así que las rutas de la aplicación no cambian.
+
+- **Instalaciones nuevas:** `install.sh` y `02-install-prod.sh` ya generan el sitio así.
+- **Servidores ya instalados:** la actualización lo aplica sola (`update.sh`, `03-update.sh` y
+  los `scripts/*-update.sh` del proyecto). Antes de escribir deja un respaldo
+  `default.backup-before-nginx-php-index-<fecha>`, prueba con `nginx -t` y, si algo falla, deja
+  el sitio como estaba. No toca un sitio que ya tenga `location = /index.php` (restringido a
+  mano) ni uno cuyo bloque de PHP sea `internal;`, y avisa si no encuentra un
+  `location ~ \.php$ {` que pueda cambiar: en ese caso, edítalo a mano con los dos bloques de
+  arriba.
+
+### Comprobar el bloqueo
+
+Desde la carpeta del proyecto, con una sonda que se borra al terminar:
+
+```sh
+echo '<?php echo "EJECUTADO";' > storage/app/public/sonda.php
+curl -s -o /dev/null -w '%{http_code}\n' https://<dominio>/storage/sonda.php   # 404
+curl -s https://<dominio>/storage/sonda.php | grep -c EJECUTADO               # 0
+rm -f storage/app/public/sonda.php
+```
+
+Un `200` o un `EJECUTADO` significa que nginx todavía ejecuta (o sirve tal cual) ese `.php`:
+revisa el sitio en `proxy/fpms/<dominio>/default` y dentro del contenedor
+(`docker exec nginx_<dominio> cat /etc/nginx/sites-available/default`).
+
+Para ver qué cambiaría sin aplicar nada:
+
+```sh
+ENSURE_DRY_RUN=1 bash -c '. scripts/lib/update-common.sh; ensure_nginx_php_only_index "$PWD/docker-compose.yml" "$PWD"'
+```
+
+### Desactivarlo en un servidor
+
+Si el sitio de nginx se mantiene a mano, agrega en el `.env` del proyecto:
+
+```sh
+NGINX_PHP_INDEX_ENSURE=false
+```
+
+`STACK_CAPACITY_ENSURE=false` no lo desactiva: esto es seguridad, no capacidad.
+
+### Archivos sospechosos ya subidos
+
+El bloqueo impide ejecutar, pero no borra lo que ya entró. Para listarlo sin tocar nada:
+
+```sh
+docker compose exec -T fpm_<dominio> php artisan security:scan-uploads
+```
+
+Revisa `public/`, `storage/app/public` y `storage/app/certificates`: `CRITICO` (sale con código 1)
+es un ejecutable, una imagen con código PHP dentro o un `.htaccess`/`.user.ini` fuera de lugar;
+`REVISAR` es un SVG/HTML en las subidas o algo que no es PEM entre los certificados de QZ Tray.
+Revisa cada archivo antes de borrarlo.
+
+### Clave del Acceso Maestro
+
+La instalación y cada actualización generan `SECRET_LOGIN_KEY` en el `.env` si falta (nunca la
+pisan). Con ella se firma el enlace de «Acceso Maestro» del panel de administración; sin ella se
+usa la `APP_KEY`.
+
 ## Migración de tenants - clientes (backup)
 Primero realizamos el backup en el sistema, lo descargamos:
 1) Creamos en el panel de admnistrador de usuarios (clientes), al momento de terminar todo el proceso de creacion del nuevo inquilino (Cliente), eliminamos y creamos otra vez en blanco la base de datos

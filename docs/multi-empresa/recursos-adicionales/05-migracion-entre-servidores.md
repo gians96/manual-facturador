@@ -139,11 +139,13 @@ server {
     location / {
         try_files $uri $uri/ /index.php$is_args$args;
     }
-    location ~ \.php$ {
+    location = /index.php { # pro8-php-index
         include snippets/fastcgi-php.conf;
         fastcgi_pass fpm{numero nuevo}:9000;
         fastcgi_read_timeout 3600;
     }
+    # pro8-php-index: ningun otro .php se ejecuta (p. ej. uno subido a storage)
+    location ~* \.(php[0-9]?|phtml|phar|pht)$ { return 404; } # pro8-php-index
     error_page 404 /index.php;
     location ~ /\.ht {
         deny all;
@@ -152,6 +154,7 @@ server {
 ```
 
 * En la **fastcgi_pass** se tiene que cambiar con el nombre que se puso para el fpm dentro del docker-compose.
+* Solo `/index.php` pasa a PHP-FPM. Cualquier otro `.php` (por ejemplo, uno subido a `storage`) responde 404 en vez de ejecutarse. Si copias un `default` antiguo con `location ~ \.php$`, cámbialo por estos dos bloques: la siguiente actualización también lo hace por ti (ver [Instalación por scripts](../../devs/despliegue/instalacion-scripts/index.md#solo-indexphp-ejecuta-php)).
 
 
 ### Cambiar el host de la base de datos en el .env 
