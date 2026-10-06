@@ -69,7 +69,8 @@ recreación del contenedor. Si reaparece, el contenedor no está usando el `comm
 | `tenants:usage --flush` | Vuelca el consumo por tenant y refresca tamaños de BD y disco. Cada pasada recorre `information_schema.TABLES` de **todas** las bases (miles de tablas), por eso no corre más a menudo. El panel no se queda atrás: *Consumo por tenant* vuelca los contadores al abrir su pestaña (sin volver a medir tamaños: `--skip-sizes`) y guarda el resultado 10 min; los contadores aguantan 3 días en caché | cada 6 h (minuto 7) | `php artisan schedule:list \| grep tenants:usage` → `7 */6 * * *`; `php artisan tenants:usage --days=7` | `tenant_usage.log` |
 | `requests:flush` | Suma en `request_usage_daily` los tiempos por pantalla que anota cada petición (`storage/app/request-timings/`, un archivo por tramo de 10 min) para la tarjeta *Rendimiento por pantalla* de `/information`. Solo toma tramos cerrados; poda lo de más de 90 días (`--keep-days`) | cada 10 min (minuto 2 de cada decena) | `tail -3 storage/logs/requests_flush.log` (una línea «N tramo(s), M petición(es) volcadas» cada 10 min); en `storage/app/request-timings/` no debe haber tramos de hace más de 20 min | `requests_flush.log` |
 | `backup:prune-runs --days=180` | Poda el historial de copias | lunes 05:30 | `SELECT COUNT(*) FROM backup_runs` | `backup_prune_runs.log` |
-| `logs:prune --max-mb=20 --keep-mb=5` | Recorta los logs que Monolog **no** rota: la salida de estas mismas tareas, `laravel.log` del canal `single`, el log de acceso de nginx (`nginx-access.log`) y el slowlog de PHP-FPM (`php-fpm-slow.log`). Conserva la cola, no vacía. Además **vacía `mysql.slow_log`** (el slow log de MariaDB), solo si la tabla existe y `log_output` es `TABLE` | lunes 05:45 | `docker exec fpm_… php artisan logs:prune --dry-run` (lista lo que recortaría y cuántas filas del slow log vaciaría, sin tocar nada) | `logs_prune.log` |
+| `logs:prune --max-mb=20 --keep-mb=5` | Recorta los logs que Monolog **no** rota: la salida de estas mismas tareas, `laravel.log` del canal `single`, el log de acceso de nginx (`nginx-access.log`) y el slowlog de PHP-FPM (`php-fpm-slow.log`). Conserva la cola, no vacía. **Antes de recortar archiva lo que descarta** en `storage/logs/archive/<nombre>-<fecha>.log.gz` (8 semanas, `--archive-days`; tope total 500 MB, `--archive-max-mb`): el log de acceso es la única fuente de la IP de cada petición. Si no puede archivar, no recorta (salvo por encima de 200 MB, `--hard-max-mb`). Salta los enlaces simbólicos. Además **vacía `mysql.slow_log`** (el slow log de MariaDB), solo si la tabla existe y `log_output` es `TABLE` | lunes 05:45 | `docker exec -u www-data fpm_… php artisan logs:prune --dry-run` (lista lo que archivaría y recortaría, sin tocar nada); `ls storage/logs/archive` | `logs_prune.log` |
+| `security:prune` | Borra del registro de seguridad (`security_events`) lo que pasa de `SECURITY_LOG_RETENTION_DAYS` (365 días), por lotes. Deja siempre un evento `sensitive_delete` (`reason` `security_log_purged`) como latido, aunque no borre nada | lunes 05:15 | `docker exec -u www-data fpm_… php artisan security:prune --dry-run`; el último `sensitive_delete` en `security_events` debe ser de esta semana | — |
 | `tenancy:run print-orders:prune` | Borra órdenes de impresión ya impresas (`pdf_b64` es pesado) | diaria 04:00 | `tail storage/logs/print_orders_prune.log` | `print_orders_prune.log` |
 | `order:payments` | Procesa pagos pendientes | cada 2 min | `tail storage/logs/order_create.log` | `order_create.log` |
 
@@ -130,10 +131,13 @@ trabajos en cola —incluidos los WhatsApp de comprobantes— se quedan esperand
 
 | Programa | Qué hace | Cómo verificar que está vivo |
 |---|---|---|
-| `laravel-worker` (2 procesos) | Cola `default`: correos, webhooks y demás trabajos | `docker exec supervisor_nt-suite_pro supervisorctl status` |
+| `laravel-worker` (2 procesos) | Cola `default`: correos, webhooks y demás trabajos. Al final de su lista va `security-alerts`, los avisos de seguridad: no atrasan la cola de negocio | `docker exec supervisor_nt-suite_pro supervisorctl status`; `grep -- '--queue' supervisor.conf` debe terminar en `security-alerts` |
 | `laravel-whatsapp-worker` (1 proceso) | Cola `whatsapp`: envía los comprobantes por el WhatsApp conectado (arma el PDF, y el XML si se pidió) | `docker exec supervisor_nt-suite_pro supervisorctl status` → `laravel-whatsapp-worker … RUNNING` |
 | `evolution_<prefijo>` (contenedor aparte) | El WhatsApp en sí (Evolution API), cuando el servidor usa el suyo propio en vez del proxy externo | `docker ps --filter name=evolution_nt-suite_pro` |
 
+- **Los workers corren como `www-data`**, no como root: un job carga `vendor/`, y si corriera como root una
+  webshell (que escribe como www-data) llegaría a root. La actualización lo ajusta en el `supervisor.conf` de cada
+  instalación (`ensure_supervisor_user`) y al final imprime con qué usuario corren.
 - **Un solo intento por envío:** reintentar mandaría el comprobante dos veces. Un envío sin respuesta
   queda como «no confirmado» y lo decide el cajero.
 - **Si las entregas se quedan en cola:** comprueba que ese programa esté `RUNNING` y que el `.env`
@@ -244,6 +248,52 @@ interno.
   líneas de Laravel, del log de acceso y del slowlog de PHP-FPM. El prefijo de los contenedores
   se detecta solo; `--prefix`, `--dir` y `--out` lo cambian.
 
+## Registro de seguridad
+
+Quién entró, desde dónde, cómo y qué cambió. Cada evento queda en tres sitios:
+- una fila en `security_events` (BD system);
+- una línea JSON en `storage/security-log/security-AAAA-MM-DD.log`;
+- para las peticiones, una línea en el log `pro8sec` de nginx, en el host, fuera del proyecto.
+
+Diseño completo: `pro-8/docs/04-arquitectura/registro-de-eventos-de-seguridad.md`. En un incidente:
+`pro-8/docs/09-operacion/incidente-de-seguridad.md`.
+
+```bash
+# ¿Se está registrando? (el último evento debe ser reciente si hubo actividad)
+docker exec mariadb_nt-suite_pro sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SELECT MAX(occurred_at), COUNT(*) FROM <bd_system>.security_events"'
+ls -la storage/security-log/                     # el archivo del día, de www-data
+
+# ¿La IP es la real? (detrás del proxy; nunca la subred de Docker)
+grep -B1 '^TRUSTED_PROXIES' .env                 # con la marca «# pro8-sec» la escribe la actualización
+docker exec nginx_nt-suite_pro nginx -T | grep -E 'set_real_ip_from|real_ip_recursive|REALIP_REMOTE_ADDR'
+docker exec nginx_nt-suite_pro tail -3 /var/log/pro8/nginx/pro8sec.log
+
+# ¿Alguien tocó el registro? (sin la copia de fuera dice «SIN ANCLA»)
+docker exec -u www-data fpm_nt-suite_pro php artisan security:verify --from=$(date +%F)
+```
+
+**Avisos.** Van por Telegram y, si falla, por correo con el SMTP del panel. Se encienden en `.env`:
+- `SECURITY_ALERT_TELEGRAM_TOKEN`
+- `SECURITY_ALERT_TELEGRAM_CHAT_ID`
+- `SECURITY_ALERT_EMAIL`
+
+Después corre `config:cache` y `queue:restart`. Avisan de:
+- login correcto después de fallos y fallos repetidos;
+- uso y emisión del Acceso Maestro;
+- cambio de nombre, RUC o logo de la empresa o de un establecimiento;
+- un usuario nuevo admin y cambios de permisos;
+- subidas peligrosas;
+- clientes borrados;
+- fallos del propio registro.
+
+Topes: 20 por tenant y 60 por instalación cada 15 minutos.
+
+:::warning Comandos artisan como `www-data`
+`docker exec` entra como root. Los comandos que escriben en `storage/` (`security:evidence`, `logs:prune`) se
+corren con `docker exec -u www-data`. El registro de seguridad ya se protege solo: escribe con los permisos
+del dueño de la carpeta.
+:::
+
 ## Servicios del host (fuera de Docker)
 
 Estos **no** pueden vivir en el contenedor: `restic` está instalado en el host, el volcado
@@ -256,6 +306,7 @@ un proceso que viviera dentro moriría a mitad.
 | Latido del ejecutor (`storage/app/system/host-status.json`) | En cada pasada, el ejecutor anota la hora, las versiones de rclone y restic y el disco libre. El panel de copias lo usa para su lista de revisión | cada minuto (no se escribe mientras ejecuta una orden) | `cat storage/app/system/host-status.json` — `checked_at` de hace menos de 3 min, o una orden en curso |
 | rclone en el host | Lo usan **todas** las copias en modo archivos, también las de un disco del propio servidor. Desde 2026-09-27 la actualización lo instala si falta (`ensure_backup_tools`, con apt) | — | `rclone version \| head -1` |
 | ~~`logrotate` de `storage/logs/*.log`~~ | **Ya no hace falta.** Lo sustituye `logs:prune` dentro del scheduler (tabla de arriba): viaja con el código, funciona igual en on-prem y corre donde los permisos de `storage/logs` son los correctos, que es dentro del contenedor | — | — |
+| `logrotate` del log `pro8sec` de nginx (`/etc/logrotate.d/pro8-<prefijo>-nginx`) | Rota `/var/log/pro8/<prefijo>/nginx/pro8sec.log`, el log de seguridad de nginx (IP real, sin tokens): diario, 90 copias, comprimidas, con `copytruncate`. Lo instala la actualización si hay logrotate; avisa si nada lo ejecuta (sin cron ni `logrotate.timer`, como en WSL) | diario | `logrotate -d /etc/logrotate.d/pro8-<prefijo>-nginx`; `systemctl is-active logrotate.timer` o cron activo |
 | `docker system prune` | Libera las capas huérfanas que deja cada despliegue (suelen ser la causa real de quedarse sin inodes) | semanal | `docker system df` |
 
 ### Instalar el runner del host

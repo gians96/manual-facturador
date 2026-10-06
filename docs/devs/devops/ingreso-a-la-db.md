@@ -1,5 +1,18 @@
 # Cómo realizar el cambio de estados de comprobantes desde la base de datos
 
+:::danger No publiques el puerto de la base a internet
+Un puerto de MariaDB abierto (`MYSQL_PORT_HOST`, p. ej. 3001) recibe intentos de acceso desde todo internet, y con
+la contraseña de `.env` se lee y se cambia la base de **todas** las empresas. Publícalo solo en el propio servidor
+(en el compose, `"127.0.0.1:${MYSQL_PORT_HOST}:3306"`; `ufw` no basta, porque Docker se lo salta) y entra por un
+**túnel SSH**: tu cliente se conecta a tu propia máquina.
+
+```bash
+ssh -N -L 3307:127.0.0.1:<MYSQL_PORT_HOST> root@<ip-del-servidor>
+```
+
+Luego, en el cliente de base de datos: host `127.0.0.1`, puerto `3307`.
+:::
+
 :::info Requisitos Previos
 Antes de proceder, asegúrese de tener acceso a:
 - Archivo `.env` del servidor

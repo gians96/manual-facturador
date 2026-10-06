@@ -1,5 +1,11 @@
 # Manual de Google Cloud: Habilitando Puertos en Firewall
 
+:::danger No abras el puerto de la base de datos
+El ejemplo de abajo habilita un puerto de MySQL solo para ilustrar el procedimiento. **No lo hagas con la base de
+producción**: un puerto de MariaDB abierto a internet recibe intentos de acceso de todo el mundo. Para entrar a la
+base usa un túnel SSH (ver «Ingreso a la base de datos»). Abre solo 80, 443 y el de SSH.
+:::
+
 ## Pasos
 
 1. Ingresar a su panel de Google Cloud y dirigirse al menú de firewall.
