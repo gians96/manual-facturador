@@ -54,6 +54,8 @@ set_env_var() {
     if grep -q "^${key}=" .env; then
         sed -i "/^${key}=/c\\${key}=${value}" .env
     else
+        # Si el .env no termina en salto de linea, la variable se pegaria a la ultima.
+        [ -z "$(tail -c1 .env)" ] || echo >> .env
         echo "${key}=${value}" >> .env
     fi
 }
@@ -417,6 +419,13 @@ docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php art
     echo "=========================================================="
 }
 
+# Clave propia del Acceso Maestro (config('app.secret_login_key')). Se genera una
+# sola vez, antes de config:cache, y nunca se pisa.
+if [ -z "$(env_value SECRET_LOGIN_KEY)" ]; then
+    ensure_env_var "SECRET_LOGIN_KEY" "$(od -An -tx1 -N32 /dev/urandom | tr -d ' \n')"
+    echo "   SECRET_LOGIN_KEY generada en .env (Acceso Maestro)"
+fi
+
 echo "-> 6/8 clear caches"
 for cmd in route:clear config:clear cache:clear view:clear; do
     docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan $cmd" || true
@@ -425,6 +434,24 @@ done
 if [ "$MODE" = "prod" ]; then
     echo "-> 6b  config:cache (solo prod)"
     docker compose exec -T $FPM sh -c "cd /var/www/html && CACHE_DRIVER=file php artisan config:cache" || true
+fi
+
+echo "-> nginx: solo /index.php ejecuta PHP"
+# El sitio de nginx lo genero la instalacion y no llega con git pull: lo pone al
+# dia scripts/lib/update-common.sh del proyecto recien actualizado, el mismo que
+# usan los scripts de actualizacion de pro-8. Respalda, prueba con nginx -t y, si
+# algo falla, deja el sitio como estaba. En subshell y sin set -e, para que un
+# fallo aqui no corte la actualizacion. Interruptor: NGINX_PHP_INDEX_ENSURE=false en .env.
+if [ -f scripts/lib/update-common.sh ]; then
+    (
+        set +e +u +o pipefail
+        # shellcheck source=/dev/null
+        . scripts/lib/update-common.sh
+        type ensure_nginx_php_only_index >/dev/null 2>&1 || exit 3
+        ensure_nginx_php_only_index "$(pwd)/$(compose_file)" "$(pwd)"
+    ) || echo "ADVERTENCIA: no se pudo comprobar que nginx solo ejecute /index.php; revisalo a mano (ver la guia de instalacion por scripts)."
+else
+    echo "ADVERTENCIA: el proyecto no trae scripts/lib/update-common.sh; no se comprueba que nginx solo ejecute /index.php."
 fi
 
 echo "-> 7/8 reiniciar contenedores PHP y nginx"

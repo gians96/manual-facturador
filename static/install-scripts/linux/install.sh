@@ -305,11 +305,13 @@ server {
         proxy_read_timeout 600s;
         proxy_send_timeout 600s;
     }
-    location ~ \.php\$ {
+    location = /index.php { # pro8-php-index
         include snippets/fastcgi-php.conf;
         fastcgi_pass fpm_$DIR_MODIFIED:9000;
         fastcgi_read_timeout 3600;
     }
+    # pro8-php-index: ningun otro .php se ejecuta (p. ej. uno subido a storage)
+    location ~* \.(php[0-9]?|phtml|phar|pht)\$ { return 404; } # pro8-php-index
     error_page 404 /index.php;
     location ~ /\.ht {
         deny all;
@@ -480,6 +482,8 @@ sed -i '/FORCE_HTTPS=/c\FORCE_HTTPS=false' .env
 sed -i '/APP_DEBUG=/c\APP_DEBUG=false' .env
 # .env.example trae APP_ENV=local, y en local se registran las rutas de Laravel Dusk (/_dusk/...).
 sed -i '/APP_ENV=/c\APP_ENV=production' .env
+# Acceso Maestro firma su enlace con una clave propia, no con la APP_KEY.
+set_env_var "SECRET_LOGIN_KEY" "$(od -An -tx1 -N32 /dev/urandom | tr -d ' \n')"
 
 # CONFIGURACIONES DE REDIS  CACHE_DRIVER=file es CRITICO (redis_tenancy rompe CLI)
 sed -i '/CACHE_DRIVER=/c\CACHE_DRIVER=file' .env
