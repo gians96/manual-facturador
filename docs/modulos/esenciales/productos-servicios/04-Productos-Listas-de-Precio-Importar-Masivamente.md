@@ -18,11 +18,9 @@ En este archivo tendrá que completar los siguientes campos necesarios:
 
 ![Alt text](img/Listas-de-Precio-Importar-Masivamente_04.jpg)
 
-**1.  Código interno (Producto):** Ingresa el código interno del producto.
+**1.  Codigo interno:** Ingresa el código interno del producto. Debe existir: las filas con un código que no está registrado se omiten.
 
-**2.  Descripción:** Ingresa una breve descripción.
-
-**3.  Código Tipo de Unidad:** Ingresa el código según corresponda el producto o el servicio.
+**2.  Unidad:** Ingresa el código de la unidad de la presentación, por ejemplo **BX** para caja.
 - Para ver los códigos, dirígete a **Configuraciones y más** > **Configuraciones Globales**, luego ubica el submódulo de **Sunat** y selecciona la subcategoría **Listado de Unidades**.
 
 :::danger IMPORTANTE:
@@ -31,13 +29,24 @@ Si no cuenta con un código interno en su empresa puede agregar por ejemplo 001,
 
 ![Alt text](img/Importar-masivamente_05.jpg)
 
-**4.  Factor:** La cantidad del producto a descontar del inventario.
+**3.  Factor:** Cuántas unidades del producto trae la presentación; es la cantidad que se descuenta del inventario al venderla.
 
-**5.  Precio 1, Precio 2 o  Precio 3:** Ingresa el precio en escalera según corresponda como la imagen referencial. complete los dos otros campos con 0. De contar con mas precios, repita el proceso.
+**4.  Descripción:** El nombre de la presentación, por ejemplo «Caja x 12». Si el producto ya tiene una presentación con la misma unidad y la misma descripción, se actualizan sus precios; si no, se crea una nueva.
 
-**6.  Precio por defecto:** Verificar en qué casilla están colocados los precios y insertar el número de casilla en Precio por Defecto. Un ejemplo en la siguiente imagen.
+**5.  Precios:** Una columna por cada etiqueta de precio activa (**Precio 1**, **Precio 2**, **Precio 3** o los nombres que hayas puesto en **Configuración › Avanzado › Visual › Gestionar Etiquetas de Precios**). Completa con 0 los precios que no uses.
+
+**6.  Qué precio cobra el POS:** El archivo no trae esa columna.
+- Una presentación **nueva** cobra el primer precio, o el de la etiqueta de precio marcada por defecto.
+- Una presentación que **ya existía** sigue cobrando el precio que tenía elegido.
+- Para cambiarlo, edita el producto y, en la pestaña **Presentaciones**, elige **Cobra el POS**. Revisa la [Creación avanzada de productos](./02-Productos-Creacion-avanzada.md#sección-presentaciones).
 
 ![Alt text](img/Listas-de-Precio-Importar-Masivamente_06.jpg)
+
+La imagen corresponde a una versión anterior del formato, que traía la columna **Precio por defecto**.
+
+:::tip
+Si tu cuenta admite una sola presentación por producto, el formato solo trae el **Codigo interno** y los precios, que se aplican a la presentación del producto.
+:::
 
 :::danger IMPORTANTE:
 Ningún campo puede quedar vacío.
