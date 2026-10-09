@@ -65,20 +65,23 @@ El código nuevo no puede ser el de otro lote del mismo producto. Si el producto
 
 En la pestaña **Presentaciones**, la farmacia ve una fila simple por presentación, con estas columnas:
 
-- **Presentación:** la unidad de la presentación, por ejemplo, **Tableta o blíster** o **Caja**.
+- **Presentación:** la unidad de medida de la presentación, con su código SUNAT entre paréntesis, por ejemplo, **Unidades (NIU)** o **Caja (BX)**. Ese código es el que va al comprobante electrónico.
 - **Descripción:** el texto que se muestra al vender, por ejemplo, «Blíster».
-- **Unidades que contiene:** cuántas unidades del producto trae, por ejemplo, 10 en un blíster de 10 tabletas.
+- **Contiene:** cuántas unidades del producto trae, por ejemplo, 10 en un blíster de 10 tabletas.
 - **Precio de venta:** lo que cobran el POS y la app móvil por la presentación.
-- **Precio por unidad:** el precio de venta dividido entre las unidades que contiene. Te sirve para comparar presentaciones.
+- **Por unidad:** el precio de venta dividido entre las unidades que contiene, y cuánto más barato o caro sale frente a la unidad suelta (el **Precio Unitario** del producto).
+
+:::danger IMPORTANTE: el blíster va con Unidades (NIU)
+SUNAT no tiene un código de unidad para el blíster. El código **U2** significa **una tableta**: si vendes un blíster con U2, el comprobante declara 1 tableta aunque se hayan vendido 10. Por eso el botón **+ Blíster** usa **Unidades (NIU)** y la descripción «Blíster». Si una presentación con más de una unidad tiene U2, el formulario te avisa.
+:::
 
 Siguiendo el ejemplo, agregaremos un blíster de 10 tabletas y una caja de 100:
 
-1. Selecciona **+ Blíster**. Se agrega una fila con la unidad **Tableta o blíster** (código U2) y la descripción «Blíster».
-   - Esa unidad viene desactivada. La primera vez, el sistema pregunta si quieres activarla: selecciona **Activar**. Si eliges **Cancelar**, no se agrega la fila. También puedes activarla desde el [Listado de unidades](../../configuracion-y-mas/configuracion-globales/Sunat/listado-de-unidades.md).
-2. En **Unidades que contiene** escribe **10**.
-3. Mientras el **Precio de venta** esté vacío, debajo aparece la sugerencia **Usar S/ 5.00 (0.50 × 10)**, que es el precio unitario por las unidades que contiene. Selecciónala para usar ese monto o escribe otro. La columna **Precio por unidad** muestra **S/ 0.50 c/u**.
-4. Selecciona **+ Caja**. Se agrega una fila con la unidad **Caja** (código BX) y la descripción «Caja».
-5. En **Unidades que contiene** escribe **100** y en **Precio de venta**, **45.00**. Las cajas suelen llevar descuento, por eso la sugerencia no se llena sola. La columna **Precio por unidad** muestra **S/ 0.45 c/u**.
+1. Selecciona **+ Blíster**. Se agrega una fila con la unidad **Unidades (NIU)** y la descripción «Blíster». El campo **Contiene** aparece vacío, con el ejemplo «Ej. 10», y en rojo «Indica cuántas unidades trae» hasta que lo completes.
+2. En **Contiene** escribe **10**.
+3. Mientras el **Precio de venta** esté vacío, debajo aparece la sugerencia **Usar S/ 5.00 (0.50 × 10)**, que es el precio unitario por las unidades que contiene. Selecciónala para usar ese monto o escribe otro. La columna **Por unidad** muestra **S/ 0.50 c/u** e «Igual que la unidad».
+4. Selecciona **+ Caja**. Se agrega una fila con la unidad **Caja (BX)** y la descripción «Caja». Si tu empresa desactivó la unidad Caja, el sistema pregunta si quieres activarla.
+5. En **Contiene** escribe **100** y en **Precio de venta**, **45.00**. Las cajas suelen llevar descuento, por eso la sugerencia no se llena sola. La columna **Por unidad** muestra **S/ 0.45 c/u** y «10 % menos que la unidad».
 6. Para cualquier otra presentación, selecciona **+ Otra presentación** y elige la unidad.
 7. Selecciona el botón **Guardar**.
 
@@ -90,7 +93,7 @@ Si no ves los botones **+ Blíster** y **+ Caja**, tu cuenta admite una sola pre
 
 Cada presentación tiene hasta tres precios: **Precio 1**, **Precio 2** y **Precio 3**. Puedes cambiarles el nombre en **Configuración › Avanzado › Visual › Gestionar Etiquetas de Precios**. El **Precio de venta** de la fila es el precio que cobra el POS.
 
-Para elegir otro, selecciona **Otros precios** debajo del precio de venta, o la flecha a la izquierda de la fila. Se despliegan:
+Para elegir otro, selecciona **Más precios** debajo del precio de venta. Se despliegan:
 
 - **Cobra el POS:** el precio de la lista que cobran el POS y la app móvil por esa presentación. Ese mismo precio va en la exportación de precios a DIGEMID.
 - La lista con todos los precios de la presentación.

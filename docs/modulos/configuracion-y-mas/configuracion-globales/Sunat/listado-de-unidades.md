@@ -83,14 +83,17 @@ Leyenda:
 
 ![alt text](img/listadounidades2.jpg)
 
-## Unidades desactivadas: Tableta o blíster (U2)
+## Unidades activas e inactivas
 
 El listado muestra por defecto solo las unidades **activas**. Para ver las demás, elige **Inactivos** o **Todos** en el filtro **Estado**. Una unidad se activa o desactiva con el interruptor de la columna **Activo**.
 
-La unidad **U2 → Tableta o blister** viene **desactivada**. La usan las presentaciones en blíster de farmacia:
+## El código de la unidad va al comprobante
 
-- En la pestaña **Presentaciones** del producto, el botón **+ Blíster** pide confirmación para activarla. Al seleccionar **Activar**, queda activa para todos los productos.
-- También puedes activarla aquí: filtra por **Inactivos**, busca el código **U2** y enciende su interruptor **Activo**.
+El **código** de la unidad (NIU, BX, U2…) es el que se envía a SUNAT en el comprobante electrónico: es el **Catálogo N.° 03**, que usa los códigos de la UN/ECE. La descripción solo se ve en el sistema; lo que SUNAT lee es el código. Antes de usar una unidad, revisa que su código signifique lo que vendes:
+
+- **U2 → Tableta** es **una tableta suelta**. No la uses para un blíster ni para una caja: «1 blíster» con U2 se declara como 1 tableta.
+- **Blíster:** SUNAT no tiene un código de blíster. Usa **NIU → Unidades** y escribe «Blíster» como descripción de la presentación. Es lo que hace el botón **+ Blíster** de farmacia.
+- **Caja:** usa **BX → Caja**.
 
 Más detalles en [Farmacia › Productos: Presentaciones y Lotes](../../../rubros/farmacia/Productos-Presentaciones-y-Lotes.md).
 
