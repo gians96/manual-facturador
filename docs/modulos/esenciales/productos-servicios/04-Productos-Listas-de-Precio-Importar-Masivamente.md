@@ -38,7 +38,7 @@ Si no cuenta con un código interno en su empresa puede agregar por ejemplo 001,
 **6.  Qué precio cobra el POS:** El archivo no trae esa columna.
 - Una presentación **nueva** cobra el primer precio, o el de la etiqueta de precio marcada por defecto.
 - Una presentación que **ya existía** sigue cobrando el precio que tenía elegido.
-- Para cambiarlo, edita el producto y, en la pestaña **Presentaciones**, elige **Cobra el POS**. Revisa la [Creación avanzada de productos](./02-Productos-Creacion-avanzada.md#sección-presentaciones).
+- Para cambiarlo, edita el producto y, en la pestaña **Presentaciones**, abre los precios de la presentación y selecciona **Usar en POS** en el precio que quieras cobrar. Revisa la [Creación avanzada de productos](./02-Productos-Creacion-avanzada.md#sección-presentaciones).
 
 ![Alt text](img/Listas-de-Precio-Importar-Masivamente_06.jpg)
 

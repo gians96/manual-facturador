@@ -93,16 +93,15 @@ Si no ves los botones **+ Blíster** y **+ Caja**, tu cuenta admite una sola pre
 
 Cada presentación tiene hasta tres precios: **Precio 1**, **Precio 2** y **Precio 3**. Puedes cambiarles el nombre en **Configuración › Avanzado › Visual › Gestionar Etiquetas de Precios**. El **Precio de venta** de la fila es el precio que cobra el POS.
 
-Para elegir otro, selecciona **Más precios** debajo del precio de venta. Se despliegan:
+Para elegir otro, selecciona **Más precios** debajo del precio de venta. Se despliegan los precios de la presentación, cada uno en una tarjeta:
 
-- **Cobra el POS:** el precio de la lista que cobran el POS y la app móvil por esa presentación. Ese mismo precio va en la exportación de precios a DIGEMID.
-- La lista con todos los precios de la presentación.
-
-Si cambias **Cobra el POS** a otro precio, el campo **Precio de venta** pasa a mostrar y editar ese precio.
+- La que cobran el POS y la app móvil lleva la marca **✓ Cobra el POS** y queda resaltada. Ese mismo precio va en la exportación de precios a DIGEMID.
+- Para cambiarla, selecciona **Usar en POS** en otra tarjeta. El campo **Precio de venta** de la fila pasa a mostrar y editar ese precio, y **Por unidad** se recalcula.
+- Si la tarjeta elegida está en 0, sale en **rojo**: la presentación se cobraría a S/ 0.00.
 
 :::danger IMPORTANTE:
 - Las presentaciones nuevas empiezan cobrando el primer precio, o la etiqueta de precio marcada por defecto.
-- Al guardar, si una presentación se cobraría a S/ 0.00 y tiene otro precio con valor, el sistema te avisa para que revises **Cobra el POS** antes de guardar.
+- Al guardar, si una presentación se cobraría a S/ 0.00 y tiene otro precio con valor, el sistema te avisa para que elijas otro precio con **Usar en POS** antes de guardar.
 - Antes, las presentaciones nuevas cobraban el **Precio 2** sin que se pudiera ver: si solo llenabas el primer precio, el POS las cobraba a S/ 0.00. Revisa las presentaciones de tus productos antiguos.
 :::
 

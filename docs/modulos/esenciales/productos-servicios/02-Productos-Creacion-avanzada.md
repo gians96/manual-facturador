@@ -112,19 +112,25 @@ Es otra manera de agregar precios del producto sin alterar los precios en el alm
 
 ![Alt text](img/Creacion-avanzada_04.jpg)
 
-Cada fila es una presentación, con **Unidad**, **Descripción**, **Factor** (cuántas unidades del producto trae) y **Cobra el POS**. Con la flecha de la izquierda despliegas sus precios: **Precio 1**, **Precio 2** y **Precio 3**, o los nombres que hayas puesto en **Configuración › Avanzado › Visual › Gestionar Etiquetas de Precios**. Para sumar una fila, selecciona **Agregar lista de precios**.
+Cada fila es una presentación, con **Unidad**, **Descripción**, **Factor** (cuántas unidades del producto trae) y **Cobra el POS**. La columna **Cobra el POS** muestra qué precio cobran el POS y la app móvil y su monto, por ejemplo «Precio 1 · S/ 45.00». Para sumar una fila, selecciona **Agregar lista de precios**.
+
+Selecciona **Cobra el POS** (o la flecha de la izquierda) para desplegar los precios de la presentación: **Precio 1**, **Precio 2** y **Precio 3**, o los nombres que hayas puesto en **Configuración › Avanzado › Visual › Gestionar Etiquetas de Precios**. Cada precio es una tarjeta:
+
+- La que cobra el POS lleva la marca **✓ Cobra el POS** y queda resaltada.
+- Para cambiarla, selecciona **Usar en POS** en otra tarjeta.
+- Los precios de la posición 4 en adelante dicen **No llega al POS**: el POS y la app solo leen los tres primeros.
 
 La captura corresponde a una versión anterior, con los precios en columnas y **P.Defecto** en lugar de **Cobra el POS**.
 
 :::danger IMPORTANTE:
-**Cobra el POS** indica cuál de esos precios cobran el POS y la app móvil por la presentación. Debajo se ve el monto: si sale en **rojo**, la presentación se cobraría a S/ 0.00, así que revisa que el precio elegido tenga valor.
+Si el precio que cobra el POS está en 0, la etiqueta de la fila y la tarjeta salen en **rojo**: la presentación se cobraría a S/ 0.00. Escribe el monto o elige otro precio con **Usar en POS**.
 
 - Las presentaciones nuevas empiezan en el primer precio, o en la etiqueta de precio marcada por defecto.
 - Al guardar, si alguna presentación se cobraría a S/ 0.00 y tiene otro precio con valor, el sistema te avisa y te deja revisarla antes de guardar.
 :::
 
 :::tip Presentaciones creadas antes
-Antes, cada presentación nueva cobraba el **Precio 2** sin que se pudiera ver. Si solo llenabas el primer precio, el POS la cobraba a S/ 0.00. Abre tus productos con presentaciones y revisa **Cobra el POS**: un monto en rojo indica que debes elegir otro precio.
+Antes, cada presentación nueva cobraba el **Precio 2** sin que se pudiera ver. Si solo llenabas el primer precio, el POS la cobraba a S/ 0.00. Abre tus productos con presentaciones y revisa **Cobra el POS**: un monto en rojo indica que debes elegir otro precio con **Usar en POS**.
 :::
 
 Con el giro **Farmacia** activo, esta sección muestra una fila más simple por presentación, con **Precio de venta** y precio por unidad. Revisa [Farmacia › Productos: Presentaciones y Lotes](../../rubros/farmacia/Productos-Presentaciones-y-Lotes.md).
