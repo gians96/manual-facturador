@@ -83,6 +83,17 @@ Leyenda:
 
 ![alt text](img/listadounidades2.jpg)
 
+## Unidades desactivadas: Tableta o blíster (U2)
+
+El listado muestra por defecto solo las unidades **activas**. Para ver las demás, elige **Inactivos** o **Todos** en el filtro **Estado**. Una unidad se activa o desactiva con el interruptor de la columna **Activo**.
+
+La unidad **U2 → Tableta o blister** viene **desactivada**. La usan las presentaciones en blíster de farmacia:
+
+- En la pestaña **Presentaciones** del producto, el botón **+ Blíster** pide confirmación para activarla. Al seleccionar **Activar**, queda activa para todos los productos.
+- También puedes activarla aquí: filtra por **Inactivos**, busca el código **U2** y enciende su interruptor **Activo**.
+
+Más detalles en [Farmacia › Productos: Presentaciones y Lotes](../../../rubros/farmacia/Productos-Presentaciones-y-Lotes.md).
+
 :::danger IMPORANTE
 
 Puedes crear un nueva nueva unidad seleccionando el botón **Nuevo**, asegurándote previamente de verificar el código correspondiente. Es fundamental utilizar el código correcto para garantizar que el código de la unidad esté correctamente clasificado dentro del sistema y cumpla con los requerimientos de sunat.

@@ -24,9 +24,9 @@ Posteriormente aparecerá el formulario para llenar los datos del **Nuevo produc
 
 **4.  Nombre:** Ingresa el nombre del producto.
 
-**5.  Nombre Secundario:** Ingresa el nombre secundario del producto.
+**5.  Nombre Secundario:** Ingresa el nombre secundario del producto. Con el giro **Farmacia** activo, este campo se llama **Principio activo**.
 
-**6.  Descripción:** Ingresa la descripción del producto.
+**6.  Descripción:** Ingresa la descripción del producto. Con el giro **Farmacia** activo, este campo se llama **Acción farmacológica**.
 
 **7.  Modelo:** Ingresar el modelo del producto en caso lo tenga.
 
@@ -44,7 +44,7 @@ Consulte con su contador si tiene dudas sobre que tipo de afectación deberá ut
 
 **12.  Almacén:** Selecciona en qué almacén se va a ubicar el producto.
 
-**13.  Stock inicial:** Ingresa la cantidad de unidades del producto.
+**13.  Stock inicial:** Ingresa la cantidad de unidades del producto. Este campo solo aparece al crear el producto. Si marcas **¿Maneja lotes?** (punto 24), ya no se escribe a mano: muestra la suma de la tabla de lotes, con la leyenda «Suma de los lotes».
 
 **14.  Stock Mínimo:** Ingresa la cantidad mínima de stock; la cantidad mínima de existencias de un producto que se puede permitir tener en su almacén.
 
@@ -52,7 +52,7 @@ Consulte con su contador si tiene dudas sobre que tipo de afectación deberá ut
 Para habilitar la venta con restricción del stock mínimo, se tiene que configurar desde el módulo **Configuración** en la sección **Avanzado** y la subcategoría **Inventarios.** Posteriormente deberá activar el botón **Venta con restricción de stock.**
 :::
 
-**15.  Fec. Vencimiento:** Ingresa la fecha de vencimiento del producto.
+**15.  Fec. Vencimiento:** Ingresa la fecha de vencimiento del lote. Aparece junto al código de lote cuando marcas **¿Maneja lotes?** en un producto que todavía no tiene lotes. Al crear el producto, cada lote lleva su vencimiento en la tabla de lotes (punto 24).
 
 **16.  Código de barra:** En caso el producto ya tenga un código de barra, deberá ingresarlo.
 
@@ -78,7 +78,17 @@ Ingresa el código si la **SUNAT** lo requiere para tu producto; si no, déjalo 
 
 **23.  Incluye percepción:** Selecciona la casilla de selección si el producto incluye percepción; algunos productos cuentan con percepción adicional al IGV. Añada el porcentaje de percepción de acuerdo a su régimen en caso lo requiera.
 
-**24.  ¿Maneja lotes?:** Selecciona la casilla de selección para añadir el código de lote que se encuentra en el producto.
+**24.  ¿Maneja lotes?:** Selecciona la casilla de selección si el producto se controla por lotes, cada uno con su código y su fecha de vencimiento.
+
+- **Al crear el producto** aparece la tabla **Lotes del stock inicial**, con una fila por lote: **Código**, **Vencimiento** y **Cantidad**. Usa **Agregar lote** para sumar filas. El **Stock Inicial** (punto 13) es la suma de los lotes. Si ya habías escrito un stock inicial antes de marcar la casilla, la tabla empieza con una fila por esa cantidad.
+- La tabla puede quedar **vacía**: el stock inicial queda en 0 y los lotes entran después por compras.
+- En una misma tabla no se puede repetir un código de lote. Si la unidad del producto es **Unidades** (NIU), las cantidades van en números enteros.
+- **Al editar un producto que ya tiene lotes** aparece la tabla **Lotes del producto**, con el saldo de cada lote sumando todos los almacenes. Ahí puedes corregir el **código** y el **vencimiento** de cada lote. La cantidad no se cambia aquí: la mueven las compras, las ventas y el inventario. Si el producto todavía no tiene lotes, verás los campos de código de lote y **Fec. Vencimiento** de siempre.
+- **Desmarcar la casilla no borra los lotes.** Quedan guardados e inactivos, las ventas dejan de pedir lote y la app móvil deja de recibirlos. Al volver a marcarla, reaparecen.
+
+:::tip
+Encuentra un ejemplo paso a paso en [Farmacia › Productos: Presentaciones y Lotes](../../rubros/farmacia/Productos-Presentaciones-y-Lotes.md).
+:::
 
 **25.  ¿Maneja series?:** Selecciona la casilla de selección para añadir el código de serie que se encuentra en el producto.
 
@@ -102,9 +112,22 @@ Es otra manera de agregar precios del producto sin alterar los precios en el alm
 
 ![Alt text](img/Creacion-avanzada_04.jpg)
 
+Cada fila es una presentación, con **Unidad**, **Descripción**, **Factor** (cuántas unidades del producto trae) y **Cobra el POS**. Con la flecha de la izquierda despliegas sus precios: **Precio 1**, **Precio 2** y **Precio 3**, o los nombres que hayas puesto en **Configuración › Avanzado › Visual › Gestionar Etiquetas de Precios**. Para sumar una fila, selecciona **Agregar lista de precios**.
+
+La captura corresponde a una versión anterior, con los precios en columnas y **P.Defecto** en lugar de **Cobra el POS**.
+
 :::danger IMPORTANTE:
-Verificar en qué casilla están colocados los precios y seleccionar la casilla en **P.Defecto.**
+**Cobra el POS** indica cuál de esos precios cobran el POS y la app móvil por la presentación. Debajo se ve el monto: si sale en **rojo**, la presentación se cobraría a S/ 0.00, así que revisa que el precio elegido tenga valor.
+
+- Las presentaciones nuevas empiezan en el primer precio, o en la etiqueta de precio marcada por defecto.
+- Al guardar, si alguna presentación se cobraría a S/ 0.00 y tiene otro precio con valor, el sistema te avisa y te deja revisarla antes de guardar.
 :::
+
+:::tip Presentaciones creadas antes
+Antes, cada presentación nueva cobraba el **Precio 2** sin que se pudiera ver. Si solo llenabas el primer precio, el POS la cobraba a S/ 0.00. Abre tus productos con presentaciones y revisa **Cobra el POS**: un monto en rojo indica que debes elegir otro precio.
+:::
+
+Con el giro **Farmacia** activo, esta sección muestra una fila más simple por presentación, con **Precio de venta** y precio por unidad. Revisa [Farmacia › Productos: Presentaciones y Lotes](../../rubros/farmacia/Productos-Presentaciones-y-Lotes.md).
 
 De esta manera podrá emitir el comprobante electrónico de la manera más fácil, ya que contará con el acceso en la parte posterior al seleccionar el producto, asimismo podrá elegir el producto según lo que su cliente solicite.
 
@@ -134,6 +157,8 @@ Deberá escribir el nombre de la categoría que desee crear y después seleccion
 **3.  Marca:** Selecciona la marca del producto, caso contrario deberá crearlo seleccionando el botón **[+Nuevo].**
 
 Deberá escribir el nombre de la marca que desee crear y después seleccionar el botón  **[+Guardar].**
+
+Con el giro **Farmacia** activo, este campo se llama **Laboratorio** y las marcas se gestionan como **[Laboratorios](./11-Gestionar-mis-marcas.md)**.
 
 **4.  Listado:** Selecciona el botón **[+Agregar]** para agregar una lista de atributos, selecciona el tipo y añada una descripción si lo cree necesario.
 

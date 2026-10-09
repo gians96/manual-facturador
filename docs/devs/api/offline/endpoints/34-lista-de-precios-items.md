@@ -10,7 +10,7 @@ En Facturador, la "lista de precios" **no** es una tabla de listas de precios gl
 
 - Un item puede venderse como "UNIDAD" (`NIU`) a S/ 5.00
 - El mismo item puede venderse como "CAJA × 12" a S/ 50.00
-- Cada unidad de medida puede tener hasta **3 precios + 1 por defecto**
+- Cada presentación tiene hasta **3 precios** (`price1/2/3`) y la **posición del que cobra** (`price_default`)
 
 Esto vive en la tabla `item_unit_types`:
 
@@ -21,10 +21,10 @@ Esto vive en la tabla `item_unit_types`:
 | `unit_type_id` | string | FK → `cat_unit_types` (ej: `NIU`, `BX`, `GLN`) |
 | `quantity_unit` | decimal(12,4) | Factor de conversión (1 CAJA = 12 UNIDADES) |
 | `description` | string | Descripción libre (ej: `"Paracetamol caja × 12"`) |
-| `price1` | decimal(12,2) | Precio 1 |
-| `price2` | decimal(12,2) | Precio 2 |
-| `price3` | decimal(12,2) | Precio 3 |
-| `price_default` | int | Cuál de los 3 es el precio por defecto (1, 2 o 3) |
+| `price1` | decimal(12,2) | Precio de la etiqueta en la posición 1 |
+| `price2` | decimal(12,2) | Precio de la etiqueta en la posición 2 |
+| `price3` | decimal(12,2) | Precio de la etiqueta en la posición 3 |
+| `price_default` | tinyint | **Posición (1, 2 o 3) del precio que cobra la presentación**. La columna tiene valor por defecto `2` en la BD (ver [`price_default`](#price_default-qué-precio-cobra-la-presentación)) |
 | `barcode` | string | Código de barras de esa presentación |
 
 > `item_unit_types` también se conoce en el código como **"presentaciones"** o **"unidades de venta"**.
@@ -67,7 +67,7 @@ El campo `select_available_price_list` viene dentro del objeto `configuration`. 
 
 ## Dónde vienen los precios
 
-El endpoint **`GET /api/document/search-items`** ya retorna el array `item_unit_types` por cada item:
+El endpoint **`GET /api/document/search-items`** ya retorna el array `item_unit_types` por cada item de `data.items` (el delta `GET /api/catalog/delta` usa el mismo formato):
 
 ```json
 {
@@ -101,7 +101,7 @@ El endpoint **`GET /api/document/search-items`** ya retorna el array `item_unit_
 }
 ```
 
-> **Ref:** `app/Http/Controllers/Tenant/Api/MobileController.php` → `searchItems()` L495-L506.
+> **Ref:** `app/Services/Tenant/MobileCatalogItemTransformer.php` → `transform()`, compartido por `MobileController::searchItems()` y `CatalogSyncController::delta()`. Cada presentación trae solo `id`, `description`, `unit_type_id`, `quantity_unit`, `price1`, `price2`, `price3` y `price_default`. Los precios salen tal como están en las columnas (decimales de MySQL, pueden llegar como texto: `"45.00"`).
 
 ### Campos clave
 
@@ -111,8 +111,30 @@ El endpoint **`GET /api/document/search-items`** ya retorna el array `item_unit_
 | `description` | Texto a mostrar en el selector |
 | `unit_type_id` | Código SUNAT de la unidad (`NIU`, `BX`, `GLN`, `KGM`, etc.) — se envía en `unidad_de_medida` |
 | `quantity_unit` | Factor: cuántas unidades base equivale (para kardex/stock) |
-| `price1/2/3` | Los 3 precios posibles |
-| `price_default` | Indica cuál usar si el usuario no elige (`1`, `2` o `3`) |
+| `price1/2/3` | Los 3 precios posibles, uno por posición de etiqueta |
+| `price_default` | Posición (`1`, `2` o `3`) del precio que **cobra** la presentación. Es el que se usa si el usuario no elige |
+
+### `price_default`: qué precio cobra la presentación
+
+`price_default` no es un precio: es la **posición** (1, 2 o 3) del precio que cobra la presentación. Todos los lectores cobran `price{price_default}`:
+
+- el POS web (`priceFromPresentation` en `resources/js/views/tenant/pos/index.vue`);
+- el app (`ItemUnitType.defaultPrice`, que cae en `price1` si el valor no es 2 ni 3);
+- la exportación de precios a DIGEMID (`CatDigemid::updatePrices`).
+
+En el panel se elige en la columna **Cobra el POS** de la pestaña Presentaciones del producto. Desde 2026-10-08:
+
+- **Las presentaciones nuevas del formulario nacen en `1`**, o en la posición de la etiqueta de precio marcada `is_default` si está activa y entre 1 y 3 (si no, la menor posición activa entre 1 y 3).
+- **El backend normaliza al guardar** (`ItemUnitType::normalizePriceDefault`, llamado desde `ItemController`): si el valor recibido no es 1, 2 ni 3, conserva el guardado si es válido; si tampoco, guarda `1`.
+
+Antes, el formulario creaba cada presentación con `price_default = 2` y sin selector: si solo se llenaba el primer precio, el POS, el app y DIGEMID cobraban S/ 0. Esas presentaciones siguen en la BD con `2` hasta que alguien las corrija en el formulario. Además, la columna tiene **valor por defecto `2`**, así que una presentación creada por otro camino sin indicar `price_default` también nace en 2. El cliente **no debe suponer** `price_default = 1`: debe cobrar siempre `price{price_default}`.
+
+#### Precios por etiqueta y `price1/2/3`
+
+Los nombres de los precios son **etiquetas** (`price_labels`, se configuran en *Configuración › Avanzado › Visual › Gestionar Etiquetas de Precios*), y el formulario guarda el precio de cada etiqueta en `item_unit_type_prices`. Al guardar el producto, `ItemController::syncLegacyPriceColumns` copia esos precios a las columnas **por posición de la etiqueta**: posición 1 → `price1`, 2 → `price2`, 3 → `price3`. Si una posición no tiene precio por etiqueta, la columna conserva su valor.
+
+- Las etiquetas en posición 4 o mayor **no llegan** a `price1/2/3`: no viajan al app ni se pueden elegir en **Cobra el POS**.
+- El app recibe solo las columnas `price1/2/3` y `price_default`, no `item_unit_type_prices`. Los nombres de las etiquetas activas están en `GET /api/price-labels/active` (`MobileController::priceLabels`).
 
 ---
 
@@ -265,6 +287,8 @@ Al llamar `search-items`, persistir el array completo en esta tabla.
 
 Cada `item_unit_type` puede tener su propio `barcode` (caja con código distinto a la unidad).
 
+> **Ojo:** hoy `search-items` y el delta **no** incluyen el `barcode` de la presentación (ver los campos de `MobileCatalogItemTransformer` arriba). Esta búsqueda local solo sirve si el cliente obtiene ese dato por otra vía.
+
 ```dart
 // Buscar por barcode local
 final match = await db.query(
@@ -298,7 +322,9 @@ if (match.isNotEmpty) {
 
 | Archivo | Línea | Propósito |
 |---------|-------|-----------|
-| `app/Http/Controllers/Tenant/Api/MobileController.php` | 495-506 | Retorna `item_unit_types` en `search-items` |
+| `app/Services/Tenant/MobileCatalogItemTransformer.php` | `transform()` | Formato de `item_unit_types` en `search-items` y en el delta |
+| `app/Models/Tenant/ItemUnitType.php` | `normalizePriceDefault()` | `price_default` siempre 1, 2 o 3 al guardar desde el formulario |
+| `app/Http/Controllers/Tenant/ItemController.php` | `syncLegacyPriceColumns()` | Copia los precios por etiqueta (posiciones 1-3) a `price1/2/3` |
 | `database/migrations/tenant/2019_05_07_160954_tenant_item_unit_types_table.php` | 15 | Schema `item_unit_types` |
 | `database/migrations/tenant/2021_08_09_131738_tenant_add_select_available_price_list_to_configurations.php` | 17 | Flag `select_available_price_list` |
 | `app/Models/Tenant/Configuration.php` | 651, 2279 | Getter/setter del flag |

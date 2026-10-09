@@ -67,6 +67,13 @@ Se encontrará el formulario Agregar Producto o Servicio y se completarán los s
 
 **6. Información adicional atributos:** Ingresa si el producto le genero algún descuento, cargos o atributos.
 
+:::tip Lotes y nombre secundario
+Al elegir el producto aparecen la casilla **¿Maneja lotes?** y el botón **Nombre secundario**. Con el giro **Farmacia** activo, ese botón se llama **Principio activo**.
+
+- **¿Maneja lotes?** activa o desactiva los lotes en el producto al instante. Con la casilla marcada, la compra pide el **Código lote** y la **Fec. Vencimiento** del lote que ingresa.
+- **Nombre secundario** (o **Principio activo**) abre un recuadro para editar ese dato del producto. Se guarda solo al salir del campo y **no cambia el nombre del producto**.
+:::
+
 Selecciona el botón **Agregar** para agregar el producto.
 
 Una vez rellenado los campos, deberá selecciona el botón **Guardar**, asimismo podrá acceder a la Listado y observar todas sus compras realizadas.

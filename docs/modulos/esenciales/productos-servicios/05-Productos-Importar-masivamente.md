@@ -51,6 +51,20 @@ Este listado lo pueden ubicar en el módulo **Configuración** en la sección Su
 
 **11.   Stock Mínimo:** Ingresa la cantidad mínima de stock; la cantidad mínima de existencias de un producto que se puede permitir tener en su almacén.En en caso no lo consideren coloque 0.
 
+**Lotes:** Si una fila trae **Código lote** y **Fec. Vencimiento** (con formato de fecha en Excel), el producto se crea con **¿Maneja lotes?** activado y con un lote de ese código y ese vencimiento por el **Stock** de la fila. Cada fila registra un solo lote. Para un producto con varios lotes, créalo desde el formulario con la tabla de lotes (ver **[Creación avanzada](./02-Productos-Creacion-avanzada.md)**, punto 24) o registra los demás lotes por compras.
+
+:::tip Plantilla de farmacia
+Con el giro **Farmacia** activo, **Descargar** baja una plantilla con los nombres de farmacia. Tiene las mismas columnas y en el mismo orden; solo cambian tres encabezados:
+
+| Plantilla general | Plantilla de farmacia |
+|---|---|
+| Marca | Laboratorio |
+| Descripcion | Acción farmacológica |
+| Nombre secundario | Principio activo |
+
+Un archivo armado con la plantilla general se importa igual, porque las columnas no cambian de lugar.
+:::
+
 :::danger IMPORTANTE:
 - Solo los campos mencionados son obligatorios.
 

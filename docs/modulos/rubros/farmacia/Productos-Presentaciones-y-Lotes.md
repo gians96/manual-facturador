@@ -1,0 +1,124 @@
+# Productos: Presentaciones y Lotes
+
+En este artículo te enseñaremos a crear un medicamento con varios lotes, a corregir un lote y a venderlo por unidad, blíster o caja con el precio correcto. Sigue estos pasos para realizarlo:
+
+:::danger IMPORTANTE:
+Esta guía supone que el giro **Farmacia** está activo. Revisa la [Configuración Previa](./Configuración-Previa.md).
+:::
+
+## Nombres de los campos en farmacia
+
+Con el giro **Farmacia** activo, el formulario de producto usa estos nombres:
+
+| Nombre de siempre | En farmacia |
+|---|---|
+| Nombre secundario | **Principio activo** |
+| Descripción | **Acción farmacológica** |
+| Marca | **Laboratorio** |
+
+El menú **Marcas** también pasa a llamarse **Laboratorios**.
+
+## Crear un medicamento con varios lotes
+
+Como ejemplo, registraremos un medicamento que llegó en dos lotes:
+
+| Lote | Vencimiento | Cantidad |
+|---|---|---|
+| L-A | 31/12/2026 | 30 unidades |
+| L-B | 30/06/2027 | 20 unidades |
+
+1. Ingresa al módulo **Productos/Servicios**, selecciona la subcategoría **Productos** y luego el botón **Nuevo**.
+2. En la pestaña **General** completa el **Nombre**, el **Principio activo**, la **Acción farmacológica**, la **Unidad** (por ejemplo, **Unidades**, si vendes por tableta) y el **Precio Unitario**, que es el precio de una unidad. En el ejemplo, S/ 0.50.
+3. Marca la casilla **¿Maneja lotes?**. Debajo aparece la tabla **Lotes del stock inicial**.
+4. Selecciona **Agregar lote** y completa la primera fila: código **L-A**, vencimiento **31/12/2026** y cantidad **30**.
+5. Selecciona otra vez **Agregar lote** y completa la segunda fila: código **L-B**, vencimiento **30/06/2027** y cantidad **20**.
+6. La fila **Total** de la tabla muestra **50**, y el campo **Stock Inicial** muestra lo mismo con la leyenda «Suma de los lotes». Ese campo no se escribe a mano.
+7. Selecciona el botón **Guardar**.
+
+El producto queda con stock 50 repartido en dos lotes, y el kardex registra un solo movimiento de stock inicial por el total.
+
+:::tip
+- La tabla puede quedar vacía: el producto se crea con stock 0 y los lotes entran después por **Compras**.
+- Si ya habías escrito un stock inicial antes de marcar **¿Maneja lotes?**, la tabla empieza con una fila por esa cantidad. Solo te falta completar el código y el vencimiento.
+- El código de lote no se puede repetir en la tabla. Si la unidad es **Unidades** (NIU), las cantidades van en números enteros.
+- Si una fecha ya pasó, el lote se marca como **vencido**.
+:::
+
+## Corregir un lote
+
+Si escribiste mal un código o un vencimiento, puedes corregirlo después:
+
+1. En el listado de productos, abre el producto para editarlo.
+2. En la pestaña **General** verás la tabla **Lotes del producto**, con el **Código**, el **Vencimiento** y el **Saldo** de cada lote, sumando todos los almacenes.
+3. Corrige el dato. En el ejemplo, cambia el código **L-B** por **L-B2** y el vencimiento por **31/07/2027**.
+4. Selecciona el botón **Guardar**.
+
+Cambian el código y el vencimiento, pero el saldo del lote (20) sigue igual. La cantidad de un lote no se edita en el formulario: la mueven las compras, las ventas y el inventario.
+
+Debajo de la tabla verás el stock del producto en todos los almacenes. Si parte de ese stock no tiene lote, se indica como **Stock sin lote**: ese stock debe entrar con su lote por **Compras** o **Inventario**.
+
+:::danger IMPORTANTE:
+El código nuevo no puede ser el de otro lote del mismo producto. Si el producto todavía no tiene lotes, no verás la tabla, sino los campos de código de lote y **Fec. Vencimiento** de siempre.
+:::
+
+## Presentaciones: blíster y caja
+
+En la pestaña **Presentaciones**, la farmacia ve una fila simple por presentación, con estas columnas:
+
+- **Presentación:** la unidad de la presentación, por ejemplo, **Tableta o blíster** o **Caja**.
+- **Descripción:** el texto que se muestra al vender, por ejemplo, «Blíster».
+- **Unidades que contiene:** cuántas unidades del producto trae, por ejemplo, 10 en un blíster de 10 tabletas.
+- **Precio de venta:** lo que cobran el POS y la app móvil por la presentación.
+- **Precio por unidad:** el precio de venta dividido entre las unidades que contiene. Te sirve para comparar presentaciones.
+
+Siguiendo el ejemplo, agregaremos un blíster de 10 tabletas y una caja de 100:
+
+1. Selecciona **+ Blíster**. Se agrega una fila con la unidad **Tableta o blíster** (código U2) y la descripción «Blíster».
+   - Esa unidad viene desactivada. La primera vez, el sistema pregunta si quieres activarla: selecciona **Activar**. Si eliges **Cancelar**, no se agrega la fila. También puedes activarla desde el [Listado de unidades](../../configuracion-y-mas/configuracion-globales/Sunat/listado-de-unidades.md).
+2. En **Unidades que contiene** escribe **10**.
+3. Mientras el **Precio de venta** esté vacío, debajo aparece la sugerencia **Usar S/ 5.00 (0.50 × 10)**, que es el precio unitario por las unidades que contiene. Selecciónala para usar ese monto o escribe otro. La columna **Precio por unidad** muestra **S/ 0.50 c/u**.
+4. Selecciona **+ Caja**. Se agrega una fila con la unidad **Caja** (código BX) y la descripción «Caja».
+5. En **Unidades que contiene** escribe **100** y en **Precio de venta**, **45.00**. Las cajas suelen llevar descuento, por eso la sugerencia no se llena sola. La columna **Precio por unidad** muestra **S/ 0.45 c/u**.
+6. Para cualquier otra presentación, selecciona **+ Otra presentación** y elige la unidad.
+7. Selecciona el botón **Guardar**.
+
+:::tip
+Si no ves los botones **+ Blíster** y **+ Caja**, tu cuenta admite una sola presentación por producto, con la unidad del producto. En ese caso verás el botón **Agregar presentación**.
+:::
+
+## ¿Qué precio cobra el POS?
+
+Cada presentación tiene hasta tres precios: **Precio 1**, **Precio 2** y **Precio 3**. Puedes cambiarles el nombre en **Configuración › Avanzado › Visual › Gestionar Etiquetas de Precios**. El **Precio de venta** de la fila es el precio que cobra el POS.
+
+Para elegir otro, selecciona **Otros precios** debajo del precio de venta, o la flecha a la izquierda de la fila. Se despliegan:
+
+- **Cobra el POS:** el precio de la lista que cobran el POS y la app móvil por esa presentación. Ese mismo precio va en la exportación de precios a DIGEMID.
+- La lista con todos los precios de la presentación.
+
+Si cambias **Cobra el POS** a otro precio, el campo **Precio de venta** pasa a mostrar y editar ese precio.
+
+:::danger IMPORTANTE:
+- Las presentaciones nuevas empiezan cobrando el primer precio, o la etiqueta de precio marcada por defecto.
+- Al guardar, si una presentación se cobraría a S/ 0.00 y tiene otro precio con valor, el sistema te avisa para que revises **Cobra el POS** antes de guardar.
+- Antes, las presentaciones nuevas cobraban el **Precio 2** sin que se pudiera ver: si solo llenabas el primer precio, el POS las cobraba a S/ 0.00. Revisa las presentaciones de tus productos antiguos.
+:::
+
+## Vender una presentación con lotes
+
+Al vender un blíster o una caja en el POS o en la app móvil, el sistema descuenta sus unidades de los lotes empezando por el que vence primero. Si ese lote no alcanza, el resto sale del lote siguiente, así que **una presentación puede salir de varios lotes**.
+
+Por ejemplo, con los lotes L-A (30 unidades) y L-B (20 unidades), vender 4 blísters de 10 descuenta 40 unidades: 30 del lote L-A y 10 del lote L-B.
+
+## Desmarcar «¿Maneja lotes?»
+
+Si editas el producto y desmarcas **¿Maneja lotes?**, aparece el aviso «Los lotes se conservan; las ventas dejarán de pedir lote». Al guardar:
+
+- Los lotes **no se borran**: quedan guardados e inactivos.
+- Las ventas dejan de pedir lote.
+- La app móvil deja de recibir los lotes del producto y sus alertas de vencimiento.
+
+Si vuelves a marcar la casilla, los lotes reaparecen con su saldo.
+
+:::danger IMPORTANTE:
+Las ventas hechas mientras los lotes estaban desactivados no descontaron ningún lote. Al reactivarlos, los saldos de los lotes pueden sumar más que el stock del producto, y el sistema te lo indica. Ajusta esos saldos desde **Inventario**.
+:::

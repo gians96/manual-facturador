@@ -42,12 +42,14 @@ Authorization: Bearer {token}
 
 > **Filtrado por establecimiento:** El endpoint sólo retorna lotes de items asignados al **warehouse del establecimiento** del usuario autenticado. Consistente con `search-items` y `/api/offline/stock` (ver [33-validacion-contrato-offline.md](33-validacion-contrato-offline.md)).
 
+> **Solo items con `lots_enabled = true`** (desde 2026-10-08): los lotes de un item con «¿Maneja lotes?» desmarcado siguen en `item_lots_group`, pero inactivos, y este endpoint no los devuelve. Ver [Lotes inactivos](#lotes-inactivos-lots_enabled-apagado).
+
 **Query params:**
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
 | `item_id` | int | No | Si se envía, filtra por item |
-| `only_available` | bool | No | `true` = solo lotes con `quantity > 0` (default) |
+| `only_available` | bool | No | `true` = solo lotes con `quantity > 0` (default). El app pasa `false` para recibir también los lotes en 0 o en negativo (una sobreventa con la restricción de stock apagada deja lotes en negativo) |
 
 **Response (200):**
 ```json
@@ -55,30 +57,48 @@ Authorization: Bearer {token}
     "success": true,
     "data": [
         {
-            "id": 101,
-            "item_id": 25,
-            "item_description": "Paracetamol 500mg x 10 tabletas",
-            "cod_digemid": "E1234567",
-            "code": "LOT-2026-001",
-            "quantity": 150,
-            "date_of_due": "2027-06-30",
-            "days_to_expire": 437
-        },
-        {
             "id": 102,
             "item_id": 25,
             "item_description": "Paracetamol 500mg x 10 tabletas",
+            "internal_id": "MED-001",
             "cod_digemid": "E1234567",
+            "sanitary": "N-12345",
             "code": "LOT-2026-002",
             "quantity": 50,
             "date_of_due": "2026-12-15",
             "days_to_expire": 240
+        },
+        {
+            "id": 101,
+            "item_id": 25,
+            "item_description": "Paracetamol 500mg x 10 tabletas",
+            "internal_id": "MED-001",
+            "cod_digemid": "E1234567",
+            "sanitary": "N-12345",
+            "code": "LOT-2026-001",
+            "quantity": 150,
+            "date_of_due": "2027-06-30",
+            "days_to_expire": 437
         }
     ]
 }
 ```
 
 > **Ordenamiento:** Los lotes se retornan ordenados por `date_of_due ASC` (FEFO — First Expired First Out).
+>
+> **Ref:** `modules/Offline/Http/Controllers/ItemLotController.php`
+
+### Lotes inactivos (`lots_enabled` apagado)
+
+Desde 2026-10-08, el formulario de producto del panel **ya no borra lotes**. Desmarcar «¿Maneja lotes?» solo apaga `items.lots_enabled`: los lotes quedan en `item_lots_group` e inactivos, y reaparecen al volver a marcarlo. Mientras el flag esté apagado:
+
+- `GET /api/offline/item-lots-group` **no** devuelve los lotes del item.
+- `GET /api/catalog/delta` manda el item en `lots_item_ids` **sin ningún lote** en `lots`. Como el cliente reemplaza los lotes por cada id de `lots_item_ids`, vacía sus lotes locales y deja de alertar sus vencimientos.
+- Cambiar el valor del flag anota `lot:{item_id}` en el changelog del catálogo, así que el siguiente delta trae la lista del item: vacía al apagarlo y con sus lotes al volver a encenderlo.
+
+El contrato no cambia: una lista vacía ya significaba «sin lotes».
+
+> **Ref:** `modules/Offline/Http/Controllers/CatalogSyncController.php` (`delta`), `app/Providers/CatalogSyncServiceProvider.php`
 
 ### Envío de lotes en venta
 
@@ -263,8 +283,9 @@ DIGEMID (Dirección General de Medicamentos, Insumos y Drogas) es el organismo r
 |-------|------|-------------|
 | `cod_digemid` | string | Código DIGEMID del producto |
 | `sanitary` | string | Número de registro sanitario |
-| `date_of_due` | date | Fecha de vencimiento del registro sanitario (a nivel producto) |
-| `lots_enabled` | bool | Si el producto maneja lotes (farmacia) |
+| `lot_code` | string | Código del **lote de referencia**: el lote con saldo que vence primero. Se recalcula al guardar el producto con la tabla de lotes; una venta no lo mueve |
+| `date_of_due` | date | Con lotes, vencimiento del lote de referencia. No es el vencimiento del registro sanitario (ese está en `cat_digemid.fec_vcto_reg_sanitario`) |
+| `lots_enabled` | bool | Si el producto maneja lotes. Apagado, sus lotes quedan inactivos y no viajan al app |
 
 ### Modelo `CatDigemid`
 
@@ -288,45 +309,38 @@ DIGEMID (Dirección General de Medicamentos, Insumos y Drogas) es el organismo r
 
 > **Ref:** `modules/Digemid/Models/CatDigemid.php`
 
-### Respuesta extendida de item (farmacia)
+### Qué devuelve `search-items` de lotes y farmacia
 
-Cuando `GET /api/document/search-items` retorna items de farmacia, incluye campos adicionales:
+`GET /api/document/search-items` **no** trae los campos DIGEMID ni los lotes agrupados. Sus items salen de `MobileCatalogItemTransformer::transform()`, el mismo formato que usan los `items` de `GET /api/catalog/delta`. De lotes y series solo trae:
 
 ```json
 {
-    "id": 25,
-    "internal_id": "MED-001",
-    "description": "Paracetamol 500mg x 10 tabletas",
-    "unit_type_id": "NIU",
-    "sale_unit_price": "5.00",
-    "lots_enabled": true,
-    "series_enabled": false,
-    "cod_digemid": "E1234567",
-    "sanitary": "N-12345",
-    "date_of_due": "2027-12-31",
-    "lots_group": [
-        {
-            "id": 101,
-            "code": "LOT-2026-001",
-            "quantity": 150,
-            "date_of_due": "2027-06-30",
-            "checked": false,
-            "compromise_quantity": 0
-        },
-        {
-            "id": 102,
-            "code": "LOT-2026-002",
-            "quantity": 50,
-            "date_of_due": "2026-12-15",
-            "checked": false,
-            "compromise_quantity": 0
-        }
-    ],
-    "lots": []
+    "success": true,
+    "data": {
+        "items": [
+            {
+                "id": 25,
+                "internal_id": "MED-001",
+                "description": "Paracetamol 500mg x 10 tabletas",
+                "unit_type_id": "NIU",
+                "sale_unit_price": "5.00",
+                "lots_enabled": true,
+                "lots": [],
+                "...": "resto de campos del item"
+            }
+        ]
+    }
 }
 ```
 
-Los campos `checked` y `compromise_quantity` son para el frontend (al seleccionar un lote, Flutter los actualiza localmente).
+| Campo | Contenido |
+|-------|-----------|
+| `lots_enabled` | Si el producto maneja lotes |
+| `lots` | Las **series** (`item_lots`) registradas en el propio item (relación `item_loteable`), no los lotes agrupados |
+
+No vienen `cod_digemid`, `sanitary`, `date_of_due`, `series_enabled` ni `lots_group`. Los lotes agrupados, con `cod_digemid`, `sanitary` e `internal_id` por lote, se descargan de `GET /api/offline/item-lots-group`, y sus cambios llegan en `lots` del delta. Los campos `checked` y `compromise_quantity` son estado local del cliente al elegir lotes; no vienen del servidor.
+
+> **Ref:** `app/Services/Tenant/MobileCatalogItemTransformer.php`, `app/Http/Controllers/Tenant/Api/MobileController.php` → `searchItems()`
 
 ---
 
@@ -407,8 +421,9 @@ Los campos `checked` y `compromise_quantity` son para el frontend (al selecciona
 
 ### Descarga inicial
 
-1. `GET /api/document/search-items` — Retorna items con `lots_group[]`, `lots[]`, `lots_enabled`, `series_enabled`
-2. Guardar cada `lots_group` en SQLite asociado al `item_id`
+1. `GET /api/document/search-items` — Retorna los items con `lots_enabled` (y `lots[]`, que son series). No trae los lotes agrupados.
+2. `GET /api/offline/item-lots-group?only_available=false` — Retorna los lotes de los items con `lots_enabled = true`. Guardarlos en SQLite asociados al `item_id`.
+3. Después, aplicar `GET /api/catalog/delta`: por cada id de `lots_item_ids`, reemplazar los lotes locales del item por los que vengan en `lots` (ninguno = vaciarlos).
 
 ### Descuento local
 
@@ -474,4 +489,5 @@ await db.updateLots(response['data']);
 | Cliente compra cantidad > stock total de lotes | Validar en frontend antes de cobrar |
 | Cliente compra, otro vendedor también vendió el mismo lote offline | Al sincronizar, uno puede fallar si `stock_control=true`. Usar `sync-batch` para manejar errores individuales |
 | Lote sin `date_of_due` | No debería existir. Si existe, tratarlo como "sin vencimiento" (ponerlo al final del orden FEFO) |
-| Item tiene `lots_enabled=true` pero no tiene lotes en `lots_group[]` | No se puede vender. Mostrar alerta "Sin lotes disponibles" |
+| Item tiene `lots_enabled=true` pero no tiene lotes descargados | No se puede vender. Mostrar alerta "Sin lotes disponibles" |
+| Item con `lots_enabled=false` que tenía lotes | El servidor ya no los envía y el delta los vacía. No pedir lote al vender |
