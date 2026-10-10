@@ -227,26 +227,27 @@ Repetir la llamada sobre una guía ya anulada **no es un error**: responde `200`
 
 ### `DELETE /api/documents/{external_id}` — desde 2026-10-10
 
-Elimina una boleta **Registrada** que no va en ningún resumen, igual que la opción **Eliminar**
-del listado de comprobantes. Detalle completo en
-[Eliminar - Boleta registrada](tenant/Generar-boleta/eliminar-boleta.api.mdx).
+Elimina una boleta (fuera de resumen) o una factura en estado **Registrado**, igual que la opción
+**Eliminar** del listado de comprobantes. Detalle completo en
+[Eliminar - Boleta o factura registrada](tenant/Generar-boleta/eliminar-boleta.api.mdx) (y con
+ejemplos de factura en [Eliminar - Factura registrada](tenant/Generar-factura/eliminar-factura.api.mdx)).
 
 | HTTP | `error_code` | Cuándo |
 |---|---|---|
 | 422 | `DOCUMENT_NOT_FOUND` | El `external_id` no existe |
-| 403 | `DOCUMENT_DELETE_FORBIDDEN` | El usuario del token no tiene el permiso «Eliminar boletas registradas» (Usuarios → Permisos → Comprobantes) |
-| 409 | `DOCUMENT_NOT_DELETABLE_TYPE` | No es una boleta: se anula con `POST /api/voided` |
-| 409 | `DOCUMENT_ALREADY_SENT` | La boleta ya no está Registrada: se anula con un resumen `"3"` |
+| 403 | `DOCUMENT_DELETE_FORBIDDEN` | El usuario del token no tiene el permiso de ese tipo: «Eliminar boletas registradas» o «Eliminar facturas registradas» (Usuarios → Permisos → Comprobantes) |
+| 409 | `DOCUMENT_NOT_DELETABLE_TYPE` | No es una boleta ni una factura (por ejemplo, una nota): se anula |
+| 409 | `DOCUMENT_ALREADY_SENT` | Ya no está Registrado: la factura se anula con `POST /api/voided`, la boleta con un resumen `"3"` |
 | 409 | `DOCUMENT_IN_SUMMARY` | La boleta va en un resumen diario |
-| 409 | `DOCUMENT_IN_SUNAT` | Boleta de envío individual que SUNAT sí tiene |
-| 409 | `SUNAT_QUERY_NOT_AVAILABLE` | Boleta de envío individual y no se puede preguntar a SUNAT: envío por PSE u OSE, o sin credenciales válidas de la consulta integrada |
-| 409 | `DOCUMENT_IN_USE` | Otro registro usa la boleta |
+| 409 | `DOCUMENT_IN_SUNAT` | Factura, o boleta de envío individual, que SUNAT sí tiene |
+| 409 | `SUNAT_QUERY_NOT_AVAILABLE` | Había que preguntar a SUNAT y no se puede: envío por PSE u OSE, o sin credenciales válidas de la consulta integrada |
+| 409 | `DOCUMENT_IN_USE` | Otro registro lo usa (por ejemplo, una nota de crédito de la factura) |
 | 503 | `SUNAT_UNREACHABLE` | La consulta a SUNAT falló o no fue concluyente |
 
-**Solo el `503` se reintenta.** Antes de borrar una boleta de envío individual emitida en
-producción, el sistema pregunta a SUNAT si la tiene, y esa consulta puede caerse. Todos los demás
-dependen del estado de la boleta o de la configuración, y no cambian por repetir la llamada.
-`errors` trae `external_id` y `estado`.
+**Solo el `503` se reintenta.** Antes de borrar una factura, o una boleta de envío individual,
+emitida en producción, el sistema pregunta a SUNAT si la tiene, y esa consulta puede caerse.
+Todos los demás dependen del comprobante, del permiso o de la configuración, y no cambian por
+repetir la llamada. `errors` trae `external_id` y `estado`.
 
 ### Notas de crédito y débito — desde 2026-09-07
 

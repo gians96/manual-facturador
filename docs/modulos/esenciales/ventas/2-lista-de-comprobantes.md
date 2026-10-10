@@ -104,42 +104,52 @@ Puedes descargar los comprobantes en diferentes formatos:
 - **Pago:** En esta sección podrás gestionar los pagos pendientes,caso contrario la ventana a mostrar estará vacia.
 ![Alt text](img/14__pago.jpg)
 
-- **Eliminar:** borra una boleta que todavía no salió a SUNAT. Solo aparece a los usuarios con el
-  permiso **Eliminar boletas registradas**; ver [Eliminar una boleta registrada](#eliminar-una-boleta-registrada).
+- **Eliminar:** borra una boleta o una factura que todavía no salió a SUNAT. Solo aparece a los
+  usuarios con el permiso de ese tipo; ver [Eliminar una boleta o factura registrada](#eliminar-una-boleta-o-factura-registrada).
 
-## Eliminar una boleta registrada
+## Eliminar una boleta o factura registrada
 
-La opción **Eliminar** aparece en una **boleta** en estado **Registrado** que no va en ningún
-resumen diario, y solo a los usuarios que tienen el permiso **Eliminar boletas registradas**. Ese
-permiso viene desmarcado para todos; el administrador lo da a quien quiera desde
+La opción **Eliminar** aparece en:
+
+* una **boleta** en estado **Registrado** que no va en ningún resumen diario, a los usuarios con
+  el permiso **Eliminar boletas registradas**;
+* una **factura** en estado **Registrado**, a los usuarios con el permiso **Eliminar facturas
+  registradas**.
+
+Los dos permisos vienen desmarcados para todos; el administrador los da a quien quiera desde
 **Configuración y más → Usuarios → Editar → Permisos → Comprobantes**
-([cómo se da el permiso](../../configuracion-y-mas/usuarios/agregar-usuarios-a-mi-sistema.md#eliminar-boletas-registradas)).
-En facturas, notas y boletas que ya se enviaron no aparece: esas se anulan.
+([cómo se dan los permisos](../../configuracion-y-mas/usuarios/agregar-usuarios-a-mi-sistema.md#eliminar-boletas-y-facturas-registradas)).
+En notas de crédito y débito, y en boletas y facturas que ya se enviaron, no aparece: esas se
+anulan.
 
-Abre el menú de tres puntos de la boleta y elige **Eliminar**:
+Abre el menú de tres puntos del comprobante y elige **Eliminar** (en una factura es igual):
 
 ![Menú de una boleta registrada con la opción Eliminar](img/eliminar-boleta-menu.png)
 
 El sistema pide confirmación antes de borrar:
 
-![Confirmación para eliminar la boleta](img/eliminar-boleta-confirmar.png)
+![Confirmación para eliminar el comprobante](img/eliminar-boleta-confirmar.png)
 
-Al eliminarla se borran también sus pagos, y el stock de los productos vuelve. **No se puede
-deshacer.** Si la boleta era la última de su serie, el número vuelve a quedar libre; si no, queda
-un salto en la numeración que SUNAT nunca recibió.
+Al eliminarlo se borran también sus pagos, y el stock de los productos vuelve. **No se puede
+deshacer.** Si era el último de su serie, el número vuelve a quedar libre; si no, queda un salto
+en la numeración que SUNAT nunca recibió. Una factura que ya tiene una nota de crédito o débito
+no se puede eliminar.
 
-**Boletas con envío individual.** Si la empresa envía cada boleta sola a SUNAT, una boleta puede
-quedarse en Registrado porque el envío tardó demasiado, aunque SUNAT sí la haya recibido. Por eso,
-en producción, antes de eliminarla el sistema le pregunta a SUNAT si la tiene, y solo la borra si
-SUNAT contesta que no:
+**Facturas y boletas con envío individual.** Las facturas se envían a SUNAT una por una al
+emitirse, y lo mismo las boletas si la empresa usa el envío individual. Si una quedó en
+Registrado, lo normal es que el envío fallara o tardara demasiado, y en ese caso SUNAT pudo
+haberla recibido igual. Por eso, en producción, antes de eliminarla el sistema le pregunta a SUNAT
+si la tiene, y solo la borra si SUNAT contesta que no:
 
 - Si SUNAT la tiene, no se elimina: usa **Reenviar** para que su estado se actualice.
 - Si la consulta no responde, no se elimina: inténtalo de nuevo en un momento.
 - Para poder preguntar, la empresa necesita el **client_id** y el **client_secret** de la
-  consulta integrada de SUNAT. Sin ellos, la boleta no se elimina.
-- Si la empresa envía por un PSE u OSE, la boleta no se elimina desde aquí: verifícala en tu
-  proveedor y usa **Reenviar**.
+  consulta integrada de SUNAT. Sin ellos, no se elimina.
+- Si la empresa envía por un PSE u OSE, no se elimina desde aquí: verifícala en tu proveedor y usa
+  **Reenviar**.
+
+Las boletas que esperan su resumen diario no salieron a SUNAT: se eliminan sin preguntar.
 
 Lo mismo se puede hacer por API, con las mismas reglas; el usuario dueño del token necesita el
 mismo permiso:
-[Eliminar - Boleta registrada](../../../devs/api/tenant/Generar-boleta/eliminar-boleta.api.mdx).
+[Eliminar - Boleta o factura registrada](../../../devs/api/tenant/Generar-boleta/eliminar-boleta.api.mdx).

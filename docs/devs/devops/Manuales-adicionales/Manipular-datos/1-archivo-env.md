@@ -47,7 +47,7 @@ Descripción de los parámetros utilizados por el sistema
 | API_SERVICE_URL | url de la API para consultar documentos a seniat y reniec, RUC y DNI respectivamente | https://apiperu.dev |
 | API_SERVICE_TOKEN | token asignada al usuario previamente registrado en apiperu | 3cf2365976ecb83ca2fd422ddc76fdc39804480a041f3edc43619ced59bd6938 |
 | SUNAT_ALTERNATE_SERVER | url alternativa de sunat para recibir documentos | true |
-| DELETE_DOCUMENT_TYPE_03 | **ya no se usa** (desde 2026-10-10): eliminar una boleta registrada es un permiso de cada usuario, «Eliminar boletas registradas», que da el administrador de cada empresa. Si sigue en el `.env` no hace nada. Ver [Lista de comprobantes](../../../../modulos/esenciales/ventas/2-lista-de-comprobantes.md#eliminar-una-boleta-registrada) | — |
+| DELETE_DOCUMENT_TYPE_03 | **ya no se usa** (desde 2026-10-10): eliminar una boleta o una factura registrada son permisos de cada usuario, «Eliminar boletas registradas» y «Eliminar facturas registradas», que da el administrador de cada empresa. Si sigue en el `.env` no hace nada. Ver [Lista de comprobantes](../../../../modulos/esenciales/ventas/2-lista-de-comprobantes.md#eliminar-una-boleta-o-factura-registrada) | — |
 | ADMIN_DELETE_CLIENT | permiso para eliminar clientes desde el administrador | true |
 | NUMBER_ITEMS | cantidad de productos a mostrar al inicio | 20 |
 | NUMBER_SEARCH_ITEMS | cantidad de productos a mostrar al buscar | 250 |

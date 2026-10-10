@@ -37,32 +37,39 @@ paths:
     delete:
       tags:
         - api
-      summary: Eliminar - Boleta registrada
+      summary: Eliminar - Boleta o factura registrada
       description: |
-        Elimina una **boleta** (`03`) en estado **Registrado** (`01`) que no va en ningún
-        resumen diario: la que todavía no salió a SUNAT. Es lo mismo que la opción
-        **Eliminar** del listado de comprobantes, con las mismas reglas.
+        Elimina un comprobante en estado **Registrado** (`01`) que todavía no salió a SUNAT:
 
-        **El usuario dueño del token necesita el permiso «Eliminar boletas registradas»**
-        (Configuración y más → Usuarios → Editar → Permisos → Comprobantes). Viene desmarcado
-        para todos, administrador incluido; cada empresa lo da a quien quiera. Sin él responde
-        `403`. Es el mismo permiso que muestra la opción **Eliminar** en el panel.
+        - una **boleta** (`03`) que no va en ningún resumen diario;
+        - una **factura** (`01`).
 
-        Todo lo demás **se anula, no se elimina**: facturas y notas con la comunicación de
-        baja (`POST /api/voided`), y boletas que ya salieron con un resumen de anulación
-        (`POST /api/summaries` con `"3"`).
+        Es lo mismo que la opción **Eliminar** del listado de comprobantes, con las mismas
+        reglas.
 
-        **Boletas con envío individual.** Una boleta que se envía sola a SUNAT puede quedar
-        Registrada con el envío vencido por tiempo de espera, aunque SUNAT sí la haya
-        recibido. Si se emitió en producción, **antes de eliminarla el sistema le pregunta a
-        SUNAT** (consulta integrada) y solo la borra si SUNAT contesta que no existe. Para eso
-        la empresa necesita el `client_id` y el `client_secret` de la consulta integrada de
-        SUNAT. Si la empresa envía por un PSE u OSE, la boleta no se elimina: que SUNAT no la
-        tenga no basta, porque el proveedor puede mandarla después.
+        **El usuario dueño del token necesita el permiso de ese tipo**: «Eliminar boletas
+        registradas» o «Eliminar facturas registradas» (Configuración y más → Usuarios →
+        Editar → Permisos → Comprobantes). Son independientes y vienen desmarcados para todos,
+        administrador incluido; cada empresa los da a quien quiera. Sin él responde `403`.
 
-        Al eliminarla se borran sus ítems y sus pagos, y el stock de los productos vuelve. Si
-        la boleta era la última de su serie, el número vuelve a quedar libre; si no, queda un
-        hueco en el correlativo que SUNAT nunca recibió.
+        Todo lo demás **se anula, no se elimina**: las notas de crédito y débito siempre, las
+        facturas que ya salieron con la comunicación de baja (`POST /api/voided`) y las boletas
+        que ya salieron con un resumen de anulación (`POST /api/summaries` con `"3"`).
+
+        **Antes de eliminar, a veces se pregunta a SUNAT.** Las facturas se envían a SUNAT una
+        por una al emitirse, y lo mismo las boletas con envío individual. Si una quedó
+        Registrada, lo normal es que el envío fallara o venciera por tiempo de espera, y en ese
+        caso SUNAT pudo haberla recibido igual. Por eso, si se emitió en producción, **el
+        sistema consulta a SUNAT** (consulta integrada) y solo la borra si SUNAT contesta que
+        no existe. Para eso la empresa necesita el `client_id` y el `client_secret` de la
+        consulta integrada. Si la empresa envía por un PSE u OSE no se elimina: que SUNAT no la
+        tenga no basta, porque el proveedor puede mandarla después. Las boletas que esperan su
+        resumen diario no salieron: se eliminan sin preguntar.
+
+        Al eliminarlo se borran sus ítems y sus pagos, y el stock de los productos vuelve. Si
+        era el último de su serie, el número vuelve a quedar libre; si no, queda un hueco en el
+        correlativo que SUNAT nunca recibió. Una factura que ya tiene una nota de crédito o
+        débito no se puede eliminar (`DOCUMENT_IN_USE`).
 
         ***Ejemplo:***
          - **Método:** DELETE
@@ -74,26 +81,26 @@ paths:
         | HTTP | `error_code` | Significa | Qué hacer |
         |---|---|---|---|
         | 422 | `DOCUMENT_NOT_FOUND` | El `external_id` no existe | No reintentar |
-        | 403 | `DOCUMENT_DELETE_FORBIDDEN` | El usuario del token no tiene el permiso «Eliminar boletas registradas» | Pedir al administrador de la empresa que se lo dé en Usuarios → Permisos |
-        | 409 | `DOCUMENT_NOT_DELETABLE_TYPE` | No es una boleta | Anularlo con `POST /api/voided` |
-        | 409 | `DOCUMENT_ALREADY_SENT` | La boleta ya no está Registrada: salió a SUNAT | Anularla con un resumen (`POST /api/summaries`, `"3"`) |
+        | 403 | `DOCUMENT_DELETE_FORBIDDEN` | El usuario del token no tiene el permiso de ese tipo («Eliminar boletas registradas» o «Eliminar facturas registradas») | Pedir al administrador de la empresa que se lo dé en Usuarios → Permisos |
+        | 409 | `DOCUMENT_NOT_DELETABLE_TYPE` | No es una boleta ni una factura (por ejemplo, una nota) | Anularlo |
+        | 409 | `DOCUMENT_ALREADY_SENT` | Ya no está Registrado: salió a SUNAT | Anularlo: factura con `POST /api/voided`, boleta con un resumen `"3"` |
         | 409 | `DOCUMENT_IN_SUMMARY` | La boleta va en un resumen diario | Esperar al resumen y anularla con otro |
-        | 409 | `DOCUMENT_IN_SUNAT` | Envío individual: SUNAT dice que sí la tiene | No eliminarla. Reenviarla para que su estado se actualice |
-        | 409 | `SUNAT_QUERY_NOT_AVAILABLE` | Envío individual y no se puede preguntar a SUNAT: la empresa envía por PSE u OSE, o faltan (o SUNAT rechazó) el `client_id` y el `client_secret` de la consulta integrada | Corregir la configuración de la empresa, o verificarla en el proveedor |
-        | 409 | `DOCUMENT_IN_USE` | Otro registro usa la boleta | No reintentar |
-        | 503 | `SUNAT_UNREACHABLE` | No se pudo confirmar con SUNAT que no tiene la boleta | **Reintentar** más tarde. Es el único error pasajero |
+        | 409 | `DOCUMENT_IN_SUNAT` | Factura, o boleta de envío individual: SUNAT dice que sí la tiene | No eliminarla. Reenviarla para que su estado se actualice |
+        | 409 | `SUNAT_QUERY_NOT_AVAILABLE` | Hacía falta preguntar a SUNAT y no se puede: la empresa envía por PSE u OSE, o faltan (o SUNAT rechazó) el `client_id` y el `client_secret` de la consulta integrada | Corregir la configuración de la empresa, o verificarla en el proveedor |
+        | 409 | `DOCUMENT_IN_USE` | Otro registro lo usa (por ejemplo, una nota de crédito) | No reintentar |
+        | 503 | `SUNAT_UNREACHABLE` | No se pudo confirmar con SUNAT que no lo tiene | **Reintentar** más tarde. Es el único error pasajero |
       operationId: eliminarBoleta
       parameters:
         - name: external_id
           in: path
           required: true
-          description: Identificador devuelto por `POST /api/documents` al emitir la boleta.
+          description: Identificador devuelto por `POST /api/documents` al emitir el comprobante.
           schema:
             type: string
             example: "59670537-a922-48d4-986e-fa9c50870aff"
       responses:
         '200':
-          description: Boleta eliminada, con sus ítems y pagos; el stock vuelve.
+          description: Comprobante eliminado, con sus ítems y pagos; el stock vuelve.
           content:
             application/json:
               schema:
@@ -105,7 +112,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorNoAutenticado'
         '403':
-          description: El usuario del token no tiene el permiso «Eliminar boletas registradas» (`DOCUMENT_DELETE_FORBIDDEN`).
+          description: El usuario del token no tiene el permiso de ese tipo (`DOCUMENT_DELETE_FORBIDDEN`).
           content:
             application/json:
               schema:
@@ -120,11 +127,11 @@ paths:
         '409':
           description: |-
             No se eliminó nada.
-            - `DOCUMENT_NOT_DELETABLE_TYPE`: no es una boleta.
-            - `DOCUMENT_ALREADY_SENT`: la boleta no está Registrada.
-            - `DOCUMENT_IN_SUMMARY`: va en un resumen diario.
-            - `DOCUMENT_IN_SUNAT`: envío individual y SUNAT la tiene.
-            - `SUNAT_QUERY_NOT_AVAILABLE`: envío individual y no se puede preguntar a SUNAT.
+            - `DOCUMENT_NOT_DELETABLE_TYPE`: no es una boleta ni una factura.
+            - `DOCUMENT_ALREADY_SENT`: no está Registrado.
+            - `DOCUMENT_IN_SUMMARY`: la boleta va en un resumen diario.
+            - `DOCUMENT_IN_SUNAT`: factura o boleta de envío individual que SUNAT tiene.
+            - `SUNAT_QUERY_NOT_AVAILABLE`: hacía falta preguntar a SUNAT y no se puede.
             - `DOCUMENT_IN_USE`: otro registro la usa.
           content:
             application/json:
@@ -132,7 +139,7 @@ paths:
                 $ref: '#/components/schemas/ErrorConCodigo'
               example:
                 success: false
-                message: "No se eliminó: la boleta B001-42 ya no está Registrada. Solo se elimina una boleta que no ha salido a SUNAT."
+                message: "No se eliminó: la boleta B001-42 ya no está Registrada. Solo se elimina un comprobante que no ha salido a SUNAT."
                 error_code: "DOCUMENT_ALREADY_SENT"
                 errors:
                   external_id: "dcac6a4c-7c5e-4ebc-9319-18fefae32c10"
