@@ -66,14 +66,14 @@ El código nuevo no puede ser el de otro lote del mismo producto.
 Si un medicamento se vendía **sin lotes** y ahora quiere manejarlos, el stock que ya tiene hay que **rotularlo** en lotes sin duplicarlo:
 
 1. En **Productos**, edite el medicamento y marque **¿Maneja lotes?**. Si tiene stock, se abre **Pasar a lotes**.
-2. Cuente lo que hay en el estante, lote por lote: en **Lotes nuevos encontrados en el estante** escriba código, vencimiento y cantidad de cada uno.
-3. Pulse **Revisar**: verá el stock general antes → después, el ajuste de kardex si lo contado no coincide con el sistema, y los lotes que se crean.
+2. Arriba ve el stock general del sistema. Cuente lo que hay en el estante, lote por lote: en **Lotes del stock** escriba código, vencimiento y cantidad de cada uno. Abajo, **Stock general antes → después** muestra si lo contado sube o baja el stock.
+3. Pulse **Revisar** (paso 2 de 2): verá el stock general antes → después, el ajuste de kardex si lo contado no coincide con el sistema, y los lotes que se crean. Todavía no se guardó nada.
 4. Pulse **Confirmar**. El stock queda en la suma de los lotes y el producto ya maneja lotes. No depende del botón Guardar del producto.
 
 Si cancela, la casilla vuelve a desmarcarse: un producto con stock sin lote no se puede vender con lotes.
 
 :::tip Muchos productos a la vez
-Para pasar a lotes o hacer la toma de inventario de muchos medicamentos, use **Inventario › Movimientos › Importar › Pasar a lotes (stock actual)**: descargue sus productos «con el stock actual», escriba una fila por lote con lo que cuente y súbalo en modo **Conteo**. Ver **[Importar masivamente](../../esenciales/productos-servicios/05-Productos-Importar-masivamente.md)**.
+Para pasar a lotes o hacer la toma de inventario de muchos medicamentos, use **Inventario › Movimientos › Importar › Pasar a lotes (stock actual)**: descargue **Mis productos con su stock**, escriba una fila por lote con lo que cuente y súbalo en modo **Conteo**. Ver **[Importar masivamente](../../esenciales/productos-servicios/05-Productos-Importar-masivamente.md)**.
 :::
 
 ## Presentaciones: blíster y caja

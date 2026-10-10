@@ -145,9 +145,11 @@ El campo que debe completar es:
 * **Stock real:** Ingresa el stock actual.
 
 :::tip Producto con lotes: Ajuste por lotes
-En un producto que maneja lotes, **Ajuste** abre **Ajuste de stock por lotes**: el stock general por almacén y el stock de cada lote con un campo **Conteo**. Cuente lo que hay en el estante lote por lote y agregue los lotes que encuentre y no estén registrados. Si los lotes suman más que el stock, elija qué es lo real: **el stock** (descuenta de los lotes que vencen primero) o **los lotes** (sube el stock); eso solo precarga los conteos, que puede corregir.
+En un producto que maneja lotes, **Ajuste** abre **Ajuste de stock por lotes**, en dos pasos: **Contar** y **Revisar y confirmar**.
 
-Pulse **Revisar** para ver qué va a pasar (el ajuste de stock con su movimiento de kardex y los lotes que se crean o corrigen) y **Confirmar** para guardarlo. Lo contado queda en el almacén de la fila donde pulsó Ajuste.
+Arriba se ve el **stock general** del sistema y la **suma de los lotes**. Cuente lo que hay en el estante, lote por lote, en el campo **Conteo**: debajo de cada uno aparece cuánto sube o baja ese lote (+2, −3). Agregue los lotes que encuentre y no estén registrados. Si los lotes suman más que el stock, un aviso pide elegir qué es lo real: **el stock** (descuenta de los lotes que vencen primero) o **los lotes** (sube el stock). Eso solo precarga los conteos, que puede corregir, y hasta elegir no se puede revisar.
+
+Abajo, **Stock general antes → después** dice si sube, baja o no cambia. Pulse **Revisar** para ver qué va a pasar (el ajuste de stock con su movimiento de kardex y los lotes que se crean o corrigen) y **Confirmar** para guardarlo; nada se guarda antes. Lo contado queda en el almacén de la fila donde pulsó Ajuste.
 
 El **Ajuste masivo**, **Imp. Ajuste de stock** e **Importar stock por establecimientos** no cambian productos con lotes: los dejarían descuadrados.
 :::
@@ -181,7 +183,7 @@ Una vez rellenado el archivo excel, deberá seleccionar el botón **Seleccione u
 En **Importar**:
 
 - **Ingreso con lotes (suma stock):** registra mercadería que entra con su lote. **Suma** al stock. Si el código ya existe con la misma fecha de vencimiento, suma a ese lote; una fila con error no impide que entren las demás.
-- **Pasar a lotes (stock actual):** abre la **[importación de productos](../productos-servicios/05-Productos-Importar-masivamente.md)** en modo **Conteo**: el Excel es lo que hay en el estante, por lote. Sirve para la toma de inventario y para rotular en lotes el stock que ya tiene, sin duplicarlo. Descargue sus productos «con el stock actual», corrija las cantidades y súbalo.
+- **Pasar a lotes (stock actual):** abre **Inventario y lotes con Excel**, la **[importación de productos](../productos-servicios/05-Productos-Importar-masivamente.md)** en modo **Conteo**: el Excel es lo que hay en el estante, por lote. Sirve para la toma de inventario y para rotular en lotes el stock que ya tiene, sin duplicarlo. Descargue **Mis productos con su stock**, corrija las cantidades y súbalo.
 
 ## Tres puntos
 
