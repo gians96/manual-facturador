@@ -55,10 +55,25 @@ Si escribiste mal un código o un vencimiento, puedes corregirlo después:
 
 Cambian el código y el vencimiento, pero el saldo del lote (20) sigue igual. La cantidad de un lote no se edita en el formulario: la mueven las compras, las ventas y el inventario.
 
-Debajo de la tabla verás el stock del producto en todos los almacenes. Si parte de ese stock no tiene lote, se indica como **Stock sin lote**: ese stock debe entrar con su lote por **Compras** o **Inventario**.
+Debajo de la tabla verás el stock del producto en todos los almacenes. Si los lotes no cuadran con el stock (**stock sin lote**, **lotes de más** o un stock negativo), el pie de la tabla lo dice y ofrece **Cuadrar…**, que abre el conteo por lote (ver abajo).
 
 :::danger IMPORTANTE:
-El código nuevo no puede ser el de otro lote del mismo producto. Si el producto todavía no tiene lotes, no verás la tabla, sino los campos de código de lote y **Fec. Vencimiento** de siempre.
+El código nuevo no puede ser el de otro lote del mismo producto.
+:::
+
+## Pasar a lotes un medicamento que ya tiene stock
+
+Si un medicamento se vendía **sin lotes** y ahora quiere manejarlos, el stock que ya tiene hay que **rotularlo** en lotes sin duplicarlo:
+
+1. En **Productos**, edite el medicamento y marque **¿Maneja lotes?**. Si tiene stock, se abre **Pasar a lotes**.
+2. Cuente lo que hay en el estante, lote por lote: en **Lotes nuevos encontrados en el estante** escriba código, vencimiento y cantidad de cada uno.
+3. Pulse **Revisar**: verá el stock general antes → después, el ajuste de kardex si lo contado no coincide con el sistema, y los lotes que se crean.
+4. Pulse **Confirmar**. El stock queda en la suma de los lotes y el producto ya maneja lotes. No depende del botón Guardar del producto.
+
+Si cancela, la casilla vuelve a desmarcarse: un producto con stock sin lote no se puede vender con lotes.
+
+:::tip Muchos productos a la vez
+Para pasar a lotes o hacer la toma de inventario de muchos medicamentos, use **Inventario › Movimientos › Importar › Pasar a lotes (stock actual)**: descargue sus productos «con el stock actual», escriba una fila por lote con lo que cuente y súbalo en modo **Conteo**. Ver **[Importar masivamente](../../esenciales/productos-servicios/05-Productos-Importar-masivamente.md)**.
 :::
 
 ## Presentaciones: blíster y caja
@@ -122,5 +137,5 @@ Si editas el producto y desmarcas **¿Maneja lotes?**, aparece el aviso «Los lo
 Si vuelves a marcar la casilla, los lotes reaparecen con su saldo.
 
 :::danger IMPORTANTE:
-Las ventas hechas mientras los lotes estaban desactivados no descontaron ningún lote. Al reactivarlos, los saldos de los lotes pueden sumar más que el stock del producto, y el sistema te lo indica. Ajusta esos saldos desde **Inventario**.
+Las ventas hechas mientras los lotes estaban desactivados no descontaron ningún lote. Al reactivarlos, los saldos de los lotes pueden sumar más que el stock del producto: se abre el conteo por lote, donde elige qué es lo real (el stock, descontando de los lotes que vencen primero, o los lotes, subiendo el stock) y corrige lo que haga falta.
 :::

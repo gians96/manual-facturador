@@ -70,7 +70,8 @@ Se encontrará el formulario Agregar Producto o Servicio y se completarán los s
 :::tip Lotes y nombre secundario
 Al elegir el producto aparecen la casilla **¿Maneja lotes?** y el botón **Nombre secundario**. Con el giro **Farmacia** activo, ese botón se llama **Principio activo**.
 
-- **¿Maneja lotes?** activa o desactiva los lotes en el producto al instante. Con la casilla marcada, la compra pide el **Código lote** y la **Fec. Vencimiento** del lote que ingresa.
+- **¿Maneja lotes?** activa o desactiva los lotes en el producto al instante. Con la casilla marcada, la compra pide el **Código lote** y la **Fec. Vencimiento** del lote que ingresa. Si el producto ya tiene stock sin lote, al marcarla se abre **Pasar a lotes** para contar ese stock por lote; **no cuente las unidades de esta compra**, que entran al guardarla. Si cancela, la casilla se desmarca. En una compra ya guardada (Editar compra) no se abre: pase el producto a lotes desde **Productos › Editar**.
+- Un producto creado desde la compra con **+** nace **sin stock inicial**: el stock lo pone la compra.
 - **Nombre secundario** (o **Principio activo**) abre un recuadro para editar ese dato del producto. Se guarda solo al salir del campo y **no cambia el nombre del producto**.
 :::
 

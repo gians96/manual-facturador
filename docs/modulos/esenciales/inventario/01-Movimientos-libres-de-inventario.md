@@ -28,6 +28,14 @@ Se completarán los siguientes datos:
   
 Seguidamente selecciona el botón **Aceptar**, para guardar los cambios.
 
+:::tip Producto que todavía no existe
+No hace falta ir a Productos: con el botón **+** junto a «Producto», con **Crear producto "…"** cuando la búsqueda no encuentra nada o, con el lector de códigos, al escanear un código que no es de ningún producto, se abre el alta del producto **sin stock inicial** (el stock lo pone este ingreso, así no se duplica). Al guardarlo queda elegido en el ingreso con el motivo **Inventario inicial**. Si el código escaneado es de una presentación (por ejemplo la caja), se elige su producto.
+:::
+
+:::caution El ingreso suma
+El ingreso **suma** a lo que ya hay. Si está contando lo que tiene en el estante (toma de inventario), use **Ajuste** o la importación en modo **Conteo** (ver **Importar** más abajo).
+:::
+
 ## Botón salida
 
 Este botón registra la salida de producto del almacén.
@@ -83,6 +91,14 @@ El campo que debe completar es:
 
 * **Cantidad a retirar:** Ingresa la cantidad de producto que retirará del almacén.
   
+## Stock por lote en el listado
+
+En un producto que maneja lotes, el número de la columna **Stock** se despliega: muestra el stock de ese almacén, el stock general (todos los almacenes) y el **stock de cada lote** con su vencimiento. Si los lotes no cuadran con el stock (stock sin lote, lotes de más o algún negativo) aparece un ⚠ y el detalle; se corrige con **Ajuste**.
+
+:::info
+Los lotes no tienen almacén: son los lotes del producto en todos los almacenes.
+:::
+
 ## Botón ajuste
 
 Este botón te ayuda a ajustar tu stock, en caso de que el stock del sistema no cuadre con el stock actual.
@@ -99,9 +115,16 @@ El campo que debe completar es:
 
 * **Stock real:** Ingresa el stock actual.
 
-:::danger IMPORTANTE:
+:::tip Producto con lotes: Ajuste por lotes
+En un producto que maneja lotes, **Ajuste** abre **Ajuste de stock por lotes**: el stock general por almacén y el stock de cada lote con un campo **Conteo**. Cuente lo que hay en el estante lote por lote y agregue los lotes que encuentre y no estén registrados. Si los lotes suman más que el stock, elija qué es lo real: **el stock** (descuenta de los lotes que vencen primero) o **los lotes** (sube el stock); eso solo precarga los conteos, que puede corregir.
 
-El botón **Ajuste** no aplica para productos con lotes y series.
+Pulse **Revisar** para ver qué va a pasar (el ajuste de stock con su movimiento de kardex y los lotes que se crean o corrigen) y **Confirmar** para guardarlo. Lo contado queda en el almacén de la fila donde pulsó Ajuste.
+
+El **Ajuste masivo**, **Imp. Ajuste de stock** e **Importar stock por establecimientos** no cambian productos con lotes: los dejarían descuadrados.
+:::
+
+:::info Activar lotes en un producto con stock
+Al marcar **¿Maneja lotes?** en un producto que ya tiene stock (en **Productos › Editar** o desde una compra) se abre **Pasar a lotes**: el mismo conteo por lote. Hasta que lo confirme, el producto sigue sin lotes, así no quedan ventas bloqueadas por falta de lote.
 :::
 ## Botón Imp. Ajuste de stock
 
@@ -123,6 +146,13 @@ En el documento se completará:
 * **Stock real:** Ingresa el stock real del producto.
   
 Una vez rellenado el archivo excel, deberá seleccionar el botón **Seleccione un archivo (xlsx)** ,para subir el archivo correspondiente.
+
+## Importar: Ingreso con lotes y Pasar a lotes
+
+En **Importar**:
+
+- **Ingreso con lotes (suma stock):** registra mercadería que entra con su lote. **Suma** al stock.
+- **Pasar a lotes (stock actual):** abre la **[importación de productos](../productos-servicios/05-Productos-Importar-masivamente.md)** en modo **Conteo**: el Excel es lo que hay en el estante, por lote. Sirve para la toma de inventario y para rotular en lotes el stock que ya tiene, sin duplicarlo. Descargue sus productos «con el stock actual», corrija las cantidades y súbalo.
 
 ## Tres puntos
 
