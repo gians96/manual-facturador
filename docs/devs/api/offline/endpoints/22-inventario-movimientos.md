@@ -45,7 +45,7 @@ Content-Type: application/json
 
 ```json
 {
-    "succes": true,
+    "success": true,
     "message": "Ingreso registrado correctamente"
 }
 ```
@@ -88,7 +88,7 @@ Content-Type: application/json
 
 ```json
 {
-    "succes": true,
+    "success": true,
     "message": "Salida registrada correctamente"
 }
 ```
@@ -127,4 +127,9 @@ Content-Type: application/json
 - **Para Flutter offline:** Se puede registrar un movimiento de inventario al sincronizar, pero es un caso poco común en operación POS. Los movimientos de inventario normalmente se hacen desde la web.
 - **`item_code` = `internal_id`:** Usar el código interno del producto, no el ID numérico.
 - **`warehouse_id`:** Obtenerlo de la descarga de datos de empresa → `establishments[].warehouse.id`.
-- **Lotes y series:** este endpoint mueve el stock pero **no toca los lotes ni las series**. En un producto que maneja lotes, el stock deja de coincidir con la suma de sus lotes. Esos movimientos se registran desde la web (*Inventario › Movimientos*), que reparte la salida por vencimiento y exige una serie por unidad.
+- **Productos con lotes o series** (desde 2026-10-10):
+  - **Salida de un producto con lotes:** se reparte por vencimiento en el servidor, como en la web (*Inventario › Movimientos*), y crea su guía interna. La respuesta agrega `data.lots` con lo que salió de cada lote.
+  - **Ingreso de un producto con lotes** (la API no recibe lote ni vencimiento) y **cualquier movimiento de un producto con series:** responde `success: false` con un mensaje que lleva a la web.
+  - **`type` que no sea `input` u `output`, o un `inventory_transaction_id` que no existe:** responde `success: false` con un mensaje claro.
+  - Los productos sin lotes ni series no cambian.
+- **Ajuste de stock (`POST /api/pro8/inventory/stock`):** en un producto con lotes responde `success: false`; se ajusta desde la web, lote por lote.
