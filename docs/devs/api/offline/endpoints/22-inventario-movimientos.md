@@ -135,3 +135,20 @@ Content-Type: application/json
 - **Ajuste de stock (`POST /api/pro8/inventory/stock`):** en un producto con lotes responde `success: false`; se ajusta desde la web, lote por lote.
 - **`warehouse_id` es opcional** (desde 2026-10-10), aquí y en el ajuste: sin él, el movimiento va al almacén del establecimiento del usuario; si viene, tiene que existir (si no, 422).
 - **Motivos y almacén:** `GET /api/inventory/transaction/tables` devuelve `{success, data: {warehouse: {id, description} | null, transactions: {input: [{id, name}], output: [{id, name}]}}}`, con los motivos de `inventory_transactions` por nombre. Los códigos de las tablas de abajo son de ejemplo: use los que devuelve este endpoint.
+
+---
+
+## Inventario › Movimientos completo (desde 2026-10-10)
+
+Endpoints que usa la pantalla Inventario de la app para trabajar como la web. Requieren `permissions.manage_inventory` del bundle de login: admin, el módulo web de Productos o de Inventario, o el módulo de app Productos. Sin ese permiso responden 403. Para saber si el servidor los tiene, `GET /api/inventory/transaction/tables` trae `features: ["movements", "transfers", "lots_conversion", "stock_check"]`, además de `warehouses` y `can_manage`.
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/api/pro8/inventory/records` | Una fila por producto y almacén, con el stock por lote (`lots`, `uncovered`, `excess`, `negative`), `series_enabled` e `item_barcode`. Parámetros: `search` (nombre, código, código de barras o el de una presentación), `item_id`, `warehouse_id`, `stock_filter` (`positive`, `zero` o `negative`), `per_page` (10 a 50) y `page`. |
+| GET | `/api/pro8/inventory/items/{item}/lots` | Los lotes del producto con su saldo, el stock por almacén y la `snapshot` (huella) para el ajuste por lotes. |
+| POST | `/api/pro8/inventory/items/{item}/lots-conversion` | Ajuste por lotes: `{snapshot, simulate, lots: [{id, quantity}], rows: [{code, date_of_due, quantity}], counts?, excess?}`. Con `simulate: 1` devuelve el `plan` sin escribir. 409 si la huella cambió. Un producto sin lotes o con series responde 422. |
+| POST | `/api/pro8/inventory/movements` | `{type, item_id, warehouse_id?, inventory_transaction_id, quantity, comments?, input_lots?, IdLoteSelected?}`: ingreso con lotes, salida por vencimiento o con los lotes elegidos. Remover es una salida con el motivo `12` (Retiro). Deja una guía por movimiento. Los productos con series responden 422. |
+| POST | `/api/pro8/inventory/transfers` | `{item_id, warehouse_id, warehouse_destination_id, quantity, detail?}`: traslado con la guía U4. El stock de origen lo verifica el servidor; los lotes no cambian. |
+| POST | `/api/pro8/inventory/stock` | Ajuste «Stock Real» de siempre. Con `check_stock: true`, si el stock del sistema ya no es el `quantity` enviado, responde 409 con `data.stock`. |
+
+Los errores de validación vienen como `{success: false, message, errors: {campo: [mensajes]}}`, con el status (422 o 409).
