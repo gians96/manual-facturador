@@ -127,3 +127,4 @@ Content-Type: application/json
 - **Para Flutter offline:** Se puede registrar un movimiento de inventario al sincronizar, pero es un caso poco común en operación POS. Los movimientos de inventario normalmente se hacen desde la web.
 - **`item_code` = `internal_id`:** Usar el código interno del producto, no el ID numérico.
 - **`warehouse_id`:** Obtenerlo de la descarga de datos de empresa → `establishments[].warehouse.id`.
+- **Lotes y series:** este endpoint mueve el stock pero **no toca los lotes ni las series**. En un producto que maneja lotes, el stock deja de coincidir con la suma de sus lotes. Esos movimientos se registran desde la web (*Inventario › Movimientos*), que reparte la salida por vencimiento y exige una serie por unidad.

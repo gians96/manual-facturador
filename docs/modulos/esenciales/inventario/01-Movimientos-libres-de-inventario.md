@@ -33,7 +33,22 @@ No hace falta ir a Productos: con el botón **+** junto a «Producto», con **Cr
 :::
 
 :::caution El ingreso suma
-El ingreso **suma** a lo que ya hay. Si está contando lo que tiene en el estante (toma de inventario), use **Ajuste** o la importación en modo **Conteo** (ver **Importar** más abajo).
+El ingreso **suma** a lo que ya hay. Si el producto ya tiene stock en ese almacén, el formulario lo avisa («Ya tiene N…») con un botón que abre el **Ajuste**. Si está contando lo que tiene en el estante (toma de inventario), use **Ajuste** o la importación en modo **Conteo** (ver **Importar** más abajo).
+:::
+
+### Producto con lotes: uno o varios lotes
+
+En un producto que maneja lotes aparece la tabla **Lotes que ingresan**: una fila por lote con su **código**, **vencimiento** y **cantidad**. El campo **Cantidad** se llena solo con la suma de las filas.
+
+- Debajo de la tabla se ve qué pasará con cada fila antes de guardar: **lote nuevo**, o **se suma al lote registrado (6 → 8)** si el código ya existe con la misma fecha.
+- Si el código ya existe con **otra** fecha de vencimiento, la fila se marca en rojo: corrija la fecha o use otro código.
+- Con el lector de códigos, cada lectura del producto suma 1 a la última fila.
+- Con la unidad **NIU** las cantidades son enteras.
+
+Al guardar se registra **una sola guía** de ingreso con el total; el PDF de la guía muestra los lotes.
+
+:::tip Guardar y registrar otro
+**Guardar y registrar otro** guarda el ingreso y deja el formulario listo para el siguiente producto, con el mismo almacén, motivo y fecha, y muestra el último que registró. Para ingresar varios productos de una misma factura, use **Compras**.
 :::
 
 ## Botón salida
@@ -58,6 +73,20 @@ Se completarán los siguientes datos:
 :::danger IMPORTANTE:
 Todos los campos que cuentan con **(*)** son obligatorios.
 :::
+
+### Producto con lotes: sale primero lo que vence antes
+
+En un producto que maneja lotes no hace falta elegir el lote: al escribir la cantidad, el formulario muestra de qué lotes saldrá, empezando por el que **vence antes** (por ejemplo «Se descontará: L-B ×4, L-A ×3»). Es lo mismo que hará el sistema al guardar.
+
+- **Elegir otros lotes…** abre la lista de lotes con ese reparto ya cargado para cambiarlo. **Por vencimiento** vuelve al reparto automático.
+- Si los lotes no alcanzan para la cantidad, el formulario dice cuánto falta y ofrece **Cuadrar lotes…** (el ajuste por lotes) sin salir de la salida.
+- Ningún lote queda en negativo, y con la unidad **NIU** la cantidad es entera.
+
+### Producto con series: una por unidad
+
+En un producto que maneja series, pulse **Seleccionar series** y marque **una serie por cada unidad** que sale; debajo se ve «Elegidas: N de M». Sin elegirlas no se puede guardar: antes la salida bajaba el stock y las series seguían como disponibles. Solo se aceptan series del producto, del almacén elegido y que no hayan salido.
+
+En el **ingreso** de un producto con series se registra también una serie por unidad.
 ## Botón trasladar
 
 Este botón se utiliza para mover producto entre almacenes.
@@ -151,7 +180,7 @@ Una vez rellenado el archivo excel, deberá seleccionar el botón **Seleccione u
 
 En **Importar**:
 
-- **Ingreso con lotes (suma stock):** registra mercadería que entra con su lote. **Suma** al stock.
+- **Ingreso con lotes (suma stock):** registra mercadería que entra con su lote. **Suma** al stock. Si el código ya existe con la misma fecha de vencimiento, suma a ese lote; una fila con error no impide que entren las demás.
 - **Pasar a lotes (stock actual):** abre la **[importación de productos](../productos-servicios/05-Productos-Importar-masivamente.md)** en modo **Conteo**: el Excel es lo que hay en el estante, por lote. Sirve para la toma de inventario y para rotular en lotes el stock que ya tiene, sin duplicarlo. Descargue sus productos «con el stock actual», corrija las cantidades y súbalo.
 
 ## Tres puntos
