@@ -106,6 +106,7 @@ Si las credenciales son inválidas, el login responde HTTP 200 con
 | 200 | Operación exitosa | `{"success": true, ...}` |
 | 401 | Token ausente o inválido | `{"success": false, "message": "No se encuentra autenticado"}` |
 | 403 | Bloqueo por licencia | `{"success": false, "message": "...", "message_code": "LICENSE_..."}` |
+| 403 | La instalación no permite la operación (eliminar boletas sin `DELETE_DOCUMENT_TYPE_03=true`) | `{"success": false, "message": "...", "error_code": "DOCUMENT_DELETE_DISABLED"}` |
 | 422 | Error de validación | `{"success": false, "message": {"campo": ["errores"]}}` |
 | 422 | Error de negocio (serie incorrecta, documento no encontrado, etc.) | `{"success": false, "message": "La serie ingresada F001, es incorrecta.", "error_code": "INVALID_SERIES"}` |
 | 500 | Fallo real del servidor. **Un dato mal enviado nunca debe devolver 500** — si lo ves, es un defecto | `{"success": false, "message": "..."}` |

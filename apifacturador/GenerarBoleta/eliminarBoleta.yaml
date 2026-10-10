@@ -1,0 +1,237 @@
+openapi: 3.0.3
+info:
+  title: Introducción
+  description: |-
+    La API del **Facturador** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
+
+    Documentos contemplados:
+
+    1. Factura
+    2. Boleta
+    3. Nota de Crédito
+    4. Nota de Débito
+    5. Resúmenes diarios (boletas)
+    6. Anulaciones (comunicación de baja)
+    7. Guía de remisión (remitente y transportista)
+    8. Cotización
+    9. Inventarios
+    10. Productos
+
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+    El token se obtiene en el módulo **Configuración → Usuarios** del sistema (columna
+    "Api Token") o mediante `POST /api/login` con el correo y contraseña del usuario.
+  version: "8.0.0"
+servers:
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+  - url: https://tu-dominio.com
+    description: Demostración
+tags:
+  - name: api
+    description: Emisión de comprobantes electrónicos (CPE)
+
+paths:
+  /api/documents/{external_id}:
+    delete:
+      tags:
+        - api
+      summary: Eliminar - Boleta registrada
+      description: |
+        Elimina una **boleta** (`03`) en estado **Registrado** (`01`) que no va en ningún
+        resumen diario: la que todavía no salió a SUNAT. Es lo mismo que la opción
+        **Eliminar** del listado de comprobantes, con las mismas reglas.
+
+        **Solo funciona si la instalación lo permite:** `DELETE_DOCUMENT_TYPE_03=true` en el
+        archivo `.env` del servidor. Si no, responde `403`.
+
+        Todo lo demás **se anula, no se elimina**: facturas y notas con la comunicación de
+        baja (`POST /api/voided`), y boletas que ya salieron con un resumen de anulación
+        (`POST /api/summaries` con `"3"`).
+
+        **Boletas con envío individual.** Una boleta que se envía sola a SUNAT puede quedar
+        Registrada con el envío vencido por tiempo de espera, aunque SUNAT sí la haya
+        recibido. Si se emitió en producción, **antes de eliminarla el sistema le pregunta a
+        SUNAT** (consulta integrada) y solo la borra si SUNAT contesta que no existe. Para eso
+        la empresa necesita el `client_id` y el `client_secret` de la consulta integrada de
+        SUNAT. Si la empresa envía por un PSE u OSE, la boleta no se elimina: que SUNAT no la
+        tenga no basta, porque el proveedor puede mandarla después.
+
+        Al eliminarla se borran sus ítems y sus pagos, y el stock de los productos vuelve. Si
+        la boleta era la última de su serie, el número vuelve a quedar libre; si no, queda un
+        hueco en el correlativo que SUNAT nunca recibió.
+
+        ***Ejemplo:***
+         - **Método:** DELETE
+         - **URL:** `https://tu-dominio.com/api/documents/59670537-a922-48d4-986e-fa9c50870aff`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        **Qué hacer ante cada error** (campo `error_code`):
+
+        | HTTP | `error_code` | Significa | Qué hacer |
+        |---|---|---|---|
+        | 422 | `DOCUMENT_NOT_FOUND` | El `external_id` no existe | No reintentar |
+        | 403 | `DOCUMENT_DELETE_DISABLED` | La instalación no permite eliminar boletas | Pedir al administrador del servidor `DELETE_DOCUMENT_TYPE_03=true` |
+        | 409 | `DOCUMENT_NOT_DELETABLE_TYPE` | No es una boleta | Anularlo con `POST /api/voided` |
+        | 409 | `DOCUMENT_ALREADY_SENT` | La boleta ya no está Registrada: salió a SUNAT | Anularla con un resumen (`POST /api/summaries`, `"3"`) |
+        | 409 | `DOCUMENT_IN_SUMMARY` | La boleta va en un resumen diario | Esperar al resumen y anularla con otro |
+        | 409 | `DOCUMENT_IN_SUNAT` | Envío individual: SUNAT dice que sí la tiene | No eliminarla. Reenviarla para que su estado se actualice |
+        | 409 | `SUNAT_QUERY_NOT_AVAILABLE` | Envío individual y no se puede preguntar a SUNAT: la empresa envía por PSE u OSE, o faltan (o SUNAT rechazó) el `client_id` y el `client_secret` de la consulta integrada | Corregir la configuración de la empresa, o verificarla en el proveedor |
+        | 409 | `DOCUMENT_IN_USE` | Otro registro usa la boleta | No reintentar |
+        | 503 | `SUNAT_UNREACHABLE` | No se pudo confirmar con SUNAT que no tiene la boleta | **Reintentar** más tarde. Es el único error pasajero |
+      operationId: eliminarBoleta
+      parameters:
+        - name: external_id
+          in: path
+          required: true
+          description: Identificador devuelto por `POST /api/documents` al emitir la boleta.
+          schema:
+            type: string
+            example: "59670537-a922-48d4-986e-fa9c50870aff"
+      responses:
+        '200':
+          description: Boleta eliminada, con sus ítems y pagos; el stock vuelve.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaEliminar'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNoAutenticado'
+        '403':
+          description: La instalación no permite eliminar boletas (`DOCUMENT_DELETE_DISABLED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              example:
+                success: false
+                message: "Esta instalación no permite eliminar boletas (DELETE_DOCUMENT_TYPE_03)."
+                error_code: "DOCUMENT_DELETE_DISABLED"
+                errors:
+                  external_id: "59670537-a922-48d4-986e-fa9c50870aff"
+                  estado: "01"
+        '409':
+          description: |-
+            No se eliminó nada.
+            - `DOCUMENT_NOT_DELETABLE_TYPE`: no es una boleta.
+            - `DOCUMENT_ALREADY_SENT`: la boleta no está Registrada.
+            - `DOCUMENT_IN_SUMMARY`: va en un resumen diario.
+            - `DOCUMENT_IN_SUNAT`: envío individual y SUNAT la tiene.
+            - `SUNAT_QUERY_NOT_AVAILABLE`: envío individual y no se puede preguntar a SUNAT.
+            - `DOCUMENT_IN_USE`: otro registro la usa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              example:
+                success: false
+                message: "No se eliminó: la boleta B001-42 ya no está Registrada. Solo se elimina una boleta que no ha salido a SUNAT."
+                error_code: "DOCUMENT_ALREADY_SENT"
+                errors:
+                  external_id: "dcac6a4c-7c5e-4ebc-9319-18fefae32c10"
+                  estado: "05"
+        '422':
+          description: El `external_id` no corresponde a ningún comprobante (`DOCUMENT_NOT_FOUND`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              example:
+                success: false
+                message: "El external id es incorrecto"
+                error_code: "DOCUMENT_NOT_FOUND"
+                errors:
+                  external_id: "59670537-a922-48d4-986e-fa9c50870aff"
+        '503':
+          description: No se pudo consultar a SUNAT (`SUNAT_UNREACHABLE`). No se borró nada; reintentar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorConCodigo'
+              example:
+                success: false
+                message: "No se eliminó: SUNAT no dio una respuesta que confirme que no tiene la boleta B001-40. Inténtalo de nuevo en un momento."
+                error_code: "SUNAT_UNREACHABLE"
+                errors:
+                  external_id: "59670537-a922-48d4-986e-fa9c50870aff"
+                  estado: "01"
+      security:
+        - bearerAuth: []
+
+components:
+  schemas:
+    RespuestaEliminar:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "La boleta B001-40 fue eliminada."
+        data:
+          type: object
+          properties:
+            external_id:
+              type: string
+              example: "59670537-a922-48d4-986e-fa9c50870aff"
+            number:
+              type: string
+              example: "B001-40"
+      required:
+        - success
+        - message
+
+    ErrorConCodigo:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error_code:
+          type: string
+          description: Código estable para ramificar sin leer el texto.
+          enum:
+            - DOCUMENT_NOT_FOUND
+            - DOCUMENT_DELETE_DISABLED
+            - DOCUMENT_NOT_DELETABLE_TYPE
+            - DOCUMENT_ALREADY_SENT
+            - DOCUMENT_IN_SUMMARY
+            - DOCUMENT_IN_SUNAT
+            - SUNAT_QUERY_NOT_AVAILABLE
+            - DOCUMENT_IN_USE
+            - SUNAT_UNREACHABLE
+        errors:
+          type: object
+          properties:
+            external_id:
+              type: string
+            estado:
+              type: string
+              description: Estado del comprobante (`01` Registrado, `03` Enviado, `05` Aceptado, `11` Anulado...).
+
+    ErrorNoAutenticado:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No se encuentra autenticado"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |-
+        Token de la cuenta (columna "Api Token" en Configuración → Usuarios,
+        o campo `token` de la respuesta de `POST /api/login`).
+        Enviar en cada petición: `Authorization: Bearer <TOKEN>`.

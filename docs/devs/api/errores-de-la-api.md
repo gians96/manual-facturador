@@ -225,6 +225,29 @@ puede caerse; anular no habla con nadie, solo mira el estado.
 Repetir la llamada sobre una guía ya anulada **no es un error**: responde `200` con
 `data.already_voided: true`.
 
+### `DELETE /api/documents/{external_id}` — desde 2026-10-10
+
+Elimina una boleta **Registrada** que no va en ningún resumen, igual que la opción **Eliminar**
+del listado de comprobantes. Detalle completo en
+[Eliminar - Boleta registrada](tenant/Generar-boleta/eliminar-boleta.api.mdx).
+
+| HTTP | `error_code` | Cuándo |
+|---|---|---|
+| 422 | `DOCUMENT_NOT_FOUND` | El `external_id` no existe |
+| 403 | `DOCUMENT_DELETE_DISABLED` | El servidor no tiene `DELETE_DOCUMENT_TYPE_03=true` |
+| 409 | `DOCUMENT_NOT_DELETABLE_TYPE` | No es una boleta: se anula con `POST /api/voided` |
+| 409 | `DOCUMENT_ALREADY_SENT` | La boleta ya no está Registrada: se anula con un resumen `"3"` |
+| 409 | `DOCUMENT_IN_SUMMARY` | La boleta va en un resumen diario |
+| 409 | `DOCUMENT_IN_SUNAT` | Boleta de envío individual que SUNAT sí tiene |
+| 409 | `SUNAT_QUERY_NOT_AVAILABLE` | Boleta de envío individual y no se puede preguntar a SUNAT: envío por PSE u OSE, o sin credenciales válidas de la consulta integrada |
+| 409 | `DOCUMENT_IN_USE` | Otro registro usa la boleta |
+| 503 | `SUNAT_UNREACHABLE` | La consulta a SUNAT falló o no fue concluyente |
+
+**Solo el `503` se reintenta.** Antes de borrar una boleta de envío individual emitida en
+producción, el sistema pregunta a SUNAT si la tiene, y esa consulta puede caerse. Todos los demás
+dependen del estado de la boleta o de la configuración, y no cambian por repetir la llamada.
+`errors` trae `external_id` y `estado`.
+
 ### Notas de crédito y débito — desde 2026-09-07
 
 | Situación | `error_code` |
