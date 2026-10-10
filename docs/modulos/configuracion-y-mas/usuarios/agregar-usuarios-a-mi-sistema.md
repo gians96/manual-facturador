@@ -33,6 +33,22 @@ En esta sección se selecciona los módulos a los que tendrá acceso el usuario 
 
 ![alt text](img/usuario3.jpg)
 
+### Eliminar boletas registradas
+
+Más abajo, en la misma pestaña **Permisos**, la sección **Comprobantes** tiene la casilla
+**Eliminar boletas registradas**. Viene **desmarcada para todos los usuarios**, incluido el
+administrador: márcala solo a quien deba poder borrar boletas.
+
+![Sección Comprobantes con la casilla Eliminar boletas registradas marcada](img/permiso-eliminar-boletas.png)
+
+Con la casilla marcada, ese usuario ve la opción **Eliminar** en las boletas en estado
+**Registrado** que todavía no van en ningún resumen diario
+([Lista de comprobantes](../../esenciales/ventas/2-lista-de-comprobantes.md#eliminar-una-boleta-registrada)).
+Si la empresa trabaja por API, el permiso vale también para el usuario dueño del token
+([Eliminar - Boleta registrada](../../../devs/api/tenant/Generar-boleta/eliminar-boleta.api.mdx)).
+
+Al guardar, el cambio se aplica de inmediato en el listado de comprobantes.
+
 
 
 ## Datos personales

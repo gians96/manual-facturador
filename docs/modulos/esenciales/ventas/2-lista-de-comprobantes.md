@@ -104,18 +104,29 @@ Puedes descargar los comprobantes en diferentes formatos:
 - **Pago:** En esta sección podrás gestionar los pagos pendientes,caso contrario la ventana a mostrar estará vacia.
 ![Alt text](img/14__pago.jpg)
 
-- **Eliminar:** borra una boleta que todavía no salió a SUNAT. Solo aparece si el servidor lo
-  permite; ver [Eliminar una boleta registrada](#eliminar-una-boleta-registrada).
+- **Eliminar:** borra una boleta que todavía no salió a SUNAT. Solo aparece a los usuarios con el
+  permiso **Eliminar boletas registradas**; ver [Eliminar una boleta registrada](#eliminar-una-boleta-registrada).
 
 ## Eliminar una boleta registrada
 
 La opción **Eliminar** aparece en una **boleta** en estado **Registrado** que no va en ningún
-resumen diario, y solo si el administrador del servidor activó `DELETE_DOCUMENT_TYPE_03=true` en
-el archivo `.env`. En facturas, notas y boletas que ya se enviaron no aparece: esas se anulan.
+resumen diario, y solo a los usuarios que tienen el permiso **Eliminar boletas registradas**. Ese
+permiso viene desmarcado para todos; el administrador lo da a quien quiera desde
+**Configuración y más → Usuarios → Editar → Permisos → Comprobantes**
+([cómo se da el permiso](../../configuracion-y-mas/usuarios/agregar-usuarios-a-mi-sistema.md#eliminar-boletas-registradas)).
+En facturas, notas y boletas que ya se enviaron no aparece: esas se anulan.
 
-Al eliminarla se borran también sus pagos, y el stock de los productos vuelve. Si la boleta era
-la última de su serie, el número vuelve a quedar libre; si no, queda un salto en la numeración
-que SUNAT nunca recibió.
+Abre el menú de tres puntos de la boleta y elige **Eliminar**:
+
+![Menú de una boleta registrada con la opción Eliminar](img/eliminar-boleta-menu.png)
+
+El sistema pide confirmación antes de borrar:
+
+![Confirmación para eliminar la boleta](img/eliminar-boleta-confirmar.png)
+
+Al eliminarla se borran también sus pagos, y el stock de los productos vuelve. **No se puede
+deshacer.** Si la boleta era la última de su serie, el número vuelve a quedar libre; si no, queda
+un salto en la numeración que SUNAT nunca recibió.
 
 **Boletas con envío individual.** Si la empresa envía cada boleta sola a SUNAT, una boleta puede
 quedarse en Registrado porque el envío tardó demasiado, aunque SUNAT sí la haya recibido. Por eso,
@@ -129,5 +140,6 @@ SUNAT contesta que no:
 - Si la empresa envía por un PSE u OSE, la boleta no se elimina desde aquí: verifícala en tu
   proveedor y usa **Reenviar**.
 
-Lo mismo se puede hacer por API:
+Lo mismo se puede hacer por API, con las mismas reglas; el usuario dueño del token necesita el
+mismo permiso:
 [Eliminar - Boleta registrada](../../../devs/api/tenant/Generar-boleta/eliminar-boleta.api.mdx).

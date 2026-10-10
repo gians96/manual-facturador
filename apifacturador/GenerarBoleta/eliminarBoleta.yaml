@@ -43,8 +43,10 @@ paths:
         resumen diario: la que todavía no salió a SUNAT. Es lo mismo que la opción
         **Eliminar** del listado de comprobantes, con las mismas reglas.
 
-        **Solo funciona si la instalación lo permite:** `DELETE_DOCUMENT_TYPE_03=true` en el
-        archivo `.env` del servidor. Si no, responde `403`.
+        **El usuario dueño del token necesita el permiso «Eliminar boletas registradas»**
+        (Configuración y más → Usuarios → Editar → Permisos → Comprobantes). Viene desmarcado
+        para todos, administrador incluido; cada empresa lo da a quien quiera. Sin él responde
+        `403`. Es el mismo permiso que muestra la opción **Eliminar** en el panel.
 
         Todo lo demás **se anula, no se elimina**: facturas y notas con la comunicación de
         baja (`POST /api/voided`), y boletas que ya salieron con un resumen de anulación
@@ -72,7 +74,7 @@ paths:
         | HTTP | `error_code` | Significa | Qué hacer |
         |---|---|---|---|
         | 422 | `DOCUMENT_NOT_FOUND` | El `external_id` no existe | No reintentar |
-        | 403 | `DOCUMENT_DELETE_DISABLED` | La instalación no permite eliminar boletas | Pedir al administrador del servidor `DELETE_DOCUMENT_TYPE_03=true` |
+        | 403 | `DOCUMENT_DELETE_FORBIDDEN` | El usuario del token no tiene el permiso «Eliminar boletas registradas» | Pedir al administrador de la empresa que se lo dé en Usuarios → Permisos |
         | 409 | `DOCUMENT_NOT_DELETABLE_TYPE` | No es una boleta | Anularlo con `POST /api/voided` |
         | 409 | `DOCUMENT_ALREADY_SENT` | La boleta ya no está Registrada: salió a SUNAT | Anularla con un resumen (`POST /api/summaries`, `"3"`) |
         | 409 | `DOCUMENT_IN_SUMMARY` | La boleta va en un resumen diario | Esperar al resumen y anularla con otro |
@@ -103,15 +105,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorNoAutenticado'
         '403':
-          description: La instalación no permite eliminar boletas (`DOCUMENT_DELETE_DISABLED`).
+          description: El usuario del token no tiene el permiso «Eliminar boletas registradas» (`DOCUMENT_DELETE_FORBIDDEN`).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorConCodigo'
               example:
                 success: false
-                message: "Esta instalación no permite eliminar boletas (DELETE_DOCUMENT_TYPE_03)."
-                error_code: "DOCUMENT_DELETE_DISABLED"
+                message: "Tu usuario no tiene el permiso «Eliminar boletas registradas» (Usuarios → Permisos → Comprobantes)."
+                error_code: "DOCUMENT_DELETE_FORBIDDEN"
                 errors:
                   external_id: "59670537-a922-48d4-986e-fa9c50870aff"
                   estado: "01"
@@ -200,7 +202,7 @@ components:
           description: Código estable para ramificar sin leer el texto.
           enum:
             - DOCUMENT_NOT_FOUND
-            - DOCUMENT_DELETE_DISABLED
+            - DOCUMENT_DELETE_FORBIDDEN
             - DOCUMENT_NOT_DELETABLE_TYPE
             - DOCUMENT_ALREADY_SENT
             - DOCUMENT_IN_SUMMARY

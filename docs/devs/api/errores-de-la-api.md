@@ -234,7 +234,7 @@ del listado de comprobantes. Detalle completo en
 | HTTP | `error_code` | Cuándo |
 |---|---|---|
 | 422 | `DOCUMENT_NOT_FOUND` | El `external_id` no existe |
-| 403 | `DOCUMENT_DELETE_DISABLED` | El servidor no tiene `DELETE_DOCUMENT_TYPE_03=true` |
+| 403 | `DOCUMENT_DELETE_FORBIDDEN` | El usuario del token no tiene el permiso «Eliminar boletas registradas» (Usuarios → Permisos → Comprobantes) |
 | 409 | `DOCUMENT_NOT_DELETABLE_TYPE` | No es una boleta: se anula con `POST /api/voided` |
 | 409 | `DOCUMENT_ALREADY_SENT` | La boleta ya no está Registrada: se anula con un resumen `"3"` |
 | 409 | `DOCUMENT_IN_SUMMARY` | La boleta va en un resumen diario |
