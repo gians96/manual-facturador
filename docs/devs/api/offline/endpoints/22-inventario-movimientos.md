@@ -133,3 +133,5 @@ Content-Type: application/json
   - **`type` que no sea `input` u `output`, o un `inventory_transaction_id` que no existe:** responde `success: false` con un mensaje claro.
   - Los productos sin lotes ni series no cambian.
 - **Ajuste de stock (`POST /api/pro8/inventory/stock`):** en un producto con lotes responde `success: false`; se ajusta desde la web, lote por lote.
+- **`warehouse_id` es opcional** (desde 2026-10-10), aquí y en el ajuste: sin él, el movimiento va al almacén del establecimiento del usuario; si viene, tiene que existir (si no, 422).
+- **Motivos y almacén:** `GET /api/inventory/transaction/tables` devuelve `{success, data: {warehouse: {id, description} | null, transactions: {input: [{id, name}], output: [{id, name}]}}}`, con los motivos de `inventory_transactions` por nombre. Los códigos de las tablas de abajo son de ejemplo: use los que devuelve este endpoint.
