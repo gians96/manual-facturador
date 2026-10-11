@@ -336,6 +336,21 @@ Respuesta: `{ "success": true, "message": "Producto registrado con éxito", "id"
 - **Campos fuera de la ficha** se ignoran: imagen, series, insumos, etiquetas, `active`. Los ids de presentaciones, precios y precios por almacén tienen que ser del producto.
 - **Errores:** `{success: false, message, errors: {campo: [mensajes]}}`, con 403, 404 (el producto no existe) o 422. Las filas de lotes se nombran «Lote N: …».
 
+### Categorías y laboratorios desde la ficha
+
+Si la categoría o la marca (en farmacia, el laboratorio) no existe, la app la crea desde el
+buscador de la ficha, como el «Crear categoría "X"» del Panel.
+
+```
+POST /api/pro8/categories   { "name": "Analgésicos" }
+POST /api/pro8/brands       { "name": "Laboratorio Uno" }
+```
+
+- **Respuesta:** `{ "success": true, "message": "…", "data": { "id": 15, "name": "Analgésicos" } }`.
+- **Nombre que ya existe** (sin distinguir mayúsculas): devuelve la existente («… ya existía.») y no crea otra.
+- **Nombre vacío:** 422.
+- **Sin el permiso `manage_products`:** 403.
+
 ### El endpoint de siempre: `POST /api/pro8/items`
 
 La ficha corta de las apps anteriores sigue igual, con estos cambios (2026-10-11):
