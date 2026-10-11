@@ -287,6 +287,8 @@ DIGEMID (Dirección General de Medicamentos, Insumos y Drogas) es el organismo r
 | `date_of_due` | date | Con lotes, vencimiento del lote de referencia. No es el vencimiento del registro sanitario (ese está en `cat_digemid.fec_vcto_reg_sanitario`) |
 | `lots_enabled` | bool | Si el producto maneja lotes. Apagado, sus lotes quedan inactivos y no viajan al app |
 
+La app guarda `cod_digemid`, `sanitary` y los lotes del stock inicial con `POST /api/pro8/items/save` ([21 §5](21-productos-crud.md#5-ficha-de-producto-completa-de-la-app-pro8items-desde-2026-10-11)).
+
 ### Modelo `CatDigemid`
 
 **Tabla:** `cat_digemid` — Catálogo completo DIGEMID del item

@@ -142,6 +142,8 @@ Content-Type: application/json
 
 Endpoints que usa la pantalla Inventario de la app para trabajar como la web. Requieren `permissions.manage_inventory` del bundle de login: admin, el módulo web de Productos o de Inventario, o el módulo de app Productos. Sin ese permiso responden 403. Para saber si el servidor los tiene, `GET /api/inventory/transaction/tables` trae `features: ["movements", "transfers", "lots_conversion", "stock_check"]`, además de `warehouses` y `can_manage`.
 
+Desde 2026-10-11, `features` suma `excel_import_link` y las tablas traen `can_open_panel_inventory` (admin o módulo web Inventario). Con los dos, la app puede abrir en el navegador `{dominio}/inventory?importar=excel`: el Panel muestra solo el diálogo «Inventario y lotes con Excel». Un producto nuevo para ingresarle varios lotes se crea con `POST /api/pro8/items/save` sin stock inicial ([21 §5](21-productos-crud.md#5-ficha-de-producto-completa-de-la-app-pro8items-desde-2026-10-11)) y después se registra el Ingreso con `input_lots`.
+
 | Método | Ruta | Qué hace |
 |---|---|---|
 | GET | `/api/pro8/inventory/records` | Una fila por producto y almacén, con el stock por lote (`lots`, `uncovered`, `excess`, `negative`), `series_enabled` e `item_barcode`. Parámetros: `search` (nombre, código, código de barras o el de una presentación), `item_id`, `warehouse_id`, `stock_filter` (`positive`, `zero` o `negative`), `per_page` (10 a 50) y `page`. |
