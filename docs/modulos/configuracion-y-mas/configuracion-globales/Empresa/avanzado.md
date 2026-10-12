@@ -70,7 +70,7 @@ Las opciones de esta sección controlan la **remisión del comprobante a SUNAT**
 
 * **Mostrar costo ponderado:** Muestra el costo ponderado de los productos en el sistema.
 
-* **Días de plazo de envío:** Especifica los días permitidos de plazo para el envío en la validación de emisión de comprobantes.
+* **Días de plazo de envío:** Especifica los días permitidos de plazo para el envío en la validación de emisión de comprobantes. También limita el **reenvío automático** a SUNAT: una factura que quedó registrada solo se reenvía sola mientras esté dentro de este plazo; fuera de él SUNAT la rechazaría, y queda registrada para revisarla. Con 4 (valor por defecto) se envía el día de emisión y los 3 siguientes. Ver [Envío automático de facturas](../../../../guias-adicionales/tareas-programadas/envio-facturas-automatico.md).
 
 * **Cantidad de elementos en el validador:** Establece el número máximo de elementos que se pueden validar en el nuevo validador de documentos.
 

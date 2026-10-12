@@ -114,7 +114,7 @@ Transmite automáticamente las guías de remisión electrónicas hacia la plataf
 
 ### Para enviar facturas a SUNAT
 
-Envía automáticamente las facturas electrónicas al sistema de SUNAT para su validación y registro oficial.
+Envía automáticamente las facturas electrónicas al sistema de SUNAT para su validación y registro oficial. Solo envía las que siguen dentro de los **Días de plazo de envío**: las vencidas quedan registradas para que SUNAT no las rechace. Además, el servidor reintenta cada 2 horas las que fallaron porque SUNAT no respondió ([más detalle](../../../../guias-adicionales/tareas-programadas/envio-facturas-automatico.md)).
 
 > **Nota:** Configura los horarios preferentes para evitar picos de envío. SUNAT recomienda usar horarios fuera de punta.
 
@@ -171,7 +171,7 @@ Identifica automáticamente los tipos de afectación IGV más utilizados en tus 
 
 ## Anexo: ¿Cómo programar el envío de Facturas, Boletas y Guías de Remisión?
 
-<!-- Enviar Facturas : **Para enviar facturas a SUNAT** seguir el siguiente manual **[Envio de Facturas automatico](../../../../guias-adicionales/TareasProgramadas/envio-facturas-automatico.md)** -->
+Enviar Facturas : **Para enviar facturas a SUNAT** seguir el siguiente manual **[Envío automático de facturas](../../../../guias-adicionales/tareas-programadas/envio-facturas-automatico.md)**
 
 Enviar Boletas : **Para enviar boletas a SUNAT** seguir el siguiente manual **[Envio de Boletas automatico](../../../../guias-adicionales/tareas-programadas/envio-boletas-automatico.md)**
 
