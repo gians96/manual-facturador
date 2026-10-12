@@ -62,8 +62,53 @@ bun run docusaurus gen-api-docs   guia_remision --plugin-id facturador
 - Documentación de instalación/operación/API-offline migrada desde el retirado `codeplant/facturador-pro/` vive en `docs/devs/{despliegue/instalacion-scripts, devops, operacion, api/offline}`.
 - **Commits: solo lo que se hizo.** El mensaje dice qué cambió, por qué y cómo se verificó, **sin nombrar clientes, empresas ni personas**: ni quién lo reportó ni para quién es. Si el caso importa, se describe por lo que pasó («una integración que enviaba la fecha en aaaa-mm-dd»), no por quién. Vale también para lo que el commit agrega: páginas, ejemplos y capturas nuevos. Lo que ya existe no se reescribe por esto.
 - **Servicios en producción:** todo servicio que se dé por culminado y funcional (comando programado, timer de systemd, demonio) se registra en [`docs/devs/operacion/servicios-operativos.md`](docs/devs/operacion/servicios-operativos.md) **con su comando de verificación**, antes de dar el trabajo por cerrado. Una tarea programada que deja de funcionar no avisa: sin una forma de comprobarla, nadie se entera hasta que hace falta.
+- **El manual va a la par del código.** Cuando se termina un feature o un cambio en pro-8 (u otro repo del ecosistema) que alguien pueda ver o usar —pantalla, flujo, permiso, configuración, mensaje, API, tarea programada—, el manual se actualiza **en el mismo trabajo**, no «después»: hasta entonces el trabajo no está cerrado (`pro-8/AGENTS.md`, paso 8). El manual describe el sistema **como queda ahora**: lo que cambió se reescribe y lo que dejó de existir se quita, no se apila una nota encima.
 
-## 5. Qué NO tocar sin autorización
+  | Qué cambió | Dónde se documenta |
+  |---|---|
+  | API (request, respuesta, códigos de error) | El spec en `apifacturador/` y se regenera su `.mdx` (§2), o la guía de `docs/devs/api/` |
+  | Pantalla o flujo del panel del tenant | `docs/modulos/` (o `docs/guias-adicionales/` si es una guía paso a paso), **con capturas reales** (§5) |
+  | Configuración (Configuración → Avanzado, etc.) | `docs/modulos/configuracion-y-mas/` |
+  | Panel system / administración | `docs/multi-empresa/panel-admin/` |
+  | App de facturación (móvil) | `docs/app-facturacion/` y, si es contrato, `docs/devs/api/` |
+  | Tarea programada, servicio, despliegue | `docs/devs/` y `servicios-operativos.md` |
+
+  Si una página ya habla del tema, se actualiza esa: no se crea otra al lado. Al cerrar, las páginas tocadas se listan en el registro de `03-trabajo-realizado` de pro-8.
+
+## 5. Capturas de pantalla: siempre reales
+
+Una captura le dice al usuario «así se ve». Si no se ve así, le hace perder tiempo y desconfiar del
+manual entero.
+
+- **De la aplicación real corriendo**, con el cambio ya hecho: el stack local de pro-8
+  (`http://<tenant>.localhost:8080`) con un tenant de prueba, o el demo público. **Nunca** maquetas,
+  imágenes generadas, capturas de otra versión ni recortes de capturas viejas.
+- **Sin datos reales de clientes**: RUC, razón social, nombres, teléfonos, correos o montos de un
+  cliente. Se usan datos de prueba; si la pantalla los trae igual, se tapan o reemplazan antes de
+  guardar. Tampoco tokens, claves ni URL de producción.
+- **Dónde y cómo**: en la carpeta `img/` de la página; PNG; nombre en minúsculas con guiones,
+  `<página>-<paso>.png` (por ejemplo `envio-facturas-automatico-2.png`); recortada a la zona que
+  importa; lo que hay que pulsar o mirar, con un recuadro (verde, como las existentes). Texto
+  alternativo que diga qué se ve (`![Aviso «SUNAT no respondió» en el modal](img/…)`), no «Alt text».
+- **Al cambiar una pantalla se reemplaza su captura** (mismo nombre si es el mismo paso) y se borran
+  las que ya no usa ninguna página.
+- **Sin sesión en el navegador** se puede capturar igual: la vista se renderiza en el servidor con un
+  usuario en memoria y se fotografía con Chrome headless
+  (`pro-8/docs/01-guias/capturas-de-pantalla-sin-sesion.md`).
+- **Si no se puede capturar** (sin el stack levantado, por ejemplo), no se inventa ni se reutiliza
+  una foto vieja. Se deja la nota y se avisa al usuario al cerrar el trabajo:
+
+  ```md
+  :::note Captura pendiente
+  Pantalla: Ventas → Comprobantes, modal «Comprobante Generado» de una factura que SUNAT no respondió.
+  Debe verse: el aviso ámbar «SUNAT no respondió» con la fecha límite de reenvío.
+  :::
+  ```
+
+  Al subir la captura, la nota se reemplaza por la imagen. Una imagen referenciada que no existe
+  rompe el build.
+
+## 6. Qué NO tocar sin autorización
 
 - El dominio/deploy (`CNAME`, `docusaurus.config.ts` → `url`/`projectName`/`editUrl`).
 - Los `.mdx` generados del API (edita el YAML fuente).
