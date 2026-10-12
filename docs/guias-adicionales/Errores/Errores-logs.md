@@ -26,14 +26,14 @@
 
 ## Visualización de Logs
 
-Al acceder a la sección de Logs, se mostrará el "Laravel Log Viewer" que presenta:
+Al acceder a la sección de Logs (solo el superadministrador) se muestra:
 
-1. Una lista de archivos de logs organizados por fecha en el panel izquierdo
-2. Panel principal que muestra los registros de errores con la siguiente información:
-   - Nivel de error (error, warning, info)
-   - Contexto 
-   - Fecha y hora
-   - Contenido detallado del error
+1. A la izquierda, los archivos de log **agrupados por tipo** (errores de la aplicación, correos,
+   tareas programadas, copias de seguridad, plataforma, app, servidor y archivados), del más
+   reciente al más viejo, con tamaño y fecha.
+2. Arriba, **cuántas entradas hay de cada nivel** (error, warning, info): al pulsar uno se filtra.
+3. Los registros del archivo elegido, **de lo más nuevo a lo más viejo** y paginados, con su nivel,
+   hora, **empresa** y **origen** (URL, comando o tarea). El buscador recorre el archivo entero.
 
 ![Visualizador de Logs](../img/imagen_log_viewer.png)
 
@@ -41,13 +41,13 @@ Al acceder a la sección de Logs, se mostrará el "Laravel Log Viewer" que prese
 
 Los logs muestran información técnica detallada que es fundamental para la resolución de problemas:
 
-- **Level**: Indica la gravedad del evento (error, warning, info, etc.)
-- **Context**: Muestra el entorno donde ocurrió el error
-- **Date**: Fecha y hora exacta del evento
-- **Content**: Descripción detallada del error, incluyendo:
-  - Número de línea en el código
-  - Mensaje de error específico
-  - Detalles técnicos como consultas SQL, valores de variables, etc.
+- **Nivel**: Indica la gravedad del evento (error, warning, info, etc.)
+- **Fecha**: Fecha y hora exacta del evento
+- **Mensaje y detalle**: al pulsar la fila, el error ordenado:
+  - **Dónde**: el archivo y la línea del sistema donde falló
+  - **Entrada**: la pantalla, API, comando o tarea por la que llegó
+  - **Empresa**, **origen**, usuario e IP (en los registros desde el 12/10/2026)
+  - La traza completa, el contexto y el texto original, con **Copiar enlace** para pasárselo a soporte
 
 ## Utilidad para Soporte Técnico
 

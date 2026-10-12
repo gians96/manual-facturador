@@ -59,6 +59,7 @@ recreación del contenedor. Si reaparece, el contenedor no está usando el `comm
 | Servicio | Qué hace | Frecuencia | Cómo verificar que está vivo | Log |
 |---|---|---|---|---|
 | `tenancy:run tenant:run` | Tareas por tenant: consultas a SUNAT y envíos automáticos. Ejecuta solo las que estén **activas** en la tabla `tasks` del tenant (interruptor de la pantalla *Tareas programadas*) | cada minuto | `docker exec fpm_… php artisan schedule:list \| grep tenant:run` | — |
+| `tenancy:run online:send-all --option=mode=unavailable --option=limit=20` | Reintenta las facturas y notas que quedaron **Registrado** porque SUNAT no respondió (`HTTP`, `WSDL`, 0100/0109/0130–0138/0200), **solo dentro de «Días de plazo de envío»**: fuera de plazo SUNAT las rechaza y no se envían. Todas las empresas, tengan o no la tarea programada. Hasta 20 por empresa y pasada; corta una empresa tras 2 fallos seguidos. En segundo plano | cada 2 h (minuto 25) | `docker exec fpm_… php artisan schedule:list \| grep send-all`; `tail storage/logs/sunat_resend.log` (una línea por empresa **solo** si había algo pendiente: «enviados N · sin respuesta de SUNAT N · con error N»; vacío es lo normal) | `sunat_resend.log` |
 | `status:server` | Muestra de CPU y RAM para las gráficas de `/information` | cada 5 min | Que aparezcan filas nuevas en `history_resources` | — |
 | `system:check` | Comprueba que **Laravel alcanza** Redis, la base y el WebSocket, y deja el resultado para `/information` | cada 5 min | `docker exec fpm_… php artisan system:check` (tabla en verde y salida 0) | `system_check.log` |
 | `storage:scan` | Mide disco, inodes y consumo por tenant para `/information` | cada hora | `stat -c %y storage/app/system/storage-usage.json` (debe ser de hace &lt; 1 h) | `storage_scan.log` |
@@ -221,6 +222,20 @@ docker exec mariadb_… sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "
   SELECT start_time, query_time, rows_examined, db, LEFT(sql_text, 200) AS consulta
   FROM mysql.slow_log ORDER BY query_time DESC LIMIT 20"'
 ```
+
+**De qué empresa y cómo (desde 2026-10-12).** Cada línea de `laravel-FECHA.log` y de los canales
+de texto (`facturalo`, `emails`, `offline_sync`, `restaurant_realtime`) termina con su origen, que
+añade `App\Logging\AddLogOrigin`:
+
+```text
+[2026-10-12 18:03:04] production.WARNING: … {"request_id":"01M4…"} {"_origin":{"tenant":"garfacat.localhost","via":"POST /api/documents","user":"api:1","ip":"…"}}
+```
+
+`tenant` es el dominio en una petición y el `uuid` del website en un comando o un job (en el
+dominio del panel no hay); `via` es `MÉTODO /ruta` sin query string, `artisan <comando>` o
+`job <Clase>`. Para ver los errores de una empresa:
+`grep '"tenant":"garfacat.localhost"' storage/logs/laravel-$(date +%F).log`. El visor `/logs` del
+panel lo muestra en columnas y filtra por empresa. Las líneas anteriores no lo llevan.
 
 :::warning Léelos antes del lunes
 `logs:prune` recorta cada lunes el log de acceso y el slowlog de PHP-FPM a sus últimos 5 MB
