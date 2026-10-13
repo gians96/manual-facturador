@@ -8,8 +8,10 @@ y cuentas bancarias**. Aparecen:
 - el saldo inicial de cada caja;
 - las transferencias entre cuentas.
 
-**Cada fila es un pago.** Muestra con qué método se pagó (Efectivo, Yape, Plin, tarjeta, transferencia…),
-a qué caja o cuenta llegó y el saldo acumulado.
+**Cada fila es un comprobante**, con lo que se pagó ese día. Muestra:
+- con qué métodos se pagó (Efectivo, Yape, Plin, tarjeta, transferencia…) y cuánto con cada uno;
+- a qué caja o cuenta llegó;
+- el saldo acumulado.
 
 ![Pantalla de Movimientos: periodo, filtros en chips, totales y la tabla de movimientos](img/movimientos-1.png)
 
@@ -42,7 +44,7 @@ Debajo del periodo hay tres grupos de chips:
 
 - **Puedes marcar uno, varios o ninguno.** «Todos» quita el filtro de ese grupo. La tabla y los totales se
   actualizan al instante: no hay que pulsar «Buscar».
-- **Solo salen los chips que tienen movimientos en el periodo.** Cada uno dice cuántos movimientos hay y
+- **Solo salen los chips que tienen movimientos en el periodo.** Cada uno dice cuántos comprobantes hay y
   cuánto suman.
 - **Cada chip cuenta lo que verías si lo marcaras.** Si eliges **Yape**, el chip **Boleta** dice cuántas
   boletas se pagaron con Yape y por cuánto.
@@ -53,7 +55,7 @@ Debajo del periodo hay tres grupos de chips:
 Los filtros quedan en la dirección de la página: al recargar se mantienen, y puedes compartir el enlace
 con otra persona que tenga acceso.
 
-![Boletas y notas de venta pagadas con Yape: chips marcados y totales del filtro](img/movimientos-2.png)
+![Boletas y notas de venta pagadas con Yape: chips marcados, totales del filtro y el efectivo en gris](img/movimientos-2.png)
 
 :::tip Métodos de los gastos
 Los gastos usan su propio catálogo de métodos, como «CAJA GENERAL». Por eso llevan **(gastos)** al lado:
@@ -62,11 +64,14 @@ así no se confunden con un método de ventas que se llame igual.
 
 ## Comprobantes pagados con varios métodos
 
-Si un comprobante se pagó con más de un método, sale **una fila por cada pago**, y cada una lleva la
-marca **Mixto · 2**. Por ejemplo, una boleta de S/ 45.90 pagada con Efectivo S/ 30.00 y Yape S/ 15.90 da
-dos filas. Así el total de cada método es exacto.
+Si un comprobante se pagó con más de un método, sale **en una sola fila con el desglose**. Por ejemplo,
+una nota de venta pagada con Yape S/ 6.00 y Efectivo S/ 4.00 da una fila de S/ 10.00, con
+«Yape S/ 6.00 / Efectivo S/ 4.00» en **Método de pago**.
 
-- Pulsa **Mixto · 2** para ver todos los pagos del comprobante. El de esa fila sale resaltado.
+- **Al filtrar por un método**, la fila suma solo lo de ese método. Con **Yape**, esa nota de venta cuenta
+  S/ 6.00, y el efectivo se ve en gris: es del comprobante, pero no entra en el filtro. Así la fila cuadra
+  con los totales de arriba.
+- **Un crédito cobrado en días distintos** sale una fila por cada día que se cobró.
 - Pulsa la flecha de la izquierda para desplegar la fila. Ahí ves:
   - los pagos del comprobante;
   - el detalle de un gasto o ingreso;
@@ -75,11 +80,12 @@ dos filas. Así el total de cada método es exacto.
   - la fecha de emisión, si se cobró otro día;
   - quién lo registró.
 
-![Pagos de una nota de venta pagada con Yape y Efectivo, y su fila desplegada](img/movimientos-3.png)
+![Nota de venta pagada con Yape y Efectivo en una sola fila, desplegada con sus pagos](img/movimientos-3.png)
 
 ## Totales y saldo
 
 - **Ingresos, Egresos, Saldo neto y Movimientos** suman **todo lo filtrado**, no solo la página que ves.
+  «Movimientos» cuenta filas: un comprobante pagado con dos métodos cuenta una vez.
 - **Monto**: en verde con «+» si es un ingreso, en rojo con «−» si es un egreso.
 - **Saldo**: el acumulado de lo filtrado en orden cronológico. La primera fila, la más reciente, muestra
   el saldo final.
@@ -100,16 +106,21 @@ El archivo se arma **en segundo plano**, así que puedes seguir trabajando. Cuan
 
 El Excel trae dos hojas:
 
-- **Movimientos**, una fila por pago, con estas columnas:
+- **Movimientos**, una fila por comprobante, como en la pantalla, con estas columnas:
   - fecha, fecha de emisión (si se cobró otro día), tipo y número del comprobante;
   - adquiriente o proveedor y su documento;
-  - **método de pago** y **pagos del comprobante** (por ejemplo `Efectivo 30.00 + Yape 15.90`), y si fue
-    pago mixto;
-  - destino, referencia, moneda, monto original y tipo de cambio;
+  - **una columna por cada método de pago que aparece** (Efectivo | Yape | Plin | …), con lo que se pagó
+    con cada uno;
   - ingreso, egreso y saldo en soles;
+  - si fue pago mixto y los **pagos del comprobante** (por ejemplo `Efectivo 30.00 + Yape 15.90`);
+  - destino, referencia, moneda, monto original y tipo de cambio;
   - usuario y detalle.
 
   Arriba lleva la empresa, el establecimiento y los filtros que usaste.
+
+  **Las columnas de método son solo las que aparecen en lo exportado.** Si todo se cobró en efectivo,
+  sale solo «Efectivo»; si filtraste Yape, solo «Yape». Los egresos van en negativo, así que la fila de
+  totales da el neto de cada método.
 - **Resumen**, con lo que entró y salió por cada método de pago y por cada tipo de comprobante.
 
 ## En el celular
