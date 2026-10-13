@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: Introducción
+  description: |-
+    La API del **Facturador** permite emitir comprobantes de pago electrónicos (CPE) y
+    obtener por cada uno los 3 archivos indispensables: **XML Firmado, PDF y CDR**.
+
+    **Autenticación:** todas las peticiones requieren el token de la cuenta enviado en el
+    encabezado `Authorization: Bearer <TOKEN>` junto con `Accept: application/json`.
+  version: "8.0.0"
+servers:
+  - url: https://tu-dominio.com
+    description: "Producción: reemplazar por el dominio de tu empresa"
+tags:
+  - name: api
+    description: Emisión de comprobantes electrónicos (CPE)
+
+paths:
+  /api/establishments/annexes:
+    get:
+      tags:
+        - api
+      summary: ESTABLECIMIENTOS ANEXOS DEL EMISOR
+      description: |
+        Lista los anexos SUNAT que se pueden mandar en `establecimiento_del_emisor` al emitir una
+        factura o boleta (`POST /api/documents`): las direcciones secundarias **activas** del
+        establecimiento del usuario dueño del token.
+
+        Se registran en el panel: **Establecimientos › editar › Dirección secundaria**, con el
+        código de anexo que figura en Consulta RUC › Establecimientos anexos, el ubigeo y la
+        dirección. Son las mismas direcciones que las guías usan como punto de partida.
+
+        Al emitir con uno de ellos, el comprobante conserva el domicilio fiscal en la cabecera y
+        añade el anexo:
+
+        - **XML:** `cac:SellerSupplierParty/cac:Party/cac:PostalAddress`, como lo pone el portal de SUNAT.
+        - **PDF:** la fila «Establecimiento del emisor», en A4, A5 y ticket.
+
+        ***Ejemplo:***
+         - **Método:** GET
+         - **URL:** `https://tu-dominio.com/api/establishments/annexes`
+         - **Encabezados:** `Authorization: Bearer <TU_TOKEN>` y `Accept: application/json`
+
+        Para emitir con el anexo `0001`:
+
+        ```json
+        "establecimiento_del_emisor": { "codigo": "0001" }
+        ```
+
+        Si dos direcciones tienen el mismo código, se manda su `id`:
+        `{ "id": 5 }`.
+
+        Si `data` viene vacío, el establecimiento no tiene anexos: hay que registrarlos en el panel
+        (no hay endpoint para crearlos). Guía completa, con el registro, la emisión, lo que sale en
+        el PDF y el XML y los errores:
+        [Establecimiento del emisor](/devs/api/establecimiento-del-emisor).
+      operationId: establecimientosAnexos
+      responses:
+        '200':
+          description: Establecimiento del token y sus anexos activos (`data` vacío si no tiene).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaAnexos'
+        '401':
+          description: Token inválido o ausente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      security:
+        - bearerAuth: []
+
+components:
+  schemas:
+    RespuestaAnexos:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        establishment:
+          type: object
+          description: Establecimiento del usuario del token (su domicilio va en la cabecera del comprobante).
+          properties:
+            id:
+              type: integer
+              example: 1
+            codigo:
+              type: string
+              example: "0000"
+            descripcion:
+              type: string
+              example: "Oficina Principal"
+            direccion:
+              type: string
+              example: "AV. PRINCIPAL 100"
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 5
+              codigo:
+                type: string
+                description: Código de anexo SUNAT.
+                example: "0001"
+              direccion:
+                type: string
+                example: "AV. LOS MINEROS 450 - ALMACEN 2"
+              ubigeo:
+                type: string
+                example: "040101"
+              departamento:
+                type: string
+                example: "AREQUIPA"
+              provincia:
+                type: string
+                example: "Arequipa"
+              distrito:
+                type: string
+                example: "Arequipa"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

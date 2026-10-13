@@ -37,9 +37,29 @@ Aparecerá el formulario para llenar los datos del **Nuevo Establecimiento**.
 - **14. Cambiar logo del establecimiento:** Selecciona para poder cambiar el logo de tu establecimiento.
 - **15. Casilla de verificación:**
   - **Sujeto al IGV - Ley 31556:** Si perteneces al sector de restaurantes, hoteles y agencias de turismo, selecciona esta casilla para aplicar el IGV que te corresponde.
-- **Dirección secundaria:**
+## Dirección secundaria (anexos del RUC)
 
-Esta opción se utiliza principalmente para generar guías de remisión con una dirección diferente a la que está asignada como principal. Es útil para manejar múltiples ubicaciones de despacho, almacenes temporales o cuando necesitas enviar mercancías desde una dirección distinta a la fiscal.
+En la pestaña **Dirección secundaria** se registran los otros locales de la empresa: los
+**establecimientos anexos** que figuran en tu ficha RUC (Consulta RUC → Establecimientos anexos),
+como un almacén, una obra o una mina. Con **Agregar dirección** se añade cada uno:
+
+- **País** y **Ubigeo:** dónde está el anexo.
+- **Dirección:** tal como figura en el RUC.
+- **Código de anexo SUNAT:** el código de cuatro dígitos que SUNAT le asignó al anexo (por ejemplo `0001`).
+
+![Pestaña «Dirección secundaria» con un anexo registrado: país, ubigeo, dirección y código de anexo SUNAT](img/crear-sucursales-y-gestionar-series-direccion-secundaria.png)
+
+Estas direcciones se usan en dos sitios:
+
+- **Guías de remisión:** como punto de partida, cuando la mercadería sale de un lugar distinto a la dirección principal.
+- **Facturas y boletas:** como **Establecimiento del emisor**, el local donde entregas el bien o prestas
+  el servicio. Se elige al emitir (ver [Nuevo comprobante](../../esenciales/ventas/01-nuevo-comprobante.md)),
+  y el comprobante muestra el domicilio fiscal en la cabecera y el anexo en una fila aparte, en el PDF y en
+  el XML. Por API se envía con `establecimiento_del_emisor` y la lista de anexos se consulta con
+  `GET /api/establishments/annexes`.
+
+Solo se ofrecen las direcciones **activas** del establecimiento. Si el anexo no está registrado en tu
+RUC, regístralo primero en SUNAT.
 
 ## Listado de establecimientos
 

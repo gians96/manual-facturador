@@ -67,6 +67,10 @@ paths:
           `offline_id` no duplica el comprobante. **Corregido el 2026-09-02**: hasta esa fecha esta
           promesa no se cumplía y cada reintento creaba un comprobante nuevo, así que si construiste
           un rodeo para evitarlo, ya puedes retirarlo.
+        - `establecimiento_del_emisor` (opcional) imprime en el PDF y en el XML el anexo SUNAT donde se
+          entrega el bien o se presta el servicio, aparte del domicilio fiscal. Los anexos disponibles
+          se consultan con `GET /api/establishments/annexes`. Paso a paso:
+          [Establecimiento del emisor](/devs/api/establecimiento-del-emisor).
       operationId: facturaGravada
       requestBody:
         description: JSON a enviar
@@ -113,7 +117,12 @@ paths:
             de SUNAT, con la sugerencia del código correcto) o `TOTALS_MISMATCH`
             (el total declarado no cuadra con la suma de los ítems). Aquí salen
             también las reglas de negocio —serie incorrecta, ubigeo, fecha fuera
-            de plazo—, que **antes devolvían 500**.
+            de plazo—, que **antes devolvían 500**. Con `establecimiento_del_emisor`:
+            `INVALID_ISSUER_ESTABLISHMENT` (bloque mal formado), `ISSUER_ESTABLISHMENT_NOT_FOUND`
+            (no hay un anexo activo con ese código o id; `errors.disponibles` los lista),
+            `ISSUER_ESTABLISHMENT_AMBIGUOUS` (varios con ese código: mandar el `id`),
+            `ISSUER_ESTABLISHMENT_MISMATCH` (`id` y `codigo` de anexos distintos) e
+            `ISSUER_ESTABLISHMENT_NOT_APPLICABLE` (en una nota).
           content:
             application/json:
               schema:
@@ -220,6 +229,28 @@ components:
             telefono:
               type: string
               example: "999888777"
+        establecimiento_del_emisor:
+          type: object
+          nullable: true
+          description: >-
+            Opcional, solo facturas y boletas. Anexo SUNAT donde se entrega el bien o se presta el
+            servicio, si no es el domicilio fiscal (el «Establecimiento del Emisor» del portal de
+            SUNAT). Sale de las direcciones secundarias activas del establecimiento del usuario del
+            token (panel: Establecimientos › editar › «Dirección secundaria»); se listan con
+            `GET /api/establishments/annexes`. Enviar `codigo` o `id`. En el XML va como
+            `cac:SellerSupplierParty` y en el PDF como la fila «Establecimiento del emisor». Si el
+            código es el del propio establecimiento (p. ej. "0000"), se emite sin anexo.
+            Guía: [Establecimiento del emisor](/devs/api/establecimiento-del-emisor).
+          example:
+            codigo: "0001"
+          properties:
+            codigo:
+              type: string
+              description: Código de anexo SUNAT, de hasta cuatro dígitos ("1" y "0001" valen lo mismo).
+              example: "0001"
+            id:
+              type: integer
+              description: Id de la dirección secundaria. Necesario si varias comparten código; si llega junto con `codigo`, tienen que ser del mismo anexo.
         totales:
           type: object
           required:

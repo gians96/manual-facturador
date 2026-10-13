@@ -28,6 +28,15 @@ Se puede crear un comprobante con un día de retaso.
 - **Tipo de cambio:** Es el tipo de cambio extraído por la SUNAT
 - **Fecha de emisión:** Es el día que se emite el comprobante
 - **Fecha de vencimiento:** Es el día que se tiene que pagar el comprobante.
+- **Establecimiento del emisor:** Solo aparece si tu establecimiento tiene direcciones secundarias
+  (anexos del RUC). Elige el anexo donde entregas el bien o prestas el servicio. El comprobante sigue
+  mostrando tu domicilio fiscal en la cabecera y añade el anexo en la fila «Establecimiento del emisor»,
+  en el PDF y en el XML que va a SUNAT. Si lo dejas vacío («Dirección principal»), el comprobante sale
+  como siempre.
+
+![Selector «Establecimiento del emisor» abierto con un anexo: código 0001 y su dirección](img/nuevo-comprobante-establecimiento-del-emisor.png)
+
+Los anexos se registran en [Sucursales & series → Dirección secundaria](../../configuracion-y-mas/sucursales-series/crear-sucursales-y-gestionar-series.md#dirección-secundaria-anexos-del-ruc).
 
 :::danger IMPORTANTE:
 
