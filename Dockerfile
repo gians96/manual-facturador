@@ -3,7 +3,17 @@
 ##############################################
 # Etapa 1 — Build del sitio estático (Docusaurus)
 ##############################################
-FROM oven/bun:1.2.19 AS build
+#
+# La compilación corre con Node, no con el runtime de Bun. En la imagen
+# oven/bun no hay `node`, así que el `#!/usr/bin/env node` de docusaurus lo
+# ejecutaba Bun, y su spawnSync reentra en el bucle de eventos: cada página
+# volvía a llamar a `git` (showLastUpdateTime) dentro de la llamada anterior,
+# hasta «RangeError: Maximum call stack size exceeded». Rompió al pasar de
+# cierto número de páginas (2026-10-13), y el build quedó colgado sin terminar.
+# Bun se queda solo para instalar dependencias desde bun.lock.
+FROM node:24-bookworm-slim AS build
+
+COPY --from=oven/bun:1.2.19 /usr/local/bin/bun /usr/local/bin/bun
 
 WORKDIR /app
 
@@ -21,7 +31,7 @@ RUN bun install --frozen-lockfile
 # 2) Resto del proyecto y build de producción
 #    (onBrokenLinks: "throw" hará fallar el build si hay enlaces rotos)
 COPY . .
-RUN bun run build
+RUN npm run build
 
 ##############################################
 # Etapa 2 — Servir con nginx (imagen final liviana)
