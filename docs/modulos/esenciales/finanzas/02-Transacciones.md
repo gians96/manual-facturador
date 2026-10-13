@@ -1,21 +1,16 @@
 # Transacciones
 
-En este artículo te te mostraremos como revisar el reporte de transacciones. En esta sección podrá observar todos los movimientos, sean efectivos, pagos a banco. Sigue estos pasos para realizarlo:
+**Finanzas › Transacciones** es el mismo libro que [Movimientos](01-Movimientos.md): todo lo que entró y
+salió de tus cajas y cuentas bancarias, un pago por fila, con su método de pago, su destino y el saldo
+acumulado.
 
-Ingresa al módulo de **Finanzas** y luego selecciona la subcategoría **Transacciones**.
+Funciona igual que Movimientos:
 
-![Alt text](img/finanzas4.jpg)
+- se elige el periodo o **Mi caja abierta**;
+- se filtra con los chips de comprobante, método de pago y movimiento;
+- se busca por número, cliente o RUC/DNI;
+- se exporta a Excel lo filtrado.
 
-## Filtros de búsqueda
+Cómo se usa cada cosa: en [Movimientos](01-Movimientos.md).
 
-![Alt text](img/finanzas5.jpg)
-
-Puede filtrar el reporte de transacciones que visualizará con los siguientes filtros:
-
-- **Periodo**
-- **Mes**
-- **Casilla de selección:** Última apertura de caja : Al seleccionar esta casilla observará todas las cajas iniciando en la fecha que se abrió en la última caja de los usuarios.
-
-Seguido seleccione el botón **Buscar**. Observará el detallado de las tracciones que se realizaron, de la misma manera seleccionando el botón **Exportar Excel** puede descargar los datos en un archivo excel.
-
-![Alt text](img/finanzas6.jpg)
+![Pantalla de Transacciones con los mismos filtros y columnas que Movimientos](img/transacciones-1.png)

@@ -15,3 +15,8 @@ Podrá exportar los reportes, seleccionando el botón correspondiente.
 Luego seleccione el botón Buscar. Se observan los movimientos:
 
 ![Alt text](img/ingreso2.jpg)
+
+:::tip ¿Qué comprobantes se pagaron con cada método?
+Este reporte da los totales por método. Para ver **cuáles** comprobantes se pagaron con Yape, tarjeta o
+efectivo, y exportarlos, usa [Movimientos](01-Movimientos.md) con el chip del método de pago.
+:::
