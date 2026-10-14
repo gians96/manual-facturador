@@ -56,6 +56,20 @@ Todos los campos con el **[*]** son obligatorios.
 Si el punto de llegada no carga correctamente, usa el botón **+Nuevo** y selecciona **Buscar** seguido de **Guardar** sin necesidad de llenar todos los campos.
 :::
 
+:::info Motivo Compra: el cliente es tu proveedor
+Con el motivo **Compra** el cliente es el proveedor: la mercadería sale de su dirección y llega a un
+establecimiento de tu empresa. El formulario lo muestra en ese orden: a la izquierda el
+**Punto de partida · del proveedor** (se elige entre las direcciones del cliente) y a la derecha el
+**Punto de llegada · de tu empresa** (se elige entre tus establecimientos). El icono de información (ⓘ)
+junto a cada etiqueta lo explica. El XML y el PDF de la guía salen con la misma partida y llegada.
+:::
+
+:::note Captura pendiente
+Pantalla: Guías de remisión → Nueva guía, sección «Destinatario y direcciones» con el motivo **Compra**.
+Debe verse: «Punto de partida · del proveedor» a la izquierda y «Punto de llegada · de tu empresa» a la
+derecha, cada una con el icono ⓘ, y el texto de ayuda abierto sobre uno de ellos.
+:::
+
 
 
 # DATOS DE MODELO DE TRASLADO 

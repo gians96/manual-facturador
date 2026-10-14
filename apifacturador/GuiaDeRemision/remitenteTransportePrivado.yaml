@@ -216,7 +216,9 @@ components:
             "13" Otros (requiere `descripcion_motivo_traslado`), "14" Venta sujeta a
             confirmación del comprador, "17" Traslado de bienes para transformación,
             "18" Traslado por emisor itinerante de comprobantes de pago, "19" Traslado
-            de mercancía extranjera.
+            de mercancía extranjera. Con "02" (Compra) envía las direcciones reales:
+            `direccion_partida` es la de tu proveedor y `direccion_llegada` la de tu
+            empresa (ver `DireccionTraslado`).
           example: "04"
         descripcion_motivo_traslado:
           type: string
@@ -391,6 +393,14 @@ components:
         Punto de partida / llegada del traslado. Las 3 claves son obligatorias (el backend
         las accede directamente). En `codigo_del_domicilio_fiscal` usar "0000" si el punto
         no corresponde a un establecimiento anexo declarado en SUNAT.
+
+
+        `direccion_partida` es de donde sale la mercadería y `direccion_llegada` a donde llega,
+        con cualquier motivo. **Motivo "02" (Compra):** el cliente es tu proveedor, así que
+        `direccion_partida` es la dirección del proveedor y `direccion_llegada` la de tu
+        empresa. La respuesta trae el aviso `PUNTOS_DE_LA_COMPRA` con la ruta que quedó.
+        Hasta octubre de 2026 la API leía estos dos bloques cruzados en la compra: si tu
+        integración los enviaba intercambiados para compensar, deja de hacerlo.
       required:
         - ubigeo
         - direccion

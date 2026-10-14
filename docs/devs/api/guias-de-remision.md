@@ -229,6 +229,51 @@ que no sea tipo `09` y luego los exige, así que con una guía transportista res
 endpoint equivocado.
 :::
 
+## Motivo 02 (compra): partida y llegada
+
+`direccion_partida` es de donde sale la mercadería y `direccion_llegada` a donde llega, con cualquier
+motivo. En la compra (`codigo_motivo_traslado: "02"`) el cliente que envías en
+`datos_del_cliente_o_receptor` es tu **proveedor**, y la guía lo declara así: el destinatario eres tú
+mismo y el proveedor va aparte. Lo normal es:
+
+| Bloque | En una compra |
+|---|---|
+| `direccion_partida` | La dirección del proveedor, donde se recoge la mercadería |
+| `direccion_llegada` | Tu sede o almacén |
+
+Un ejemplo con datos de prueba, una compra a un proveedor de Arequipa que llega a un almacén en Lima:
+
+```json
+{
+  "codigo_motivo_traslado": "02",
+  "direccion_partida": { "ubigeo": "040101", "direccion": "Calle Proveedor Demo 123 - Arequipa", "codigo_del_domicilio_fiscal": "0000" },
+  "direccion_llegada": { "ubigeo": "150101", "direccion": "Av. Almacén Demo 456 - Lima", "codigo_del_domicilio_fiscal": "0000" }
+}
+```
+
+La respuesta trae en `warnings` el aviso `PUNTOS_DE_LA_COMPRA` con la ruta que quedó («la mercadería
+sale de … y llega a …»). No es un error: sirve para comprobarla antes de enviar la guía a SUNAT.
+
+:::caution Hasta octubre de 2026 la API las leía cruzadas
+En la compra, `direccion_partida` se tomaba como la dirección de tu empresa y `direccion_llegada`
+como la del proveedor, al revés de su nombre. Si tu integración enviaba los dos bloques
+intercambiados para que la guía saliera bien, deja de hacerlo: ahora saldría al revés. El aviso
+`PUNTOS_DE_LA_COMPRA` te lo muestra en cada guía de compra.
+:::
+
+:::info ¿Quién emite la guía de una compra?
+La guía de remisión remitente la emite el propietario o poseedor de los bienes **al inicio del
+traslado** (Reglamento de Comprobantes de Pago, art. 18, num. 1.1). En una compra eso suele
+significar:
+
+- **Tú recoges** la mercadería o contratas el transporte (ya es tuya cuando sale): la emites tú, con
+  motivo `02`.
+- **El proveedor te la lleva** por su cuenta: normalmente la emite él, como venta (`01`), y tú no
+  emites ninguna.
+
+Ante la duda en un caso concreto, que lo confirme tu contador.
+:::
+
 ## Enlazarlas con el comprobante
 
 Emitir la guía es la mitad del trabajo: falta decir **qué comprobante la sustenta**, o qué
@@ -654,6 +699,7 @@ no los conoce, pero te dicen que la guía no va a quedar exactamente como la env
 | `AUTORIZACION_NO_EMITIDA` | `datos_del_emisor.numero_autorizacion_especial` | Autorización de `datos_del_emisor` en una guía remitente: solo existe en la de transportista |
 | `TRANSPORTISTA_IGNORADO` | `transportista` | Bloque `transportista` en una guía de transportista: ahí el transportista es tu empresa y el bloque se descarta. El MTC sale de la ficha y la autorización va en `datos_del_emisor` |
 | `DIRECCION_PARTIDA_IGNORADA` · `DIRECCION_LLEGADA_IGNORADA` | `direccion_partida` · `direccion_llegada` | Guía de transportista con las dos formas de dirección: se usa `direcciones_proveedores` (o el id de una dirección registrada) y la de la remitente se descarta. Si **solo** llega la de la remitente, se usa y no hay aviso |
+| `PUNTOS_DE_LA_COMPRA` | `direccion_partida` | Guía remitente con motivo `02` (compra): dice de dónde sale y a dónde llega la mercadería, para comprobar que no enviaste los bloques al revés. Informativo; ver la sección «Motivo 02 (compra): partida y llegada» |
 | `VEHICULO_SECUNDARIO_VACIO` · `CHOFER_SECUNDARIO_VACIO` | `vehiculo_secundario.N` · `chofer_secundario.N` | Una fila sin ningún dato: un vehículo sin placa, modelo, marca, TUC ni número de autorización (la entidad sola no cuenta), o un conductor sin documento, nombres ni licencia. No se declara en la guía. Antes el vehículo salía al XML con la placa vacía |
 
 Como en el pliego de SUNAT, los códigos que empiezan por `2` o `3` son rechazos y los que empiezan
