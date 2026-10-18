@@ -68,6 +68,19 @@ Son errores graves que imposibilitan el procesamiento del archivo. En estos caso
 | 203 | No se pudo procesar su solicitud. (No se encontró archivos en la información del archivo ZIP) |
 | 204 | No se pudo procesar su solicitud. (Este tipo de requerimiento solo acepta 1 archivo) |
 
+### El 200 al consultar un resumen diario
+
+Al consultar un resumen diario (o una comunicación de baja), SUNAT puede responder que lo **rechazó**
+con el código 200 y sin descripción. El sistema muestra *No se pudo procesar su solicitud. (Ocurrio
+un error en el batch)* y el resumen queda **Rechazado**; sus boletas vuelven a **Registrado** y el
+envío automático las declara otra vez la noche siguiente (o puedes crear tú un resumen nuevo de esa
+fecha). Si vuelve a pasar con las mismas boletas, revisa que todas tengan una serie de boleta (que
+empiece con **B**): una boleta con otra serie hace que SUNAT rechace el resumen entero.
+
+Antes de esta versión se mostraba *Code: 200; Description: -* y el resumen se quedaba **Enviado**
+con los botones *Regularizar* y *Eliminar*. No uses *Regularizar* en ese caso: marca las boletas como
+aceptadas sin que SUNAT las tenga.
+
 ## Errores de Compresión/Descompresión (0250-0299)
 
 | Código | Descripción |

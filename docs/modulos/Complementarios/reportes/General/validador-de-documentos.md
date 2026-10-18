@@ -21,3 +21,7 @@ Completa los siguientes filtros:
 Podrá observar el estado del sistema y el estado de **SUNAT**, en caso que sean diferentes los estados; selecciona el botón **Validar documentos** para que los estados se igualen.
 
 ![Alt text](img/General_Validador_de_Documentos_04.jpg)
+
+## Cuando SUNAT no tiene el comprobante
+
+Si SUNAT no tiene el comprobante, al igualar los estados queda **Rechazado**. Hay una excepción: una **boleta** (o su nota) que todavía está **Registrada** o **Enviada** no se toca, porque solo falta declararla en un resumen diario. El resultado dice *No existe en SUNAT: está pendiente de declararse en un resumen diario*. Antes pasaba a Rechazada y ya no se declaraba nunca.

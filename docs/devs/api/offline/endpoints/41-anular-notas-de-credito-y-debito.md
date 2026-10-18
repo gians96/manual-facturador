@@ -36,8 +36,8 @@ solo movimiento de stock cada una. Volver a consultar las dos anulaciones no cam
 
 | La nota modifica… | Grupo | Anular | Fecha | Consultar | La consulta una tarea programada |
 |---|---|---|---|---|---|
-| Una factura (serie `F…`) | `01` | `POST /api/voided` | `aaaa-mm-dd` o `dd-mm-aaaa` | `POST /api/voided/status` | Sí: «Consultar las comunicaciones de baja» |
-| Una boleta (serie `B…`) | `02` | `POST /api/summaries` con `"3"` | `aaaa-mm-dd` | `POST /api/summaries/status` | No |
+| Una factura (serie `F…`) | `01` | `POST /api/voided` | `aaaa-mm-dd` o `dd-mm-aaaa` | `POST /api/voided/status` | Sí: «Consultar las anulaciones» |
+| Una boleta (serie `B…`) | `02` | `POST /api/summaries` con `"3"` | `aaaa-mm-dd` | `POST /api/summaries/status` | Sí: «Consultar las anulaciones», desde el 2026-10-18 |
 
 Hasta el 2026-09-26, `/api/voided` solo aceptaba `dd-mm-aaaa`: si tu servidor no está actualizado,
 usa ese formato, que vale en los dos.
@@ -412,9 +412,10 @@ unos minutos. Las demás respuestas (PSE, OSE SendFact, `0127`, fallos de conexi
 [39 — Qué puede volver](39-ciclo-de-la-boleta.md#qué-puede-volver). Si SUNAT rechaza,
 [ver abajo](#rechazo).
 
-- **Nada consulta este resumen por ti.** La tarea programada de resúmenes solo mira los de tipo
-  `"1"`, y «Consultar las comunicaciones de baja» solo las bajas `RA`. Si no lo consultas, la nota se
-  queda en `13`.
+- **La tarea «Consultar las anulaciones» consulta este resumen de madrugada**, si la empresa la
+  tiene activa (desde el 2026-10-18; hasta entonces, como «Consultar las comunicaciones de baja»,
+  solo miraba las bajas `RA` y la nota se quedaba en `13` si nadie lo consultaba). Sin la tarea,
+  consúltalo tú.
 - **Volver a consultar un resumen ya resuelto no cambia ninguna nota**, salvo terminar las que se
   quedaron en vuelo si fue aceptado. Hasta el 2026-09-25,
   reconsultar el resumen `"1"` que declaró la nota la devolvía a `05` aunque ya estuviera anulada.

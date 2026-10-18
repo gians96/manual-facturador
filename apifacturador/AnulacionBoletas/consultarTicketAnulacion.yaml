@@ -69,11 +69,11 @@ paths:
         - Volver a consultar un resumen ya resuelto no cambia ninguna boleta, salvo terminar las
           que se quedaron en vuelo si fue aceptado (desde el 2026-09-25).
 
-        **Ninguna tarea programada consulta estos resúmenes:** la de resúmenes solo mira los de
-        tipo `"1"`, y «Consultar las comunicaciones de baja», solo las bajas de facturas. Lo
-        consultas tú con esta llamada, o desde el panel en *Comprobantes pendientes →
-        Anulaciones* (botón *Enviar Baja*). Si nadie lo hace, la boleta se queda en `13` (en `03`
-        con PSE).
+        **La tarea programada «Consultar las anulaciones» los consulta de madrugada** (desde el
+        2026-10-18; antes se llamaba «Consultar las comunicaciones de baja» y solo miraba las bajas
+        de facturas, así que nada consultaba estos resúmenes). Si la empresa no la tiene activa, lo
+        consultas tú con esta llamada o desde el panel en *Comprobantes pendientes → Anulaciones*
+        (botón *Enviar Baja*); si nadie lo hace, la boleta se queda en `13` (en `03` con PSE).
 
         El mismo endpoint consulta los resúmenes diarios: ver CONSULTAR RESUMEN en Generar
         Resúmenes. El ciclo completo, con ejemplos reales:

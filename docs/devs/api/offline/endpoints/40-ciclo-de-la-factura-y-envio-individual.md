@@ -267,8 +267,9 @@ POST /api/voided/status
 
 Con `code: "0"` la factura queda en `11` (Anulado): es el `state_type_id` de su fila en `documents`.
 El de arriba, `05`, es el de la baja, que nunca pasa a `11`. `links.cdr` es el CDR **de la baja**; la
-factura conserva además el suyo, el de su aceptación. A diferencia de los resúmenes, las bajas sí las
-consulta una tarea programada: «Consultar las comunicaciones de baja».
+factura conserva además el suyo, el de su aceptación. Las bajas las consulta de madrugada la tarea
+programada «Consultar las anulaciones» (antes «Consultar las comunicaciones de baja»), que desde el
+2026-10-18 consulta también los resúmenes de anulación de boletas.
 
 :::info Probado el 2026-09-26 contra SUNAT beta
 F001-12 con `"2026-09-26"` y el `external_id` en mayúsculas (`RA-20260926-1`), y F001-13 con

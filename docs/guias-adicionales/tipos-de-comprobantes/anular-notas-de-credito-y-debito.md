@@ -67,9 +67,9 @@ Selecciona **Enviar Baja**: el sistema consulta el ticket en SUNAT y muestra su 
 |---|---|---|
 | **Enviar Baja**, en la fila | Sí | Sí |
 | **Consultar documentos**, arriba en Anulaciones | Sí, todas las pendientes | No |
-| La tarea programada **Consultar las comunicaciones de baja**, si está activa | Sí, de madrugada | No |
+| La tarea programada **Consultar las anulaciones**, si está activa | Sí, de madrugada | Sí, de madrugada |
 
-Una nota de **boleta** siempre se completa con **Enviar Baja**: si nadie lo pulsa, se queda **Por anular**.
+Sin esa tarea, una nota de **boleta** se completa con **Enviar Baja**: si nadie lo pulsa, se queda **Por anular**.
 
 ## Qué cambia al anular la nota {#efectos}
 

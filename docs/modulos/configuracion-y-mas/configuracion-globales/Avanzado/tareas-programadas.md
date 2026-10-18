@@ -64,9 +64,24 @@ Registra y almacena información de configuración y datos del servidor para aud
 
 Crea un registro detallado de todos los cambios realizados en el sistema para auditoría e historial.
 
-### Consultar todos los documentos anulados
+### Consultar las anulaciones
 
-Obtiene un listado de todos los comprobantes que han sido anulados en el período especificado.
+Consulta en SUNAT las anulaciones que siguen pendientes: las comunicaciones de baja de facturas y los resúmenes de anulación de boletas (antes se llamaba *Consultar las comunicaciones de baja* y solo miraba las facturas). Cuando SUNAT acepta, el comprobante queda **Anulado**; si rechaza, vuelve al estado que tenía.
+
+En la columna de resultado dice qué hizo, por ejemplo:
+
+```text
+Bajas de facturas: 2 consultada(s) (1 aceptadas, 1 en proceso).
+Anulaciones de boletas: 1 consultada(s) (1 aceptadas).
+Por anular sin anulación pendiente: F001-30. Verifícalos con el Validador de documentos.
+```
+
+La última línea lista los comprobantes que siguen **Por anular** sin ninguna anulación que consultar (por ejemplo, cuando SUNAT respondió que ya estaban de baja): esos se resuelven con el **Validador de documentos**.
+
+:::note Captura pendiente
+Pantalla: Configuración → Avanzado → Tareas programadas, fila «Consultar las anulaciones».
+Debe verse: el nombre nuevo de la tarea y, en la columna de resultado, las líneas «Bajas de facturas: …» y «Anulaciones de boletas: …».
+:::
 
 ### Consultar el estado de los documentos
 

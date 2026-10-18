@@ -77,3 +77,16 @@ No se puede eliminar un establecimiento cuando hay ventas o compras relacionadas
 :::
 
 - **Series:** Se pueden editar las series de cada establecimiento.
+
+## Series que acepta SUNAT
+
+Cada comprobante electrónico se emite con una serie de su tipo y con el formato que acepta SUNAT:
+
+| Comprobante | Serie |
+|---|---|
+| Factura | Empieza con **F** (`F001`, `FF01`) |
+| Boleta | Empieza con **B** (`B001`, `BB01`) |
+| Nota de crédito o débito | Empieza con **F** si modifica una factura y con **B** si modifica una boleta (`FC01`, `BC01`) |
+| Cualquiera de ellos en contingencia | Cuatro dígitos (`0001`) |
+
+Al emitir, el sistema lo comprueba. Si la serie es de otro tipo de comprobante o tiene otro formato, no emite y lo dice, por ejemplo *La serie NV01 es de nota de venta, no de boleta: elige una serie de boleta.* Antes se podía emitir una boleta con la serie de una nota de venta: SUNAT no la acepta, y rechazaba con ella todo el resumen diario del día.

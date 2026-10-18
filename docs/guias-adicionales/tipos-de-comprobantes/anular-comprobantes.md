@@ -20,7 +20,7 @@ Con estos pasos el sistema envía la anulación a SUNAT, que responde con un tic
 
 ![alt text](img/anular_comprobante_new_2.png)
 
-Para completar la anulación, ingresa a **Comprobantes pendientes → Anulaciones** (o usa el enlace **Ir a anulaciones**) y selecciona **Enviar Baja** en la fila de la anulación. Cuando SUNAT la acepta, el comprobante queda **ANULADO**. Es el mismo paso para facturas, boletas y notas; está explicado con capturas en [Anular notas de crédito y débito](anular-notas-de-credito-y-debito.md#completar).
+Para completar la anulación, ingresa a **Comprobantes pendientes → Anulaciones** (o usa el enlace **Ir a anulaciones**) y selecciona **Enviar Baja** en la fila de la anulación. Cuando SUNAT la acepta, el comprobante queda **ANULADO**. Si la empresa tiene activa la tarea programada **Consultar las anulaciones**, lo hace sola de madrugada, para facturas, boletas y notas. Es el mismo paso para facturas, boletas y notas; está explicado con capturas en [Anular notas de crédito y débito](anular-notas-de-credito-y-debito.md#completar).
 
 Si SUNAT **rechaza** la anulación, la fila pasa a **RECHAZADO** y el comprobante vuelve a **ACEPTADO**: para SUNAT sigue vigente. El mensaje de **Enviar Baja** dice el motivo con su código:
 
