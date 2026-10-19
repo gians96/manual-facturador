@@ -66,6 +66,10 @@ En esta sección se habilita al nuevo usuario que tipo de documentos va a poder 
 
 ![alt text](img/usuario5.jpg)
 
+El **Documento** y la **Serie** van juntos: la serie tiene que ser de ese documento (una serie `B…` para Boleta, `F…` para Factura, `NV…` para Nota de venta) y de la sucursal del usuario. Si cambias el documento o la sucursal, la serie elegida se borra y hay que elegirla otra vez; el sistema no deja guardar una pareja que no coincide. Con ellos, el POS abre el cobro en ese documento con esa serie.
+
+Antes se podía guardar, por ejemplo, **Boleta** con la serie de nota de venta **NV01**: el POS emitía entonces boletas `NV01-…`, que SUNAT no acepta y que hacían rechazar todo el resumen diario de ese día. Si un usuario quedó así, al abrirlo el campo **Serie** lo marca con *La serie guardada no es de este documento o de esta sucursal*: elige una serie de la lista y guarda.
+
 Finalmente, una vez rellenado todos los datos selecciona el botón **Guardar**. Aparecerá la lista de usuarios creados.
 
 ![alt text](img/listadeusuarios.jpg)
