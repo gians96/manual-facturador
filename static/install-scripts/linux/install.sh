@@ -356,6 +356,21 @@ COPY default /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 EOFNGINXDF
 
+# Imagen PHP de fpm, scheduling y supervisor: la del proyecto
+# (scripts/stack/php/Dockerfile, PHP fijo y parcheado) si la trae; la mantiene
+# ensure_php_runtime en cada actualizacion. Un proyecto sin ella (ProX, un
+# checkout viejo) sigue con los Dockerfile de docker/ sobre rash07 (PHP 8.2.5).
+if type php_stack_compose_build >/dev/null 2>&1 \
+    && PHP_BUILD_FPM="$(php_stack_compose_build "$PATH_INSTALL/$DIR" fpm 8)"; then
+    PHP_BUILD_SCHEDULING="$(php_stack_compose_build "$PATH_INSTALL/$DIR" scheduling 8)"
+    PHP_BUILD_SUPERVISOR="$(php_stack_compose_build "$PATH_INSTALL/$DIR" supervisor 8)"
+else
+    PHP_BUILD_FPM="$(printf '        build:\n            context: ./docker/php-fpm\n            dockerfile: Dockerfile')"
+    PHP_BUILD_SCHEDULING="$(printf '        build:\n            context: ./docker/scheduling\n            dockerfile: Dockerfile')"
+    PHP_BUILD_SUPERVISOR="$(printf '        build:\n            context: ./docker/supervisor\n            dockerfile: Dockerfile')"
+    echo "ADVERTENCIA: el proyecto no trae scripts/stack/php: PHP queda en la imagen de rash07 (8.2.5, vulnerable a php2shell)."
+fi
+
 cat << EOF > $PATH_INSTALL/$DIR/docker-compose.yml
 x-logging: &default-logging
     # El driver json-file por defecto no tiene techo: nginx escribe su access log
@@ -393,9 +408,7 @@ $SECLOG_VOLUME
             retries: 3
             start_period: 10s
     fpm_$SERVICE_NUMBER:
-        build:
-            context: ./docker/php-fpm
-            dockerfile: Dockerfile
+$PHP_BUILD_FPM
         container_name: fpm_$DIR_MODIFIED
         logging: *default-logging
         working_dir: /var/www/html
@@ -454,9 +467,7 @@ $FPM_STACK_CAPS
             - CERT_NAME=$HOST
         restart: always
     scheduling_$SERVICE_NUMBER:
-        build:
-            context: ./docker/scheduling
-            dockerfile: Dockerfile
+$PHP_BUILD_SCHEDULING
         container_name: scheduling_$DIR_MODIFIED
         logging: *default-logging
         working_dir: /var/www/html
@@ -465,9 +476,7 @@ $FPM_STACK_CAPS
 $SCHED_STACK
         restart: always
     supervisor_$SERVICE_NUMBER:
-        build:
-            context: ./docker/supervisor
-            dockerfile: Dockerfile
+$PHP_BUILD_SUPERVISOR
         container_name: supervisor_$DIR_MODIFIED
         logging: *default-logging
         working_dir: /var/www/html

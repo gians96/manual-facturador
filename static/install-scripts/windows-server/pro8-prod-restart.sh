@@ -74,7 +74,9 @@ wait_for_project_mount() {
     fi
     probe_image=$(cd "$project_dir" && docker compose images -q "$fpm_service" 2>/dev/null | head -1)
     if [ -z "$probe_image" ]; then
-        probe_image="rash07/php-fpm:8.2"
+        # Sin imagen de fpm todavia: la base oficial de la imagen PHP del proyecto (o rash07 si no la trae).
+        probe_image="php:$(sed -n 's/^ARG PHP_VERSION=//p' "$project_dir/scripts/stack/php/Dockerfile" 2>/dev/null | head -1)-fpm-bookworm"
+        [ "$probe_image" = "php:-fpm-bookworm" ] && probe_image="rash07/php-fpm:8.2"
     fi
 
     echo "→ Verificando bind mount Docker para $proj..."

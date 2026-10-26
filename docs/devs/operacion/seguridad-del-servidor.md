@@ -20,6 +20,7 @@ que no cambia nada visible:
 
 | Qué | Para qué |
 |---|---|
+| PHP de la imagen del proyecto (`scripts/stack/php`), en la versión parcheada que fija el repo | Ningún servidor queda en un PHP con fallos conocidos: ver [PHP: versión y parches](#php-versión-y-parches) |
 | nginx con `real_ip`, confiando **solo** en la IP exacta del proxy y en Cloudflare | La IP registrada es la del cliente y no se puede falsificar escribiendo un `X-Forwarded-For` |
 | `TRUSTED_PROXIES` en `.env` (bajo la marca `# pro8-sec`) | La app usa los mismos saltos de confianza que nginx |
 | Log `pro8sec` de nginx en `/var/log/pro8/<prefijo>/nginx/`, fuera del proyecto | Una webshell (que escribe como www-data) no lo puede tocar |
@@ -31,6 +32,90 @@ Para montar `/var/log/pro8/<prefijo>/nginx` hay que recrear el contenedor nginx 
 `docker logs`, que pueden ser evidencia. La actualización **no** lo hace por su cuenta: imprime los pasos. Guarda
 antes los logs (paso 1 del runbook de incidente) o pon `SECURITY_LOGGING_RECREATE_NGINX=true` en `.env`, que los
 guarda en `/var/log/pro8/<prefijo>/evidence` antes de recrear.
+:::
+
+## PHP: versión y parches
+
+Los contenedores `fpm`, `scheduling` y `supervisor` usan una imagen que se construye con el Dockerfile
+del proyecto, `scripts/stack/php/Dockerfile`. La versión de PHP es una línea de ese archivo
+(`ARG PHP_VERSION`). Cuando sale un parche, se cambia esa línea en el repo, y la siguiente
+actualización lo lleva a cada servidor.
+
+Hasta octubre de 2026 se usaban imágenes de un tercero (`rash07/php-fpm:8.2` y compañía). Tenían
+PHP 8.2.5 y no se actualizaban desde 2023, así que quedaron expuestas a **php2shell**
+(CVE-2026-109618 y CVE-2026-109619, corregidas en la 8.2.35): una sola petición sin autenticar
+ejecutaba código en el servidor.
+
+**Qué hace la actualización** (`ensure_php_runtime`, en el paso «Reiniciando contenedores PHP y
+nginx»):
+
+1. Si los contenedores ya corren la imagen del Dockerfile actual, no hace nada.
+2. Si no, la **construye**. La primera vez tarda unos minutos y necesita unos 3 GB libres.
+3. La **prueba** antes de usarla:
+   - la versión de PHP;
+   - que no pierda ningún módulo de los que hay hoy;
+   - que `upload_progress` esté apagado;
+   - que lea un certificado .pfx antiguo;
+   - la configuración de php-fpm;
+   - que `artisan` arranque.
+4. Guarda una **foto** de cada contenedor en `/var/log/pro8-evidencia`: archivos agregados, `/tmp`,
+   procesos y logs. Recrear un contenedor borra todo eso, y puede ser evidencia.
+5. Cambia la imagen en el `docker-compose.yml`, con un respaldo
+   `docker-compose.yml.backup-before-php-<versión>-<fecha>`.
+6. Recrea los tres contenedores. Si fpm no arranca, vuelve al compose y a la imagen anteriores.
+
+El corte de servicio es de unos segundos por contenedor.
+
+**Comprobar** la versión que corre cada contenedor y que el sitio no la anuncie:
+
+```bash
+docker exec fpm_<prefijo> php -v | head -1
+```
+
+```bash
+curl -sI https://<dominio>/login | grep -i x-powered-by || echo "sin X-Powered-By"
+```
+
+**Si la actualización termina en rojo** con «PHP sigue VULNERABLE», el código nuevo quedó
+desplegado pero PHP no se cambió. El motivo está en la línea `-> PHP` de la salida. Los casos
+habituales:
+- **falta espacio:** libera con `docker image prune` y `docker builder prune` y vuelve a actualizar;
+- **no se pudo descargar la base:** sin salida a Docker Hub, GitHub o getcomposer.org;
+- **la imagen no pasó una prueba:** la salida dice cuál.
+
+Para no aplicarlo en un servidor concreto, pon `PHP_RUNTIME_ENSURE=false` en su `.env`. Mientras PHP
+siga por debajo de la versión del Dockerfile, la actualización seguirá terminando en rojo.
+
+**Volver atrás** (las imágenes anteriores no se borran): copia el respaldo sobre el compose y
+recrea los tres.
+
+```bash
+cp docker-compose.yml.backup-before-php-<versión>-<fecha> docker-compose.yml
+```
+
+```bash
+docker compose up -d --no-deps --no-build fpm_1 scheduling_1 supervisor_1 && docker compose restart nginx_1
+```
+
+**Mitigar mientras tanto** en un servidor que todavía no se puede actualizar: copia un `.ini` dentro
+de cada `fpm_*` y recarga php-fpm sin recrearlo. Así no se pierde evidencia y no se toca el repo.
+Corta durante un segundo las peticiones en curso, y se pierde si el contenedor se recrea:
+
+```bash
+printf 'session.upload_progress.enabled = 0\nexpose_php = Off\n' > /root/zz-php2shell.ini
+```
+
+```bash
+for c in $(docker ps --format '{{.Names}}' | grep '^fpm_'); do docker cp /root/zz-php2shell.ini "$c":/usr/local/etc/php/conf.d/zz-php2shell.ini && docker exec "$c" sh -c 'php-fpm -t 2>&1' | grep -q 'test is successful' && docker kill -s USR2 "$c"; done
+```
+
+Desde octubre de 2026, el pool de php-fpm del proyecto (`scripts/stack/php-fpm/zz-pool.conf`)
+también apaga `upload_progress` y la cabecera `X-Powered-By`. Eso llega con cualquier
+actualización, aunque la imagen nueva no se haya podido construir.
+
+:::warning PHP 8.2 se queda sin parches el 31-12-2026
+Después de esa fecha hay que pasar a la 8.3 o posterior. No es solo subir el `ARG`: Laravel 9
+soporta PHP hasta la 8.2, y el cambio se prueba antes en local.
 :::
 
 ## Lo que se instala a mano: `security-install.sh`

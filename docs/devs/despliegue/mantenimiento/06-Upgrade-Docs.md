@@ -181,6 +181,13 @@ Entramos al archivo `docker-compose.yml` y actualizamos las imágenes:
 
 `rash07/php7.4-supervisor` → `rash07/supervisor-php:8.2`
 
+:::note La imagen PHP la cambia después la actualización
+Estas imágenes solo sirven para el primer arranque: llevan PHP 8.2.5, que es vulnerable. La primera
+actualización (`prod-update.sh` o el botón del panel) las reemplaza por la imagen del proyecto
+(`scripts/stack/php/Dockerfile`, con PHP parcheado). Ver
+[PHP: versión y parches](../../operacion/seguridad-del-servidor.md#php-versión-y-parches).
+:::
+
 Levantamos los contenedores con las imágenes actualizadas con el comando:
 
 ```bash
