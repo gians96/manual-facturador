@@ -82,8 +82,30 @@ Puedes descargar los comprobantes en diferentes formatos:
 
 - **XML,** un archivo encriptado emitido por SUNAT(✓)
 - **PDF,** archivo pdf del documento seleccionado (✓)
+- **CDR,** la constancia de recepción de SUNAT. Aparece cuando el comprobante ya fue aceptado.
 
 ![Alt text](img/9_comprobantes_de_sunat.jpg)
+
+#### El CDR de las boletas
+
+SUNAT no emite un CDR por cada boleta: las boletas (y sus notas de crédito y débito) se informan en
+un **resumen diario**, y SUNAT responde al resumen con un solo CDR que dice *«El Resumen diario
+RC-…, ha sido aceptado»*. Por eso, en el listado:
+
+- Debajo del estado de la boleta se ve el **resumen** con el que se informó (`RC-20260922-1`). Si
+  la boleta está **Enviada**, es el resumen que todavía espera respuesta de SUNAT.
+- Su botón **CDR** sale en **morado**: descarga el CDR de ese resumen (`R-<RUC>-RC-….zip`). Al pasar
+  el mouse se ve de qué resumen es. En una boleta **Anulada**, es el CDR del resumen que la anuló.
+- El **CDR azul** es el propio del comprobante: facturas, sus notas y las boletas de envío
+  individual.
+
+![Boleta aceptada con su resumen RC-20260922-1 bajo el estado y el botón CDR morado del resumen](img/lista-de-comprobantes-cdr-resumen.png)
+
+El CDR del resumen se puede entregar al cliente sin problema: no nombra las demás boletas, ni a
+sus clientes, ni sus montos. Lo que sí las lista es el XML del resumen, que no se entrega.
+
+Tu cliente también puede descargarlo él mismo, junto con el XML y el PDF, desde la
+[consulta pública de comprobantes](../../../guias-adicionales/Facturacion/Donde-pueden-ver-mis-clientes-los-comprobantes-que-les-emiti.md).
 
 **Botón lado derecho 3 puntos desplegables**
 

@@ -6,6 +6,7 @@
 > `GET /api/document_check_server/{external_id}` — estado de una boleta  
 > `POST /api/documents/status` — el estado por serie-número, si no tienes el `external_id`  
 > `GET /downloads/summary/cdr/{external_id}` — el CDR, con el `external_id` **del resumen**  
+> `GET /downloads/document/cdr/{external_id}` — el mismo CDR, con el `external_id` **de la boleta**  
 > **Auth:** `Bearer {token}`. Las descargas de `/downloads/…` no lo piden.
 
 ---
@@ -328,19 +329,25 @@ de ese resumen. La fecha del nombre es la del día en que **enviaste** el resume
 de las boletas: si lo mandas de madrugada del día siguiente, se llama `RC-20260922-1`. Antes del
 `0` el enlace viene igual, pero todavía no hay ZIP.
 
-La boleta no tiene CDR propio, y ninguna ruta de la boleta lo devuelve:
+La boleta no tiene CDR propio. Lo que devuelve cada ruta:
 
 | Lo que pides | Qué devuelve |
 |---|---|
 | `GET /downloads/summary/cdr/{external_id}` **del resumen** | El ZIP del CDR |
-| `GET /downloads/document/cdr/{external_id}` **de la boleta** | **HTTP 500**: no existe ese archivo. Con `Accept: application/json` el mensaje es `Unable to retrieve the file_size for file at location: cdr/R-20123456789-03-B001-1.zip.`; sin esa cabecera, una página de error HTML |
+| `GET /downloads/document/cdr/{external_id}` **de la boleta** | El **mismo CDR del resumen** (`R-20123456789-RC-20260921-1.zip`): el del último resumen aceptado que la declaró, o, si la boleta está Anulada (`11`), el del resumen que la anuló. Si todavía no hay resumen aceptado, o no llegó su archivo, **HTTP 404** con el texto `El comprobante B001-1 todavía no tiene CDR: …` (con `Accept: application/json`, `{"success": false, "message": "…"}`). Hasta el 2026-10-25 respondía HTTP 500 |
 | `GET /api/document_check_server/{external_id}` de la boleta | `file_cdr: null`, también en `05`: solo trae el CDR de las facturas |
 | `links.cdr` de `POST /api/documents` | `""`. La fila de `sync-batch` ni siquiera trae `links` |
 
 Por eso, en tu base, **el CDR de una boleta es el del resumen que la declaró**: guarda con cada
 boleta el `external_id` de su resumen. El `documents` de la respuesta te dice qué boletas lleva
 cada resumen ([cuadrar](#cuadrar)). Si luego se anula, tiene dos: el del resumen que la declaró y
-el del resumen que la anuló.
+el del resumen que la anuló. Si solo tienes el `external_id` de la boleta, la ruta de la boleta te
+da el que corresponde a su estado.
+
+El CDR del resumen dice solo `El Resumen diario RC-…, ha sido aceptado` y el RUC del emisor: no
+nombra las boletas, ni a sus clientes, ni sus montos, así que se le puede entregar a cualquiera
+de esos clientes. El **XML** del resumen (`/downloads/summary/xml/{external_id}`) sí las lista
+todas con el documento del cliente y el total: ese no se comparte.
 
 Las URL de `links` no llevan token: con el `external_id` basta para descargarlas.
 

@@ -152,8 +152,8 @@ Con el `external_id` **del comprobante** descargas su CDR, un ZIP `R-{RUC}-{tipo
 cuyo XML dice, por ejemplo, `La Factura numero F001-2, ha sido aceptada`. Vale para las facturas y
 sus notas aceptadas y para las boletas que se enviaron solas. No pide token.
 
-Una boleta que se declaró en un resumen **no** tiene CDR propio: esa descarga responde 500 y su
-constancia es la del resumen → [39 — el CDR es el del resumen](39-ciclo-de-la-boleta.md#paso-4).
+Una boleta que se declaró en un resumen **no** tiene CDR propio: esa descarga le devuelve el CDR
+del resumen (o 404 si todavía no hay) → [39 — el CDR es el del resumen](39-ciclo-de-la-boleta.md#paso-4).
 
 ---
 

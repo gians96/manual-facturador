@@ -371,17 +371,18 @@ SUNAT, y solo existe si SUNAT respondió **por ese comprobante**:
 | Factura y notas de factura en `05` o `07` | Sí | `/downloads/document/cdr/{external_id}`. En `05` viene también en `file_cdr` de `document_check_server`, en base64 |
 | Factura en `01` | Todavía no: no se envió | Envíala con `POST /api/documents/send` y después pídelo → [26](26-envio-diferido-update-estado.md#1-enviar-documento-a-sunat) |
 | Boleta de **envío individual** en `05` | Sí | `/downloads/document/cdr/{external_id}`. `file_cdr` llega `null`: solo se llena en facturas |
-| Boleta que se declara **por resumen** | No, nunca | El CDR es el del resumen: `/downloads/summary/cdr/{external_id del resumen}` → [39](39-ciclo-de-la-boleta.md#paso-4) |
+| Boleta que se declara **por resumen** | No propio: el del resumen, cuando SUNAT lo acepta | `/downloads/summary/cdr/{external_id del resumen}`, o `/downloads/document/cdr/{external_id}` de la boleta, que devuelve ese mismo CDR → [39](39-ciclo-de-la-boleta.md#paso-4) |
 | Nota de venta (`80`) | No es comprobante electrónico: no tiene XML ni CDR | Solo PDF: `/sale-notes/print/{external_id}/a4` o `/ticket` |
 | Guía (`09`, `31`) aceptada | Sí | `/downloads/dispatch/xml/{external_id}`, `…/pdf/…` y `…/cdr/…`. El envío y la consulta del ticket van aparte → [guías](../../guias-de-remision.md) |
 
 Pedir el CDR de un comprobante que no lo tiene responde **HTTP 500**: una página de error HTML o,
 con `Accept: application/json`, `Unable to retrieve the file_size for file at location: cdr/…`.
-No es una caída ni se arregla reintentando. Por eso el orden es: primero el estado, y el CDR solo
-si le corresponde.
+La excepción es la boleta por resumen sin resumen aceptado todavía: responde **HTTP 404** con el
+motivo (`El comprobante B001-9 todavía no tiene CDR: …`). Ninguno de los dos es una caída ni se
+arregla reintentando. Por eso el orden es: primero el estado, y el CDR solo si le corresponde.
 
 Comprobado en vivo el 2026-09-21: F001-3 (factura aceptada), B001-10 (envío individual, CDR
-propio), B001-9 (en `01`, esperando el resumen: su CDR da 500, su XML y su PDF dan 200), NV01-182
+propio), B001-9 (en `01`, esperando el resumen: su CDR daba 500 —desde el 2026-10-25, 404 con el motivo—, su XML y su PDF dan 200), NV01-182
 (nota de venta, solo PDF) y V999-90005 (guía, los tres archivos).
 
 #### Desde SQL Server
@@ -418,7 +419,10 @@ Lo mismo al leer el `qr` de la respuesta de `POST /api/documents`. Formato y con
 
 - **El panel:** el listado de comprobantes tiene los botones *XML*, *PDF* y *CDR* de cada uno.
 - **La consulta pública `/buscar`** del dominio de la empresa: el cliente final encuentra su
-  comprobante con su RUC o DNI, la fecha, el tipo, la serie, el número y el total, y lo descarga.
+  comprobante con su RUC o DNI, la fecha, el tipo, la serie, el número y el total, ve su estado en
+  SUNAT y descarga el XML, el PDF y el CDR (el de una boleta es el de su resumen). Las guías se
+  buscan igual, con el documento del destinatario en vez del total →
+  [Visualización de comprobantes para clientes](../../../../guias-adicionales/Facturacion/Donde-pueden-ver-mis-clientes-los-comprobantes-que-les-emiti.md).
 - **El envío automático al cliente**, por correo ([36](36-envio-automatico-por-correo.md)) o por
   WhatsApp ([38](38-envio-de-comprobantes-por-whatsapp.md)).
 
