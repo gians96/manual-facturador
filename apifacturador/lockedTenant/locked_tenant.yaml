@@ -28,7 +28,11 @@ paths:
       summary: Bloquear o desbloquear tenant
       description: |
         Permite bloquear o desbloquear un tenant (cliente) en el sistema.
-        
+
+        Es el único bloqueo: la cuenta entera queda sin acceso (panel, API y app). Al bloquear se
+        puede enviar `locked_reason`, el motivo que el cliente lee al entrar («Su servicio está
+        suspendido por falta de pago.»). Al desbloquear, el motivo se borra.
+
         **Notas:**
         - El campo `locked_tenant` se sincroniza entre la base de datos principal (`clients`) 
           y la base de datos del tenant (`configurations`).
@@ -43,10 +47,11 @@ paths:
               $ref: '#/components/schemas/LockedTenantRequest'
             examples:
               bloquear:
-                summary: Bloquear tenant
+                summary: Bloquear tenant por falta de pago
                 value:
                   id: 1
                   locked_tenant: true
+                  locked_reason: "Falta de pago"
               desbloquear:
                 summary: Desbloquear tenant
                 value:
@@ -65,11 +70,15 @@ paths:
                   value:
                     success: true
                     message: "Cuenta bloqueada"
+                    locked_reason: "Falta de pago"
+                    locked_by: "admin"
                 desbloqueado:
                   summary: Cuenta desbloqueada
                   value:
                     success: true
                     message: "Cuenta desbloqueada"
+                    locked_reason: null
+                    locked_by: null
         '401':
           description: Token inválido o ausente
           content:
@@ -517,6 +526,12 @@ components:
           type: boolean
           description: Estado del tenant (true = bloqueado, false = desbloqueado)
           example: true
+        locked_reason:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Motivo del bloqueo; lo lee el cliente al entrar. Opcional, solo al bloquear.
+          example: "Falta de pago"
 
     SuccessResponse:
       type: object
@@ -527,6 +542,15 @@ components:
         message:
           type: string
           example: "Cuenta bloqueada"
+        locked_reason:
+          type: string
+          nullable: true
+          example: "Falta de pago"
+        locked_by:
+          type: string
+          nullable: true
+          description: Quién bloqueó (`admin` cuando es por este endpoint)
+          example: "admin"
 
     ErrorResponse:
       type: object
