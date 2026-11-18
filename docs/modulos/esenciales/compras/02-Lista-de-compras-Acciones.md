@@ -41,6 +41,38 @@ Se visualizarán diferentes funcionalidades de las secciones enumeradas:
 
 ![Alt text](img/nuevacompra2000000.jpg)
 
+## Editar una compra cuyos productos ya se vendieron
+
+Puedes editar una compra aunque ya hayas vendido parte de sus productos, por ejemplo para **agregar
+productos que faltaron** o corregir un precio. Las ventas que ya hiciste no se tocan.
+
+En las líneas cuyo lote o serie ya tiene ventas:
+
+| Puedes | No puedes |
+|---|---|
+| Cambiar el precio, los impuestos o el nombre que sale en el PDF. | Quitar la línea de la compra. |
+| Subir la cantidad: el lote y el stock suben la diferencia. | Bajar la cantidad por debajo de lo que ya salió del lote. |
+| Bajar la cantidad hasta lo que ya salió. | Cambiar el producto, el almacén, la presentación o el código de lote. |
+| Agregar series nuevas o quitar las que no se vendieron. | Quitar una serie que ya se vendió. |
+
+Las demás líneas de la compra, y las que agregues, se editan como siempre.
+
+Si intentas algo de la columna de la derecha, la compra no se guarda y un aviso te dice qué línea
+lo impide y cuál es la cantidad mínima, por ejemplo: *«Producto» del lote 10122060: ya salió 1
+unidad, la cantidad no puede ser menor a 1.*
+
+:::note Captura pendiente
+Pantalla: Compras → Listado → Editar, en una compra con un lote que ya tiene ventas, al guardar
+después de quitar la línea de ese lote.
+Debe verse: el aviso «No se guardó la compra» con el nombre del producto, el lote y la cantidad mínima.
+:::
+
+:::tip ¿Y anular?
+**Anular** una compra sigue bloqueado si alguno de sus lotes o series ya tiene ventas
+(«Operación bloqueada»), porque anularla quitaría del stock unidades que ya se vendieron. Para
+agregar productos, usa **Editar**.
+:::
+
 ## Importar
 
 ![Botón Importar](img/listado-compras-2.png)
