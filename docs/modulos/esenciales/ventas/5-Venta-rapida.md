@@ -40,3 +40,16 @@ En la pantalla de creación de productos, asegúrate de marcar la casilla **Calc
 En el módulo de **Venta Rápida**, estos productos aparecerán listados para su selección directa, optimizando el proceso de venta.
 
 ![Pantalla de Venta Rápida](img/ejemplo-venta-rapida.png)
+## Comprobante parecido emitido hace menos de un minuto
+
+Si emites un comprobante con el **mismo tipo, serie, cliente, total y fecha** que otro que emitiste hace menos de un minuto, el sistema te pregunta **«¿Emitir otro comprobante igual?»** antes de seguir. Sirve para no duplicar una venta por un doble clic.
+
+- **Sí, emitir**: se genera el nuevo comprobante normalmente (por ejemplo, dos clientes distintos que compran lo mismo como «Clientes Varios»).
+- **No, cancelar**: no se emite nada; revisa el listado de comprobantes por si la venta ya quedó registrada.
+
+El aviso aparece en cualquier pantalla que emite facturas o boletas (Venta rápida, POS, nuevo comprobante, etc.).
+
+:::note Captura pendiente
+Pantalla: Venta rápida, al pagar una boleta igual a otra emitida hace segundos.
+Debe verse: el aviso «¿Emitir otro comprobante igual?» con los botones «No, cancelar» y «Sí, emitir».
+:::
