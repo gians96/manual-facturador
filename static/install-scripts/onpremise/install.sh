@@ -268,7 +268,7 @@ read -p "Continuar? [S/n]: " ok
 echo "-> Configurando proxy compartido (80/443) ..."
 docker network inspect proxynet >/dev/null 2>&1 || docker network create proxynet
 mkdir -p "$CERTS_DIR" "$PROXY_DIR"
-PROXY_RUNNING="$(docker ps --filter "ancestor=rash07/nginx-proxy:4.0" --format '{{.Names}}' | head -1)"
+PROXY_RUNNING="$({ docker ps --filter label=pro8.role=edge-proxy --format '{{.Names}}'; docker ps --filter "ancestor=rash07/nginx-proxy:4.0" --format '{{.Names}}'; } | head -1)"
 if [ -z "$PROXY_RUNNING" ]; then
     cat > "$PROXY_DIR/docker-compose.yml" << 'EOFPROXY'
 services:

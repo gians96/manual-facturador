@@ -67,7 +67,7 @@ El script pide:
 - **SSL** (certbot manual DNS challenge, opcional)
 
 Incluye:
-- Proxy reverso (`rash07/nginx-proxy:4.0`) para soporte multi-proyecto
+- Proxy reverso para soporte multi-proyecto: se levanta como `rash07/nginx-proxy:4.0` y, tras clonar el proyecto, se cambia por la imagen con nginx parcheado (ver [Proxy de borde: nginx y parches](../../../operacion/seguridad-del-servidor.md#proxy-de-borde-nginx-y-parches))
 - OPcache + JIT para máximo rendimiento
 - MariaDB con tuning optimizado
 - Redis con maxmemory 256MB
@@ -185,7 +185,7 @@ certbot certonly --manual -d *.mi-empresa.com -d mi-empresa.com --agree-tos --no
 cp /etc/letsencrypt/live/mi-empresa.com/privkey.pem ~/proyectos/certs/mi-empresa.com.key
 cp /etc/letsencrypt/live/mi-empresa.com/fullchain.pem ~/proyectos/certs/mi-empresa.com.crt
 
-docker restart $(docker ps --filter "ancestor=rash07/nginx-proxy:4.0" --format "{{.Names}}" | head -1)
+docker restart $({ docker ps --filter label=pro8.role=edge-proxy --format "{{.Names}}"; docker ps --filter "ancestor=rash07/nginx-proxy:4.0" --format "{{.Names}}"; } | head -1)
 ```
 
 ## Archivos generados

@@ -34,9 +34,9 @@ COPY . .
 RUN npm run build
 
 ##############################################
-# Etapa 2 — Servir con nginx (imagen final liviana)
+# Etapa 2 — Servir con nginx (imagen final liviana; 1.30.7 corrige CVE-2026-123007/123633)
 ##############################################
-FROM nginx:1.27-alpine AS serve
+FROM nginx:1.30.7-alpine AS serve
 
 # Config a medida para el estático de Docusaurus (URLs limpias, gzip, cache)
 COPY nginx.conf /etc/nginx/conf.d/default.conf

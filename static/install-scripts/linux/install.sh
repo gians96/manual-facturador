@@ -210,7 +210,7 @@ mkdir -p $PATH_INSTALL/proxy
 # nuevo: cambiar el compose de uno que ya corre lo recrearia, y recrear borra sus
 # docker logs, que pueden ser evidencia (cada peticion con su IP).
 PROXY_LOGGING=""
-if [ ! -f "$PATH_INSTALL/proxy/docker-compose.yml" ] && [ -z "$(docker ps -aq --filter ancestor=rash07/nginx-proxy:4.0 2>/dev/null)" ]; then
+if [ ! -f "$PATH_INSTALL/proxy/docker-compose.yml" ] && [ -z "$({ docker ps -aq --filter label=pro8.role=edge-proxy; docker ps -aq --filter ancestor=rash07/nginx-proxy:4.0; } 2>/dev/null)" ]; then
     PROXY_LOGGING='        logging:
             driver: json-file
             options:
@@ -827,7 +827,7 @@ if [ "$ssl" = "s" ]; then
 
         # Detectar nombre del contenedor proxy (compatible con todos los formatos)
         echo "-> Buscando contenedor proxy..."
-        PROXY_CONTAINER=$(docker ps --filter "ancestor=rash07/nginx-proxy:4.0" --format "{{.Names}}" | head -1)
+        PROXY_CONTAINER=$({ docker ps --filter label=pro8.role=edge-proxy --format "{{.Names}}"; docker ps --filter "ancestor=rash07/nginx-proxy:4.0" --format "{{.Names}}"; } | head -1)
 
         # Si no encuentra por imagen, buscar por nombre
         if [ -z "$PROXY_CONTAINER" ]; then
@@ -847,6 +847,23 @@ if [ "$ssl" = "s" ]; then
 
 fi
 
+
+# Proxy de borde con nginx parcheado. rash07/nginx-proxy:4.0 trae nginx 1.29.0
+# con HTTP/2 en 443, vulnerable a CVE-2026-123007/123633 (RCE sin autenticar).
+# Lo cambia scripts/lib/update-common.sh del proyecto por la imagen del repo
+# (scripts/stack/nginx-proxy), el mismo paso que repite cada actualizacion; si ya
+# esta parcheado no lo toca. En subshell y sin set -e: un fallo aqui no corta la
+# instalacion, pero se avisa.
+EDGE_LIB="$PATH_INSTALL/$DIR/scripts/lib/update-common.sh"
+if [ -f "$EDGE_LIB" ] && grep -q '^ensure_edge_proxy_runtime()' "$EDGE_LIB"; then
+    echo "Parchando el proxy de borde (nginx HTTP/2)..."
+    ( set +e +u +o pipefail; cd "$PATH_INSTALL/$DIR" && . "$EDGE_LIB" \
+        && ensure_edge_proxy_runtime "$PATH_INSTALL/$DIR/docker-compose.yml" "$PATH_INSTALL/$DIR" \
+        && [ "${_EDGE_PROXY_OK:-}" != "0" ] ) \
+        || echo "ADVERTENCIA: el proxy de borde sigue con un nginx vulnerable (CVE-2026-123007/123633); revisa la salida de arriba y corre update.sh."
+else
+    echo "ADVERTENCIA: el proyecto no trae ensure_edge_proxy_runtime; el proxy de borde queda con rash07/nginx-proxy:4.0 (nginx vulnerable a CVE-2026-123007/123633)."
+fi
 
 echo ""
 echo "=============================================="

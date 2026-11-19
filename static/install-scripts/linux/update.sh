@@ -494,6 +494,24 @@ else
     echo "ADVERTENCIA: el proyecto no trae scripts/lib/update-common.sh; no se comprueba que nginx solo ejecute /index.php."
 fi
 
+echo "-> proxy de borde (nginx parcheado: HTTP/2, CVE-2026-123007/123633)"
+# El proxy 80/443 es uno por servidor y no llega con git pull. Lo parcha
+# scripts/lib/update-common.sh del proyecto (ensure_edge_proxy_runtime): la primera
+# vez lo reconstruye y lo recrea (unos segundos sin servicio para todos los
+# dominios); despues solo comprueba. Interruptor: PROXY_RUNTIME_ENSURE=false en .env.
+EDGE_PROXY_VULN=""
+if [ -f scripts/lib/update-common.sh ] && grep -q '^ensure_edge_proxy_runtime()' scripts/lib/update-common.sh; then
+    (
+        set +e +u +o pipefail
+        # shellcheck source=/dev/null
+        . scripts/lib/update-common.sh
+        ensure_edge_proxy_runtime "$(pwd)/$(compose_file)" "$(pwd)"
+        [ "${_EDGE_PROXY_OK:-}" != "0" ]
+    ) || EDGE_PROXY_VULN=1
+else
+    echo "   (el proyecto no trae ensure_edge_proxy_runtime; no se comprueba el proxy de borde)"
+fi
+
 echo "-> reiniciar contenedores PHP y nginx"
 # CRITICO. `kill -USR2 1` solo purga el OPcache de fpm, y aqui hay TRES procesos
 # PHP con su propio OPcache: fpm, supervisor y scheduling. Con
@@ -530,6 +548,15 @@ for _i in 1 2 3 4 5 6 7 8 9 10; do
     sleep 2
     [ "${_i}" = "10" ] && echo "   ADVERTENCIA: no se pudo correr el cache:clear final; hazlo a mano"
 done
+
+# Proxy de borde con nginx vulnerable: el codigo quedo desplegado, pero el
+# servidor sigue expuesto. Sale en error a proposito.
+if [ -n "${EDGE_PROXY_VULN:-}" ]; then
+    echo ""
+    echo "ERROR Actualizacion INCOMPLETA: el proxy de borde sigue con un nginx vulnerable"
+    echo "      (CVE-2026-123007/123633; ver «-> proxy de borde» arriba)."
+    exit 1
+fi
 
 echo ""
 echo "OK Actualizacion completada."

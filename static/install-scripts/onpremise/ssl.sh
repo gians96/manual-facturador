@@ -58,7 +58,7 @@ set_env_var() {
 find_proxy() {
     local proxy
 
-    proxy="$(docker ps --filter "ancestor=rash07/nginx-proxy:4.0" --format '{{.Names}}' | head -1)"
+    proxy="$({ docker ps --filter label=pro8.role=edge-proxy --format '{{.Names}}'; docker ps --filter "ancestor=rash07/nginx-proxy:4.0" --format '{{.Names}}'; } | head -1)"
     [ -z "$proxy" ] && proxy="$(docker ps | grep -i proxy | awk '{print $NF}' | head -1)"
     echo "$proxy"
 }

@@ -21,6 +21,7 @@ que no cambia nada visible:
 | Qué | Para qué |
 |---|---|
 | PHP de la imagen del proyecto (`scripts/stack/php`), en la versión parcheada que fija el repo | Ningún servidor queda en un PHP con fallos conocidos: ver [PHP: versión y parches](#php-versión-y-parches) |
+| Proxy de borde (80/443) con el nginx parcheado que fija el repo (`scripts/stack/nginx-proxy`) | El proxy compartido no queda en un nginx con fallos conocidos: ver [Proxy de borde: nginx y parches](#proxy-de-borde-nginx-y-parches) |
 | nginx con `real_ip`, confiando **solo** en la IP exacta del proxy y en Cloudflare | La IP registrada es la del cliente y no se puede falsificar escribiendo un `X-Forwarded-For` |
 | `TRUSTED_PROXIES` en `.env` (bajo la marca `# pro8-sec`) | La app usa los mismos saltos de confianza que nginx |
 | Log `pro8sec` de nginx en `/var/log/pro8/<prefijo>/nginx/`, fuera del proyecto | Una webshell (que escribe como www-data) no lo puede tocar |
@@ -117,6 +118,88 @@ actualización, aunque la imagen nueva no se haya podido construir.
 Después de esa fecha hay que pasar a la 8.3 o posterior. No es solo subir el `ARG`: Laravel 9
 soporta PHP hasta la 8.2, y el cambio se prueba antes en local.
 :::
+
+## Proxy de borde: nginx y parches
+
+El proxy de borde es el contenedor que atiende los puertos 80 y 443 y reparte el tráfico a cada
+dominio según `VIRTUAL_HOST`. Hay **uno solo por servidor**, compartido por todos los dominios.
+Los instaladores lo levantan como `rash07/nginx-proxy:4.0`, que trae **nginx 1.29.0** con HTTP/2
+activo en 443.
+
+En noviembre de 2026 se publicaron dos fallos del HTTP/2 de nginx con los que una petición **sin
+autenticar ejecuta código** en el servidor: **CVE-2026-123007** (control de flujo, `send_window`) y
+**CVE-2026-123633** (use-after-free cuando escasean las conexiones). Se corrigen en nginx **1.30.7**
+(stable) y **1.31.9** (mainline). Apagar HTTP/2 con `ENABLE_HTTP2=false` no basta: la plantilla del
+proxy lo deja encendido en su servidor de respaldo.
+
+La imagen parcheada se construye con el Dockerfile del proyecto, `scripts/stack/nginx-proxy/Dockerfile`.
+Conserva todo lo de `rash07/nginx-proxy:4.0`: la plantilla, docker-gen, el límite de subida de 120 MB y
+los tiempos de espera de 3600 s. Solo cambia el nginx. La versión es una línea del archivo
+(`ARG NGINX_VERSION`).
+
+**Qué hace la actualización** (`ensure_edge_proxy_runtime`, junto a PHP). La aplican
+`prod-update.sh`, `onprem-update.sh`, los `update.sh` de este manual y los instaladores, después de
+clonar el proyecto:
+
+1. Si el proxy ya corre la imagen del Dockerfile actual, no hace nada. Pasa en todas las
+   actualizaciones siguientes y en los demás dominios del mismo servidor.
+2. Si no, la **construye**. Tarda menos de un minuto.
+3. La **prueba** antes de usarla:
+   - la versión de nginx;
+   - `nginx -t` con la configuración y los certificados que el proxy usa hoy;
+   - que estén docker-gen y la plantilla.
+4. Guarda una **foto** del proxy en `/var/log/pro8-evidencia`. Recrearlo borra sus `docker logs`,
+   que tienen cada petición con su IP.
+5. Cambia la imagen en el `docker-compose.yml` del proxy, con un respaldo
+   `docker-compose.yml.backup-before-nginx-proxy-<versión>-<fecha>`. Copia el Dockerfile a `build/`,
+   junto a ese compose.
+6. Recrea el proxy y espera a que cargue **todos** los dominios que tenía. Si no lo logra, vuelve al
+   compose y a la imagen anteriores.
+
+Solo reemplaza por su cuenta un `rash07/nginx-proxy:4.0`. Otro proxy (otra versión, otra imagen) se
+informa y no se toca.
+
+:::warning Un corte corto para todos los dominios, una sola vez
+Al recrear el proxy, **todos los dominios del servidor** se cortan durante unos segundos (en las
+pruebas, menos de un segundo). Pasa una sola vez por servidor. Conviene hacer la primera
+actualización en un horario de poco tráfico. Para ver antes qué cambiaría sin aplicar nada, corre
+la actualización con `ENSURE_DRY_RUN=1`.
+:::
+
+**Comprobar** qué nginx corre el proxy:
+
+```bash
+docker exec $(docker ps -q --filter label=pro8.role=edge-proxy | head -1) nginx -v
+```
+
+En un servidor que todavía no se actualizó, el proxy es el de rash07:
+
+```bash
+docker exec $(docker ps -q --filter ancestor=rash07/nginx-proxy:4.0 | head -1) nginx -v
+```
+
+`nginx/1.29.0` significa que es vulnerable.
+
+**Si la actualización termina en rojo** con «el proxy de borde sigue VULNERABLE», el código nuevo
+quedó desplegado, pero el proxy no se cambió. El motivo está en la línea `-> proxy de borde` de la
+salida. Los casos habituales:
+- **sin salida a Docker Hub:** no se pudo descargar `nginx:1.30.7`;
+- **sin permiso:** hay que correr la actualización como root (escribe junto al compose del proxy);
+- **la imagen no pasó una prueba:** la salida dice cuál.
+
+Para no aplicarlo en un servidor concreto, pon `PROXY_RUNTIME_ENSURE=false` en el `.env` del
+dominio. Mientras el proxy siga vulnerable, la actualización seguirá terminando en rojo.
+
+**Volver atrás:** la imagen anterior no se borra. En la carpeta del proxy (`/var/proxy`, o
+`_infra/proxy` en on-premise):
+
+```bash
+cp docker-compose.yml.backup-before-nginx-proxy-<versión>-<fecha> docker-compose.yml
+```
+
+```bash
+docker compose up -d --no-deps --no-build proxy
+```
 
 ## Lo que se instala a mano: `security-install.sh`
 
