@@ -154,7 +154,10 @@ Estos campos son fundamentales para el correcto funcionamiento del sistema y los
 
 ![Alt text](img/Creacion-avanzada_06.jpg)
 
-**1.  Imagen:** Inserta la imagen del producto.
+**1.  Imagen:** Inserta la imagen del producto. Puedes subir la foto tal como sale del celular: el
+sistema la reduce antes de enviarla y la guarda optimizada (como máximo 1600 px en su lado mayor), así
+que no hace falta achicarla antes. Se aceptan JPG, PNG, GIF y WebP de hasta 10 MB. En el punto de
+venta se muestra una miniatura, para que el catálogo cargue rápido.
 
 **2.  Categoría:** Selecciona la categoría del producto, caso contrario deberá crearlo seleccionando el botón **[+Nuevo].**
 

@@ -483,6 +483,12 @@ if [ -f scripts/lib/update-common.sh ]; then
         if type ensure_supervisor_user >/dev/null 2>&1; then
             ensure_supervisor_user "$(pwd)/$(compose_file)" "$(pwd)"
         fi
+        # Tamaño maximo de una subida (client_max_body_size, igual que el
+        # post_max_size del pool de PHP): sin el, nginx corta en 1 MB con un 413.
+        # Interruptor: NGINX_BODY_SIZE_ENSURE=false.
+        if type ensure_nginx_body_size >/dev/null 2>&1; then
+            ensure_nginx_body_size "$(pwd)/$(compose_file)" "$(pwd)"
+        fi
     ) || echo "ADVERTENCIA: no se pudo comprobar que nginx solo ejecute /index.php; revisalo a mano (ver la guia de instalacion por scripts)."
 else
     echo "ADVERTENCIA: el proyecto no trae scripts/lib/update-common.sh; no se comprueba que nginx solo ejecute /index.php."

@@ -281,6 +281,7 @@ cat << EOF > $PATH_INSTALL/proxy/fpms/$DIR/default
 # pro8-stack: log de acceso con tiempos (lo agrega scripts/lib/update-common.sh)
 log_format timed '\$remote_addr - [\$time_local] "\$request" \$status \$body_bytes_sent "\$http_referer" "\$http_user_agent" "\$http_x_forwarded_for" \$upstream_response_time \$request_time'; # pro8-stack
 server {
+    client_max_body_size 16m; # pro8-body-size: subidas, igual que post_max_size de PHP (zz-pool.conf)
     access_log /var/www/html/storage/logs/nginx-access.log timed; # pro8-stack
     listen 80 default_server;
     root /var/www/html/public;

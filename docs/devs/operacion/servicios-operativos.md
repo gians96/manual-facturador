@@ -170,10 +170,11 @@ dentro del paso *Reiniciando contenedores PHP y nginx*:
 
 | Pieza | Qué queda | Cómo verificar |
 |---|---|---|
-| PHP-FPM | Pool versionado `scripts/stack/php-fpm/zz-pool.conf`, montado en `/usr/local/etc/php-fpm.d/zz-pool.conf`: 15 workers (`pm = dynamic`), `pm.max_requests = 500`, `request_terminate_timeout = 3600s` y slowlog de peticiones de más de 10 s. El contenedor lleva `cap_add: [SYS_PTRACE]` para poder sacar la traza | `docker exec fpm_… php-fpm -tt 2>&1 \| grep -E 'max_children\|slowlog'` → `pm.max_children = 15` |
+| PHP-FPM | Pool versionado `scripts/stack/php-fpm/zz-pool.conf`, montado en `/usr/local/etc/php-fpm.d/zz-pool.conf`: 15 workers (`pm = dynamic`), `pm.max_requests = 500`, `request_terminate_timeout = 3600s` y slowlog de peticiones de más de 10 s. Sube el tope de subida de PHP a 12 MB por archivo y 16 MB por petición (`upload_max_filesize`, `post_max_size`; la imagen trae 2 MB y 8 MB, y una foto de celular no pasaba). El contenedor lleva `cap_add: [SYS_PTRACE]` para poder sacar la traza | `docker exec fpm_… php-fpm -tt 2>&1 \| grep -E 'max_children\|slowlog\|upload_max'` → `pm.max_children = 15` y `upload_max_filesize = 12M`. Ojo: `php -i` muestra el valor de la línea de comandos (2M), no el del pool |
 | OPcache | Solo en servidores cuya imagen de PHP no lo trae activo (esquema de instalación viejo): la actualización monta `scripts/stack/php-fpm/zz-opcache.ini` en fpm (512 MB, revalida cada 60 s). Sin OPcache, PHP recompila todo el código en cada petición; con él, una página típica responde unas 2,5–3 veces más rápido. Las instalaciones nuevas ya lo traen en su imagen | `docker exec fpm_… php -m \| grep -i opcache` → `Zend OPcache` |
 | Slowlog de PHP-FPM | Cada petición que pasa de 10 s deja su traza (qué función PHP estaba corriendo) en `storage/logs/php-fpm-slow.log` | `tail -50 storage/logs/php-fpm-slow.log` |
 | Log de acceso de nginx | `storage/logs/nginx-access.log`, con formato `timed`: el **último campo es `$request_time`** (segundos) y el penúltimo, `$upstream_response_time` | `tail -3 storage/logs/nginx-access.log` |
+| Tamaño de subida | `client_max_body_size` dentro de cada `server {}` del sitio de nginx (línea marcada `# pro8-body-size`), con el mismo valor que el `post_max_size` del pool de PHP: **16 MB**. Sin ella nginx corta en 1 MB y cualquier foto, Excel o imagen de la app que pese más recibe un **413** sin llegar a PHP. Un valor puesto a mano (en el sitio o en `nginx.conf`) se respeta. `NGINX_BODY_SIZE_ENSURE=false` en `.env` lo desactiva | `docker exec nginx_… nginx -T 2>/dev/null \| grep client_max_body_size` → `client_max_body_size 16m;` |
 | Slow log de MariaDB | Consultas de más de 2 s en la tabla `mysql.slow_log` (`log_output = TABLE`). Se activa en caliente, sin reiniciar | `SHOW GLOBAL VARIABLES LIKE 'slow_query_log';` → `ON` |
 | Cachés de MariaDB para muchas tablas | Bloque marcado `# >>> pro8-stack` **al final** del `my.cnf` montado (`/etc/mysql/conf.d/custom.cnf`): `table_definition_cache = 40000`, `table_open_cache = 10000`, `open_files_limit = 65535`, `innodb_open_files = 10000`, y `ulimits nofile 65535` en el compose | `SHOW GLOBAL VARIABLES LIKE 'table_definition_cache';` (vale 40000 tras el reinicio) |
 | Scheduling | `command` que instala el crontab del repositorio, `exec php-fpm` e `init: true` (el contenedor se detiene en cuanto recibe la señal, sin acabar en `SIGKILL`) | `docker exec scheduling_… crontab -l` → una sola línea `schedule:run` |
@@ -532,6 +533,44 @@ La tarjeta dice **dónde** mirar; los logs de [Leer los logs](#leer-los-logs) di
 el máximo: una pantalla de 300 ms abierta 20 000 veces cuesta más que un informe de 30 s que se
 abre una vez al mes.
 :::
+
+### Cómo leer «Consultas lentas de la base»
+
+- **«Filas leídas» muy por encima de lo que devuelve la consulta** (una búsqueda por un solo
+  código que lee cien mil filas) es un índice que falta. Así se encontró que imprimir una nota de
+  venta recorría la tabla entera: se buscaba por `external_id` y solo `documents` e `income` tenían
+  índice. Desde 2026-11-19 lo tienen todas las tablas que se buscan por esa columna.
+- **Un bloque de `SELECT … FROM tabla` sin `WHERE`, de madrugada, en todas las empresas a la vez y
+  con «filas leídas» igual al tamaño de la tabla** es la copia de seguridad leyendo cada tabla. Es
+  lo esperado; no hay nada que optimizar ahí.
+- **`information_schema.TABLES`** es el propio panel midiendo el tamaño de las bases.
+
+## Imágenes: optimizar las que ya estaban guardadas
+
+Toda imagen que se sube se guarda reducida (1600 px en el lado mayor, recodificada). Las que se
+subieron antes del 2026-11-19 quedaron como llegaron, y una foto de varios MB se sigue descargando
+entera cada vez que se muestra. `images:optimize` les aplica lo mismo, **sin cambiar el nombre ni
+el formato de ningún archivo** (no toca la base de datos).
+
+No es una tarea programada: se corre a mano, una vez por servidor.
+
+```bash
+# 1. Cuánto se ahorraría (no escribe nada)
+docker exec <fpm> php artisan images:optimize --dry-run
+
+# 2. Aplicarlo, guardando los originales en una carpeta que no se sirve por web
+docker exec <fpm> php artisan images:optimize --backup=/var/www/html/storage/app/respaldo-imagenes
+```
+
+- Por defecto recorre `uploads/items` y `uploads/promotions`. Otra carpeta: `--dir=categories`
+  (se puede repetir).
+- Solo mira las imágenes de más de 300 KB (`--min-kb=`) y solo reemplaza si quedan al menos un
+  10 % más livianas. Una segunda pasada no cambia nada.
+- `--limit=500` reemplaza como mucho ese número de imágenes por corrida.
+- `-v` lista cada archivo con su peso antes y después.
+- Recodificar pierde algo de calidad y **no se puede deshacer** sin el respaldo: la primera vez,
+  siempre con `--backup`. Cuando se haya comprobado que el catálogo se ve bien, el respaldo se borra.
+- Lo que no se pudo procesar queda en el log con la etiqueta `[IMAGENES]`.
 
 ## Consumo por tenant (para revisar planes)
 
