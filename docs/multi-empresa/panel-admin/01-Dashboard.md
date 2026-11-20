@@ -30,9 +30,11 @@ Ingresar al **Dashboard**, ubicar en **Listado de clientes** y veremos los sigui
 
     ![Diálogo «Bloquear cuenta» con las opciones de motivo](img/01-dashboard-bloquear-motivo.png)
 
-    El cliente bloqueado ve el motivo y, si es por falta de pago, cuánto debe y el botón **Pagar ahora**:
+    El cliente bloqueado ve el motivo y, si es por falta de pago, la pantalla **Servicio suspendido**: cuánto debe, desde cuándo está vencido («Venció el …») y el botón **Ir a pagar**, que lo lleva al estado de cuenta público de su empresa, donde cualquiera puede pagar sin iniciar sesión. Con cualquier otro motivo ve el motivo y el contacto de soporte, sin botón de pago.
 
-    ![Pantalla del cliente bloqueado: «Su servicio está suspendido por falta de pago», la deuda y «Pagar ahora»](img/01-dashboard-cliente-bloqueado.png)
+    ![Pantalla del cliente bloqueado: «Servicio suspendido», «Su servicio está suspendido por falta de pago», la deuda, la fecha de vencimiento y «Ir a pagar»](img/01-dashboard-cliente-bloqueado.png)
+
+    Cómo lo ve el cliente, y el aviso que recibe antes de llegar a esto, están en [Aviso de cobro, próximo pago y servicio suspendido](../../guias-adicionales/Otros/aviso-de-cobro-y-mis-pagos.md).
 
     Si la plataforma de cobro bloqueó la cuenta, la vuelve a desbloquear sola cuando se registra el pago. Si la bloqueaste tú con «Falta de pago», también se desbloquea sola cuando la plataforma avisa que ya pagó. Con cualquier otro motivo, solo se desbloquea apagando el interruptor.
 17. **Pago:** si el cliente pagó o no, según la plataforma de cobro: **Pagó** (al día hasta…), **No pagó** (cuántos días lleva vencido y cuánto debe) o **En prueba**. Un guion (—) significa que a esa empresa no la cobra la plataforma. En **Filtros** puedes listar solo los que pagaron o los que no.
