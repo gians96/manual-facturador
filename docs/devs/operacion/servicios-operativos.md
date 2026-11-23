@@ -122,8 +122,6 @@ ejecuta esta comprobación al terminar, devolviendo error si algo no se alcanza.
 | `nubetec:refresh-legal` | Versiones legales vigentes de la plataforma | cada hora | `tail storage/logs/nubetec_legal.log` | `nubetec_legal.log` |
 | `nubetec:refresh-announcements` | Anuncios que muestra el navbar. Los marcados solo para administradores no les salen a los demás usuarios; uno retirado en la plataforma se quita aquí en la siguiente pasada | cada hora | `tail storage/logs/nubetec_announcements.log` (cada pasada deja «Descargados … · nuevos … · actualizados … · retirados …») | `nubetec_announcements.log` |
 | `tenancy:run nubetec:notify-legal` | Avisa por correo de cambios en los documentos legales | diaria 09:00 | `tail storage/logs/nubetec_legal_notify.log` | `nubetec_legal_notify.log` |
-| `nubetec:sync-tenants --limit=200` | Federa empresas hacia la plataforma. Si la plataforma no ofrece la siembra de cartera con la credencial configurada, sale sin enviar nada | diaria 03:30 | `tail storage/logs/nubetec_sync_tenants.log` (si no se ofrece, la línea es «… no ofrece la siembra de cartera con esta credencial: no hay nada que hacer.») | `nubetec_sync_tenants.log` |
-| `nubetec:seed-subscriptions` | Refleja el plan de cada empresa al día. Igual que la anterior: sin siembra de cartera en la plataforma, no envía nada | diaria 03:45 | `tail storage/logs/nubetec_seed_subscriptions.log` | `nubetec_seed_subscriptions.log` |
 
 ## Colas y WhatsApp (contenedor `supervisor_*`)
 
