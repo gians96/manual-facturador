@@ -32,7 +32,12 @@ corrección no se aplica. Cómo hacerlo:
 Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {token}
+Prefer: respond-async        ← opcional: ver «En segundo plano»
 ```
+
+Sin `Prefer: respond-async` todo funciona como describe esta página. Con ella, y solo si el
+servidor lo tiene activado para la empresa, el lote se procesa por detrás:
+[en segundo plano](#en-segundo-plano).
 
 ### Payload
 
@@ -1549,6 +1554,104 @@ Ver también [13 — Guía Remitente](13-guia-remision-remitente.md),
 [16 — Idempotencia](16-idempotencia.md).
 
 ---
+
+## En segundo plano — `Prefer: respond-async` {#en-segundo-plano}
+
+Un lote grande tarda: cada comprobante se firma y, si corresponde, se envía a SUNAT dentro de la
+misma petición. Para no esperar, el app puede pedir que el servidor lo procese por detrás.
+
+**Es opcional y no cambia nada para quien no lo pide.** El servidor solo lo hace si se cumplen las
+dos cosas; si falta cualquiera, responde el `200` de siempre:
+
+| `Prefer: respond-async` | La empresa lo tiene activado (`offline_sync_async`) | Respuesta |
+|---|---|---|
+| No | — | `200`, como siempre |
+| Sí | No (así nacen todas) | `200`, como siempre |
+| Sí | Sí | `202`: el lote quedó en cola |
+
+Si el servidor ve lotes esperando desde hace más de 10 minutos (su proceso de cola está detenido),
+responde `200` en línea en vez de encolar: el app no tiene que hacer nada distinto.
+
+### 1. Mandar el lote
+
+El mismo cuerpo de siempre, con la cabecera y, recomendado, un `batch_id` (UUID) generado por el app:
+
+```json
+{
+  "batch_id": "e1bca9ca-9f51-4d37-b875-c0bc710ec3af",
+  "cash_openings": [],
+  "sales": [ … ],
+  "cash_closings": []
+}
+```
+
+Respuesta `202 Accepted`, con `Location: /api/offline/sync-batch/{batch_id}`:
+
+```json
+{
+  "success": true,
+  "message": "Lote recibido; se procesa en segundo plano.",
+  "data": {
+    "batch_id": "e1bca9ca-9f51-4d37-b875-c0bc710ec3af",
+    "status": "pending",
+    "sales_count": 1,
+    "status_url": "/api/offline/sync-batch/e1bca9ca-9f51-4d37-b875-c0bc710ec3af"
+  }
+}
+```
+
+Si el `202` se pierde y el app reenvía el POST con el **mismo `batch_id`**, el servidor no crea otro
+lote: devuelve el estado del que ya tiene.
+
+### 2. Saber cuándo terminó
+
+- **Aviso:** al terminar llega el evento `offline-sync.done` por el canal del catálogo que el app ya
+  escucha, con `batch_id`, `status`, `success_count` y `error_count`.
+- **Consulta:** `GET /api/offline/sync-batch/{batch_id}`. Responde `202` mientras está `pending` o
+  `processing`, y `200` al terminar. Si el aviso no llega, consulta con espera creciente: 2 s, 5 s,
+  15 s y 60 s.
+
+```json
+{
+  "success": true,
+  "message": "Lote procesado.",
+  "data": {
+    "batch_id": "e1bca9ca-9f51-4d37-b875-c0bc710ec3af",
+    "status": "done",
+    "message": "Sincronización completada: 3 sincronizadas, 0 fallidas",
+    "result": {
+      "results": [ … ],
+      "cash_results": [ … ],
+      "cash_closing_results": [ … ],
+      "total": 3,
+      "success_count": 3,
+      "error_count": 0,
+      "cash_summary": []
+    }
+  }
+}
+```
+
+:::tip `result` es el `data` de la respuesta de siempre
+Las mismas filas, los mismos `was_duplicate`, `cash_*`, `warnings` y `error_code` que describe esta
+página. El código que lee la respuesta síncrona sirve tal cual para `data.result`.
+:::
+
+`status: "failed"` significa que el lote **entero** no se pudo procesar (por ejemplo, el usuario
+se borró), con `success: false` y el motivo en `data.error`. Que una venta falle no lo pone en
+`failed`: va en `result.results[]`, como siempre.
+
+### Orden y reintentos
+
+- Los lotes de un mismo usuario se procesan **en el orden en que llegaron**: uno no empieza hasta que
+  terminó el anterior. Un cierre de caja nunca se adelanta a las ventas del lote previo.
+- Reenviar ventas ya mandadas es seguro, igual que en línea: salen como `was_duplicate`.
+- Mientras el lote no termine, las ventas siguen como «pendientes» en el equipo.
+
+| Status | `error_code` | Qué hacer |
+|---|---|---|
+| 404 | `BATCH_NOT_FOUND` | El lote no existe o es de otro usuario. Reenviar las ventas si hace falta (es seguro). |
+| 409 | `BATCH_ID_TAKEN` | Ese `batch_id` lo usó otro usuario: generar otro. |
 
 ## Notas para Flutter
 
